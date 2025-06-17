@@ -1,8 +1,9 @@
 package com.ecclesiaflow.springsecurity.services.impl;
 
-
+import com.ecclesiaflow.springsecurity.dto.JwtAuthenticationResponse;
+import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.dto.SignUpRequest;
-
+import com.ecclesiaflow.springsecurity.dto.SigninRequest;
 import com.ecclesiaflow.springsecurity.entities.Role;
 import com.ecclesiaflow.springsecurity.entities.User;
 import com.ecclesiaflow.springsecurity.repository.UserRepository;
@@ -10,10 +11,11 @@ import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.services.JWTService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
-
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -38,5 +40,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return userRepository.save(user);
     }
 
+    public JwtAuthenticationResponse signin(SigninRequest signinRequest) {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signinRequest.getEmail(), signinRequest.getPassword()));
 
+        var user = userRepository.findByEmail(signinRequest.getEmail()).orElseThrow(()->new IllegalArgumentException("Invalid email or password"));
+        var jwt = jwtService.generateToken(user);
+        var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
+
+        JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
+        jwtAuthenticationResponse.setToken(jwt);
+        jwtAuthenticationResponse.setRefreshToken(refreshToken);
+        return jwtAuthenticationResponse;
+    }
+    
 }
