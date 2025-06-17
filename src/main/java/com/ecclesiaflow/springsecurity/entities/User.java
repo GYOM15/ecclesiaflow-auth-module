@@ -2,17 +2,12 @@ package com.ecclesiaflow.springsecurity.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-import java.util.List;
+import javax.management.relation.Role;
 
 @Data
 @Entity
 @Table(name = "user")
-public class User implements UserDetails {
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -23,59 +18,5 @@ public class User implements UserDetails {
     private String password;
     private Role role;
 
-    /**
-     * @return
-     */
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
-    }
 
-    /**
-     * @return
-     */
-    @Override
-    public String getUsername() {
-        return email;
-    }
-
-    /**
-     * @return
-     */
-    @Override
-    public String getPassword() {
-        return password;
-    }
-
-    /**
-     * @return
-     */
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    /**
-     * @return
-     */
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    /**
-     * @return
-     */
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    /**
-     * @return
-     */
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
 }
