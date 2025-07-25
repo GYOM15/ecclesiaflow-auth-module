@@ -1,16 +1,13 @@
 package com.ecclesiaflow.springsecurity.controller;
 
-import com.ecclesiaflow.springsecurity.dto.UserResponse;
-import com.ecclesiaflow.springsecurity.entities.User;
-import com.ecclesiaflow.springsecurity.repository.UserRepository;
+import com.ecclesiaflow.springsecurity.dto.MemberResponse;
+import com.ecclesiaflow.springsecurity.entities.Member;
+import com.ecclesiaflow.springsecurity.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.services.JWTService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,24 +16,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/user")
 @RequiredArgsConstructor
-public class UserController {
+public class MemberController {
     private final JWTService jwtService;
-    private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
 
     @GetMapping("/hello")
     public ResponseEntity<String> sayHello() {
-        return ResponseEntity.ok("Hi User");
+        return ResponseEntity.ok("Hi Member");
     }
 
 //    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<UserResponse> getUserInfo() {
+//    public ResponseEntity<MemberResponse> getUserInfo() {
 //        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 //        String email = authentication.getName();
 //
-//        User user = userRepository.findByEmail(email)
-//                .orElseThrow(() -> new IllegalStateException("User not found"));
+//        Member user = memberRepository.findByEmail(email)
+//                .orElseThrow(() -> new IllegalStateException("Member not found"));
 //
-//        UserResponse response = UserResponse.builder()
+//        MemberResponse response = MemberResponse.builder()
 //                .message("Hi " + user.getFirstName())
 //                .email(user.getEmail())
 //                .build();
@@ -46,7 +43,7 @@ public class UserController {
 
 
     @GetMapping("/token")
-    public ResponseEntity<UserResponse> getUserInfo(HttpServletRequest request) {
+    public ResponseEntity<MemberResponse> getUserInfo(HttpServletRequest request) {
         String authorizationHeader = request.getHeader("Authorization");
 
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
@@ -58,9 +55,9 @@ public class UserController {
 
         // Décoder le token pour vérifier les infos
         String email = jwtService.extractUserName(token);
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
+        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("Member not found"));
 
-        UserResponse response = UserResponse.builder().message("Hi " + user.getFirstName()).email(user.getEmail()).token(token).build();
+        MemberResponse response = MemberResponse.builder().message("Hi " + member.getFirstName()).email(member.getEmail()).token(token).build();
 
         return ResponseEntity.ok(response);
     }

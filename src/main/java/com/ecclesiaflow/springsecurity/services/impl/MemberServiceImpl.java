@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.services.impl;
 
-import com.ecclesiaflow.springsecurity.repository.UserRepository;
-import com.ecclesiaflow.springsecurity.services.UserService;
+import com.ecclesiaflow.springsecurity.repository.MemberRepository;
+import com.ecclesiaflow.springsecurity.services.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -10,17 +10,17 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class MemberServiceImpl implements MemberService {
 
-    private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
 
     @Override
     public UserDetailsService userDetailsService() {
         return new UserDetailsService() {
             @Override
             public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                return userRepository.findByEmail(username)
-                        .orElseThrow(()-> new UsernameNotFoundException("User not found"));
+                return memberRepository.findByEmail(username)
+                        .orElseThrow(()-> new UsernameNotFoundException("Member not found"));
             }
         };
     }

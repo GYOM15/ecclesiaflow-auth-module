@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.config;
 
 import com.ecclesiaflow.springsecurity.entities.Role;
-import com.ecclesiaflow.springsecurity.services.UserService;
+import com.ecclesiaflow.springsecurity.services.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +25,7 @@ public class SecurityConfiguration {
 
     private final JWTAuthenticationFilter jwtAuthenticationFilter;
 
-    private final UserService userService;
+    private final MemberService memberService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -49,7 +49,7 @@ public class SecurityConfiguration {
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userService.userDetailsService());
+        authProvider.setUserDetailsService(memberService.userDetailsService());
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }

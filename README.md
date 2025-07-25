@@ -4,7 +4,7 @@ Perfect! Let me adapt the documentation to align with your Ecclesia Flow brandin
 
 A Modern SaaS Church Management Suite - Authentication Service
 
-A complete platform enabling churches to efficiently manage their community, events, and resources. Multi-tenant, secure, and user-friendly, it offers powerful tools for administration, communication, and member engagement.
+A complete platform enabling churches to efficiently manage their community, events, and resources. Multi-tenant, secure, and member-friendly, it offers powerful tools for administration, communication, and member engagement.
 
 This repository contains the Authentication Module - the security backbone of the Ecclesia Flow ecosystem, implementing JWT-based authentication and role management for the church management platform.
 
@@ -128,7 +128,7 @@ Ecclesia Flow Security Settings
 -  CSRF Protection: Disabled for RESTful API architecture
 -  Public Endpoints: /api/v1/auth/** (registration, login, token refresh)
 -  Church Admin Endpoints: /api/v1/admin - Church administrator access only
--  Member Endpoints: /api/v1/user - Church member access
+-  Member Endpoints: /api/v1/member - Church member access
 -  Session Management: Stateless for scalable church management
 -  Authentication Filter: Custom JWT filter for Ecclesia Flow authentication
 
@@ -300,7 +300,7 @@ Church-Specific Considerations
 
 🤝 Contributing to Ecclesia Flow
 
-We welcome contributions to the Ecclesia Flow Authentication Module! Please ensure all contributions align with our mission of serving church communities with secure, reliable, and user-friendly technology.
+We welcome contributions to the Ecclesia Flow Authentication Module! Please ensure all contributions align with our mission of serving church communities with secure, reliable, and member-friendly technology.
 
 📧 Support
 
@@ -310,5 +310,5 @@ For support with the Ecclesia Flow Authentication Module, please contact the dev
 
 Ecclesia Flow - Empowering churches with modern, secure, and comprehensive management solutions. 🙏
 
-This authentication module forms the security foundation of the Ecclesia Flow ecosystem, ensuring that church communities can safely and efficiently manage their digital operations while maintaining the highest standards of data protection and user experience.
+This authentication module forms the security foundation of the Ecclesia Flow ecosystem, ensuring that church communities can safely and efficiently manage their digital operations while maintaining the highest standards of data protection and member experience.
  

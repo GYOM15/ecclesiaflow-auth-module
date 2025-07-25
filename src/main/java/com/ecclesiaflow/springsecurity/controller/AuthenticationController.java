@@ -4,7 +4,7 @@ import com.ecclesiaflow.springsecurity.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.dto.SignUpRequest;
 import com.ecclesiaflow.springsecurity.dto.SigninRequest;
-import com.ecclesiaflow.springsecurity.entities.User;
+import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +20,7 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/signup")
-    public ResponseEntity<User> signup(@RequestBody SignUpRequest signUpRequest) {
+    public ResponseEntity<Member> signup(@RequestBody SignUpRequest signUpRequest) {
         return ResponseEntity.ok(authenticationService.signup(signUpRequest));
     }
 
