@@ -7,11 +7,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/adminMembers")
 @RequiredArgsConstructor
 public class AdminController {
 
-    @GetMapping
+    @GetMapping(produces = "application/vnd.ecclesiaflow.admins.v2+json")
     public ResponseEntity<String> sayHello() {
         return ResponseEntity.ok("Hi Admin");
     }

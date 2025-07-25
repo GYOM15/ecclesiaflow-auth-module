@@ -14,22 +14,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
-    @PostMapping("/signup")
+    @PostMapping(value = "/signup", produces = "application/vnd.ecclesiaflow.members.v2+json")
     public ResponseEntity<Member> signup(@RequestBody SignUpRequest signUpRequest) {
         return ResponseEntity.ok(authenticationService.signup(signUpRequest));
     }
 
-    @PostMapping("/signin")
+    @PostMapping(value = "/members/token", produces = "application/vnd.ecclesiaflow.members.v2+json")
     public ResponseEntity<JwtAuthenticationResponse> signin(@RequestBody SigninRequest signinRequest) {
         return ResponseEntity.ok(authenticationService.signin(signinRequest));
     }
 
-    @PostMapping("/refresh")
+    @PostMapping(value = "/refresh", produces = "application/vnd.ecclesiaflow.members.v2+json")
     public ResponseEntity<JwtAuthenticationResponse> refresh(@RequestBody RefreshTokenRequest refreshTokenRequest) {
         return ResponseEntity.ok(authenticationService.refreshToken(refreshTokenRequest));
     }
