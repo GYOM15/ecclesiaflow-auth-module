@@ -13,7 +13,6 @@ import com.ecclesiaflow.springsecurity.util.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -22,10 +21,10 @@ import java.util.HashMap;
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
     private final MemberRepository memberRepository;
-    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JWTService jwtService;
 
+    @Override
     public Member registerMember(MemberRegistration registration) {
         if (memberRepository.findByEmail(registration.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Un compte avec cet email existe déjà.");
@@ -41,10 +40,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return memberRepository.save(member);
     }
 
+    @Override
     public JwtAuthenticationResponse getAuthenticatedMember(SigninCredentials credentials) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword()));
 
-        var member = memberRepository.findByEmail(credentials.getEmail()).orElseThrow(()->new IllegalArgumentException("Invalid email or password"));
+        var member = memberRepository.findByEmail(credentials.getEmail()).orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
         var jwt = jwtService.generateToken(member);
         var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), member);
 
@@ -54,9 +54,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return jwtAuthenticationResponse;
     }
 
+    @Override
     public JwtAuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         String userEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
-        Member member = memberRepository.findByEmail(userEmail).orElseThrow(()->new IllegalArgumentException("Invalid email or password"));
+        Member member = memberRepository.findByEmail(userEmail).orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
         if (jwtService.isTokenValid(refreshTokenRequest.getToken(), member)) {
             var jwt = jwtService.generateToken(member);
 
