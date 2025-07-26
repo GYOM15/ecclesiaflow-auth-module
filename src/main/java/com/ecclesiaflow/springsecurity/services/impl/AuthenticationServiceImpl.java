@@ -1,5 +1,7 @@
 package com.ecclesiaflow.springsecurity.services.impl;
 
+import com.ecclesiaflow.springsecurity.domain.MemberRegistration;
+import com.ecclesiaflow.springsecurity.domain.SigninCredentials;
 import com.ecclesiaflow.springsecurity.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.dto.SignUpRequest;
@@ -25,25 +27,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final JWTService jwtService;
 
-    public Member signup(SignUpRequest signUpRequest) {
-        if (memberRepository.findByEmail(signUpRequest.getEmail()).isPresent()) {
+    public Member signup(MemberRegistration registration) {
+        if (memberRepository.findByEmail(registration.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Un compte avec cet email existe déjà.");
         }
         Member member = new Member();
 
-        member.setEmail(signUpRequest.getEmail());
-        member.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
-        member.setFirstName(signUpRequest.getFirstName());
-        member.setLastName(signUpRequest.getLastName());
+        member.setEmail(registration.getEmail());
+        member.setPassword(passwordEncoder.encode(registration.getPassword()));
+        member.setFirstName(registration.getFirstName());
+        member.setLastName(registration.getLastName());
         member.setRole(Role.MEMBER);
 
         return memberRepository.save(member);
     }
 
-    public JwtAuthenticationResponse signin(SigninRequest signinRequest) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signinRequest.getEmail(), signinRequest.getPassword()));
+    public JwtAuthenticationResponse signin(SigninCredentials credentials) {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword()));
 
-        var user = memberRepository.findByEmail(signinRequest.getEmail()).orElseThrow(()->new IllegalArgumentException("Invalid email or password"));
+        var user = memberRepository.findByEmail(credentials.getEmail()).orElseThrow(()->new IllegalArgumentException("Invalid email or password"));
         var jwt = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
 
