@@ -9,6 +9,7 @@ import com.ecclesiaflow.springsecurity.entities.Role;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.services.JWTService;
+import com.ecclesiaflow.springsecurity.util.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -32,7 +33,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Member member = new Member();
 
         member.setEmail(registration.getEmail());
-        member.setPassword(passwordEncoder.encode(registration.getPassword()));
+        member.setPassword(EncryptionUtil.hashPassword(registration.getPassword()));
         member.setFirstName(registration.getFirstName());
         member.setLastName(registration.getLastName());
         member.setRole(Role.MEMBER);

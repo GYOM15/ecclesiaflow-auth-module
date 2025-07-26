@@ -3,11 +3,11 @@ package com.ecclesiaflow.springsecurity;
 import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.entities.Role;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
+import com.ecclesiaflow.springsecurity.util.EncryptionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @SpringBootApplication
 public class SpringsecurityApplication implements CommandLineRunner {
@@ -28,7 +28,7 @@ public class SpringsecurityApplication implements CommandLineRunner {
 			member.setEmail("admin@ecclesiaflow.com");
 			member.setFirstName("admin");
 			member.setLastName("admin");
-			member.setPassword(new BCryptPasswordEncoder().encode("admin"));
+			member.setPassword(EncryptionUtil.hashPassword("admin"));
 			member.setRole(Role.ADMIN);
 			memberRepository.save(member);
 		}
