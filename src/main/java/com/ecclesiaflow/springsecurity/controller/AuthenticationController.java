@@ -19,11 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
-    @PostMapping(value = "/signup", produces = "application/vnd.ecclesiaflow.members.v2+json")
-    public ResponseEntity<Member> signup(@RequestBody SignUpRequest signUpRequest) {
-        return ResponseEntity.ok(authenticationService.signup(signUpRequest));
-    }
-
     @PostMapping(value = "/members/token", produces = "application/vnd.ecclesiaflow.members.v2+json")
     public ResponseEntity<JwtAuthenticationResponse> signin(@RequestBody SigninRequest signinRequest) {
         return ResponseEntity.ok(authenticationService.signin(signinRequest));

@@ -1,16 +1,16 @@
 package com.ecclesiaflow.springsecurity.controller;
 
 import com.ecclesiaflow.springsecurity.dto.MemberResponse;
+import com.ecclesiaflow.springsecurity.dto.SignUpRequest;
 import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
+import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.services.JWTService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -19,10 +19,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class MembersController {
     private final JWTService jwtService;
     private final MemberRepository memberRepository;
+    private final AuthenticationService authenticationService;
 
     @GetMapping("/hello")
     public ResponseEntity<String> sayHello() {
         return ResponseEntity.ok("Hi Member");
+    }
+
+    @PostMapping(value = "/signup", produces = "application/vnd.ecclesiaflow.members.v2+json")
+    public ResponseEntity<Member> signup(@RequestBody SignUpRequest signUpRequest) {
+        return ResponseEntity.ok(authenticationService.signup(signUpRequest));
     }
 
 //    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
