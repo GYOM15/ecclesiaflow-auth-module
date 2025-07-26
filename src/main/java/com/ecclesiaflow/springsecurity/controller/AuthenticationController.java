@@ -20,9 +20,9 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping(value = "/members/token", produces = "application/vnd.ecclesiaflow.members.v2+json")
-    public ResponseEntity<JwtAuthenticationResponse> signin(@RequestBody SigninRequest signinRequest) {
+    public ResponseEntity<JwtAuthenticationResponse> getAuthenticatedMember(@RequestBody SigninRequest signinRequest) {
         SigninCredentials credentials = MemberMapper.fromSigninRequest(signinRequest);
-        return ResponseEntity.ok(authenticationService.signin(credentials));
+        return ResponseEntity.ok(authenticationService.getAuthenticatedMember(credentials));
     }
 
     @PostMapping(value = "/refresh", produces = "application/vnd.ecclesiaflow.members.v2+json")

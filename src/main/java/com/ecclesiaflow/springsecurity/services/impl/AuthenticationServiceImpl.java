@@ -4,8 +4,6 @@ import com.ecclesiaflow.springsecurity.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.domain.SigninCredentials;
 import com.ecclesiaflow.springsecurity.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
-import com.ecclesiaflow.springsecurity.dto.SignUpRequest;
-import com.ecclesiaflow.springsecurity.dto.SigninRequest;
 import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.entities.Role;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
@@ -42,7 +40,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return memberRepository.save(member);
     }
 
-    public JwtAuthenticationResponse signin(SigninCredentials credentials) {
+    public JwtAuthenticationResponse getAuthenticatedMember(SigninCredentials credentials) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword()));
 
         var user = memberRepository.findByEmail(credentials.getEmail()).orElseThrow(()->new IllegalArgumentException("Invalid email or password"));
