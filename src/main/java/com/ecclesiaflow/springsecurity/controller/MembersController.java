@@ -1,11 +1,13 @@
 package com.ecclesiaflow.springsecurity.controller;
 
+import com.ecclesiaflow.springsecurity.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.dto.MemberResponse;
 import com.ecclesiaflow.springsecurity.dto.SignUpRequest;
 import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.services.JWTService;
+import com.ecclesiaflow.springsecurity.util.MemberMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +30,9 @@ public class MembersController {
 
     @PostMapping(value = "/signup", produces = "application/vnd.ecclesiaflow.members.v2+json")
     public ResponseEntity<Member> signup(@RequestBody SignUpRequest signUpRequest) {
-        return ResponseEntity.ok(authenticationService.signup(signUpRequest));
+        MemberRegistration registration = MemberMapper.fromSignUpRequest(signUpRequest);
+//        Member member = authenticationService.signup(registration);
+        return ResponseEntity.ok(authenticationService.signup(registration));
     }
 
 //    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)

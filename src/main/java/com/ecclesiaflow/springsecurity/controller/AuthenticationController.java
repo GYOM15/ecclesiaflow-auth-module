@@ -1,9 +1,11 @@
 package com.ecclesiaflow.springsecurity.controller;
 
+import com.ecclesiaflow.springsecurity.domain.SigninCredentials;
 import com.ecclesiaflow.springsecurity.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.dto.SigninRequest;
 import com.ecclesiaflow.springsecurity.services.AuthenticationService;
+import com.ecclesiaflow.springsecurity.util.MemberMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +21,8 @@ public class AuthenticationController {
 
     @PostMapping(value = "/members/token", produces = "application/vnd.ecclesiaflow.members.v2+json")
     public ResponseEntity<JwtAuthenticationResponse> signin(@RequestBody SigninRequest signinRequest) {
-        return ResponseEntity.ok(authenticationService.signin(signinRequest));
+        SigninCredentials credentials = MemberMapper.fromSigninRequest(signinRequest);
+        return ResponseEntity.ok(authenticationService.signin(credentials));
     }
 
     @PostMapping(value = "/refresh", produces = "application/vnd.ecclesiaflow.members.v2+json")
