@@ -7,7 +7,7 @@ import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.entities.Member;
 
 public interface AuthenticationService {
-    Member signup(MemberRegistration memberRegistration);
+    Member registerMember(MemberRegistration memberRegistration);
     JwtAuthenticationResponse getAuthenticatedMember(SigninCredentials signinCredentials);
     JwtAuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest);
 }

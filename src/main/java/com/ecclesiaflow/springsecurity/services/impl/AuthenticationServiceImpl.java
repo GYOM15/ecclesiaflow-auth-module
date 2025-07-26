@@ -25,7 +25,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final JWTService jwtService;
 
-    public Member signup(MemberRegistration registration) {
+    public Member registerMember(MemberRegistration registration) {
         if (memberRepository.findByEmail(registration.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Un compte avec cet email existe déjà.");
         }
@@ -43,9 +43,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public JwtAuthenticationResponse getAuthenticatedMember(SigninCredentials credentials) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword()));
 
-        var user = memberRepository.findByEmail(credentials.getEmail()).orElseThrow(()->new IllegalArgumentException("Invalid email or password"));
-        var jwt = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
+        var member = memberRepository.findByEmail(credentials.getEmail()).orElseThrow(()->new IllegalArgumentException("Invalid email or password"));
+        var jwt = jwtService.generateToken(member);
+        var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), member);
 
         JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
         jwtAuthenticationResponse.setToken(jwt);

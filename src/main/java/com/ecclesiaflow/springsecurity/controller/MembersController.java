@@ -32,7 +32,7 @@ public class MembersController {
     @PostMapping(value = "/signup", produces = "application/vnd.ecclesiaflow.members.v2+json")
     public ResponseEntity<MemberResponse> signup(@RequestBody SignUpRequest signUpRequest) {
         MemberRegistration registration = MemberMapper.fromSignUpRequest(signUpRequest);
-        Member member = authenticationService.signup(registration);
+        Member member = authenticationService.registerMember(registration);
         MemberResponse response = MemberResponseMapper.fromMember(member, "Member registered");
         return ResponseEntity.ok(response);
     }
