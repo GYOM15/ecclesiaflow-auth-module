@@ -67,5 +67,4 @@ public class MembersController {
 
         return ResponseEntity.ok(response);
     }
-
 }

@@ -2,9 +2,7 @@ package com.ecclesiaflow.springsecurity.controller;
 
 import com.ecclesiaflow.springsecurity.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
-import com.ecclesiaflow.springsecurity.dto.SignUpRequest;
 import com.ecclesiaflow.springsecurity.dto.SigninRequest;
-import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

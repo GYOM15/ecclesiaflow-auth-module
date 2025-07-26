@@ -18,8 +18,8 @@ public class MemberServiceImpl implements MemberService {
     public UserDetailsService userDetailsService() {
         return new UserDetailsService() {
             @Override
-            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                return memberRepository.findByEmail(username)
+            public UserDetails loadUserByUsername(String member) throws UsernameNotFoundException {
+                return memberRepository.findByEmail(member)
                         .orElseThrow(()-> new UsernameNotFoundException("Member not found"));
             }
         };
