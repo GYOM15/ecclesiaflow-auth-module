@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 
@@ -25,6 +26,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final JWTService jwtService;
 
     @Override
+    @Transactional
     public Member registerMember(MemberRegistration registration) {
         if (memberRepository.findByEmail(registration.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Un compte avec cet email existe déjà.");
@@ -41,6 +43,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public JwtAuthenticationResponse getAuthenticatedMember(SigninCredentials credentials) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword()));
 
@@ -55,6 +58,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public JwtAuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         String userEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
         Member member = memberRepository.findByEmail(userEmail).orElseThrow(() -> new IllegalArgumentException("Email ou mot de passe incorrect"));

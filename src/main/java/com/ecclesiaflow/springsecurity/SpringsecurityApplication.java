@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootApplication
 public class SpringsecurityApplication implements CommandLineRunner {
@@ -33,6 +34,7 @@ public class SpringsecurityApplication implements CommandLineRunner {
 	}
 
 	@Override
+	@Transactional
 	public void run(String... args) {
 		Member adminAccount = memberRepository.findByRole(Role.ADMIN);
 		if (adminAccount == null) {
