@@ -44,7 +44,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public JwtAuthenticationResponse getAuthenticatedMember(SigninCredentials credentials) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword()));
 
-        var member = memberRepository.findByEmail(credentials.getEmail()).orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+        var member = memberRepository.findByEmail(credentials.getEmail()).orElseThrow(() -> new IllegalArgumentException("Email ou mot de passe incorrect"));
         var jwt = jwtService.generateToken(member);
         var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), member);
 
@@ -57,7 +57,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public JwtAuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         String userEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
-        Member member = memberRepository.findByEmail(userEmail).orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+        Member member = memberRepository.findByEmail(userEmail).orElseThrow(() -> new IllegalArgumentException("Email ou mot de passe incorrect"));
         if (jwtService.isTokenValid(refreshTokenRequest.getToken(), member)) {
             var jwt = jwtService.generateToken(member);
 
@@ -66,7 +66,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             jwtAuthenticationResponse.setRefreshToken(refreshTokenRequest.getToken());
             return jwtAuthenticationResponse;
         }
-        throw new IllegalArgumentException("Invalid refresh token.");
+        throw new IllegalArgumentException("Token de rafraîchissement invalide");
         //return null;
     }
 }

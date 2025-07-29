@@ -20,7 +20,7 @@ public class MemberServiceImpl implements MemberService {
             @Override
             public UserDetails loadUserByUsername(String member) throws UsernameNotFoundException {
                 return memberRepository.findByEmail(member)
-                        .orElseThrow(()-> new UsernameNotFoundException("Member not found"));
+                        .orElseThrow(()-> new UsernameNotFoundException("Membre introuvable"));
             }
         };
     }
