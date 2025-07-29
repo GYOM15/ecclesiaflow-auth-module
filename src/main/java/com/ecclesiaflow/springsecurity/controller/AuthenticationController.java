@@ -6,6 +6,12 @@ import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.dto.SigninRequest;
 import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.util.MemberMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,17 +23,61 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "API d'authentification centralisée pour EcclesiaFlow")
 public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
-    @PostMapping(value = "/members/token", produces = "application/vnd.ecclesiaflow.members.v2+json")
-    public ResponseEntity<JwtAuthenticationResponse> getAuthenticatedMember(@Valid @RequestBody SigninRequest signinRequest) {
-        SigninCredentials credentials = MemberMapper.fromSigninRequest(signinRequest);
+    @PostMapping(value = "/token", produces = "application/vnd.ecclesiaflow.auth.v1+json")
+    @Operation(
+        summary = "Génération de token d'authentification",
+        description = "Authentifie un utilisateur et génère un token JWT pour l'accès aux ressources"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Token généré avec succès",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = JwtAuthenticationResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Données d'authentification invalides",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Identifiants incorrects",
+            content = @Content
+        )
+    })
+    public ResponseEntity<JwtAuthenticationResponse> generateToken(@Valid @RequestBody SigninRequest request) {
+        SigninCredentials credentials = MemberMapper.fromSigninRequest(request);
         return ResponseEntity.ok(authenticationService.getAuthenticatedMember(credentials));
     }
 
-    @PostMapping(value = "/refresh", produces = "application/vnd.ecclesiaflow.members.v2+json")
-    public ResponseEntity<JwtAuthenticationResponse> refresh(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+    @PostMapping(value = "/refresh", produces = "application/vnd.ecclesiaflow.auth.v1+json")
+    @Operation(
+        summary = "Rafraîchissement du token JWT",
+        description = "Génère un nouveau token JWT à partir d'un refresh token valide"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Token rafraîchi avec succès",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = JwtAuthenticationResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Refresh token invalide ou expiré",
+            content = @Content
+        )
+    })
+    public ResponseEntity<JwtAuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
         return ResponseEntity.ok(authenticationService.refreshToken(refreshTokenRequest));
     }
 }
