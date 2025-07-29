@@ -9,7 +9,7 @@ import com.ecclesiaflow.springsecurity.entities.Role;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.services.JWTService;
-import com.ecclesiaflow.springsecurity.util.EncryptionUtil;
+import com.ecclesiaflow.springsecurity.services.PasswordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,6 +24,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final MemberRepository memberRepository;
     private final AuthenticationManager authenticationManager;
     private final JWTService jwtService;
+    private final PasswordService passwordService;
 
     @Override
     @Transactional
@@ -34,7 +35,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Member member = new Member();
 
         member.setEmail(registration.getEmail());
-        member.setPassword(EncryptionUtil.hashPassword(registration.getPassword()));
+        member.setPassword(passwordService.encodePassword(registration.getPassword()));
         member.setFirstName(registration.getFirstName());
         member.setLastName(registration.getLastName());
         member.setRole(Role.MEMBER);
@@ -60,8 +61,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     @Transactional(readOnly = true)
     public JwtAuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
-        String userEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
-        Member member = memberRepository.findByEmail(userEmail).orElseThrow(() -> new IllegalArgumentException("Email ou mot de passe incorrect"));
+        String memberEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
+        Member member = memberRepository.findByEmail(memberEmail).orElseThrow();
         if (jwtService.isTokenValid(refreshTokenRequest.getToken(), member)) {
             var jwt = jwtService.generateToken(member);
 

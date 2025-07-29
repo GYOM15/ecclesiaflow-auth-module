@@ -9,86 +9,44 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 
+/**
+ * Aspect responsable du logging automatique des opérations critiques
+ * Respecte le principe de responsabilité unique en se concentrant uniquement sur le logging
+ */
 @Slf4j
 @Aspect
 @Component
 public class LoggingAspect {
 
-    // Pointcut pour les services d'authentification
-    @Pointcut("execution(* com.ecclesiaflow.springsecurity.services.impl.AuthenticationServiceImpl.*(..))")
-    public void authenticationServiceMethods() {}
+    /**
+     * Pointcut pour toutes les méthodes des services
+     */
+    @Pointcut("execution(* com.ecclesiaflow.springsecurity.services..*(..))")
+    public void serviceMethods() {}
 
-    // Pointcut pour les contrôleurs
-    @Pointcut("execution(* com.ecclesiaflow.springsecurity.controller.*.*(..))")
+    /**
+     * Pointcut pour toutes les méthodes des contrôleurs
+     */
+    @Pointcut("execution(* com.ecclesiaflow.springsecurity.controller..*(..))")
     public void controllerMethods() {}
 
-    // Pointcut pour les méthodes annotées avec @LogExecution
+    /**
+     * Pointcut pour les méthodes annotées avec @LogExecution
+     */
     @Pointcut("@annotation(com.ecclesiaflow.springsecurity.annotation.LogExecution)")
     public void logExecutionAnnotatedMethods() {}
 
-    // Pointcut pour le GlobalExceptionHandler
-    @Pointcut("execution(* com.ecclesiaflow.springsecurity.exception.GlobalExceptionHandler.*(..))")
-    public void exceptionHandlerMethods() {}
-
-    // Pointcut pour les opérations critiques (enregistrement et authentification)
-    @Pointcut("execution(* com.ecclesiaflow.springsecurity.services.impl.AuthenticationServiceImpl.registerMember(..)) || " +
-              "execution(* com.ecclesiaflow.springsecurity.services.impl.AuthenticationServiceImpl.getAuthenticatedMember(..))")
-    public void criticalOperations() {}
-
-    // Log avant l'exécution des méthodes critiques
-    @Before("criticalOperations()")
-    public void logBeforeCriticalOperation(JoinPoint joinPoint) {
-        String methodName = joinPoint.getSignature().getName();
-        
-        if ("registerMember".equals(methodName)) {
-            log.info("Tentative d'enregistrement d'un nouveau membre");
-        } else if ("getAuthenticatedMember".equals(methodName)) {
-            log.info("Tentative d'authentification");
-        }
+    /**
+     * Log générique pour les méthodes de service avec gestion des performances
+     */
+    @Around("serviceMethods()")
+    public Object logServiceMethods(ProceedingJoinPoint joinPoint) throws Throwable {
+        return logMethodExecution(joinPoint, "SERVICE");
     }
 
-    // Log autour des méthodes d'authentification avec gestion des exceptions
-    @Around("authenticationServiceMethods()")
-    public Object logAroundAuthenticationService(ProceedingJoinPoint joinPoint) throws Throwable {
-        String methodName = joinPoint.getSignature().getName();
-        long startTime = System.currentTimeMillis();
-        
-        try {
-            Object result = joinPoint.proceed();
-            long executionTime = System.currentTimeMillis() - startTime;
-            
-            log.info("Méthode {} exécutée avec succès en {}ms", methodName, executionTime);
-            
-            // Log spécifique pour les opérations importantes
-            if ("registerMember".equals(methodName)) {
-                log.info("Nouveau membre enregistré avec succès");
-            } else if ("getAuthenticatedMember".equals(methodName)) {
-                log.info("Authentification réussie");
-            } else if ("refreshToken".equals(methodName)) {
-                log.info("Token rafraîchi avec succès");
-            }
-            
-            return result;
-        } catch (Exception e) {
-            long executionTime = System.currentTimeMillis() - startTime;
-            
-            log.warn("Échec de la méthode {} après {}ms - Erreur: {}", 
-                    methodName, executionTime, e.getMessage());
-            
-            // Log spécifique pour les échecs d'opérations critiques
-            if ("registerMember".equals(methodName)) {
-                log.warn("Échec de l'enregistrement du membre: {}", e.getMessage());
-            } else if ("getAuthenticatedMember".equals(methodName)) {
-                log.warn("Échec de l'authentification: {}", e.getMessage());
-            } else if ("refreshToken".equals(methodName)) {
-                log.warn("Échec du rafraîchissement du token: {}", e.getMessage());
-            }
-            
-            throw e;
-        }
-    }
-
-    // Log pour les méthodes annotées avec @LogExecution
+    /**
+     * Log pour les méthodes annotées avec @LogExecution (configuration flexible)
+     */
     @Around("logExecutionAnnotatedMethods() && @annotation(logExecution)")
     public Object logAnnotatedMethods(ProceedingJoinPoint joinPoint, LogExecution logExecution) throws Throwable {
         String methodName = joinPoint.getSignature().getName();
@@ -96,13 +54,14 @@ public class LoggingAspect {
         long startTime = System.currentTimeMillis();
         
         String message = logExecution.value().isEmpty() ? 
-            String.format("Exécution de %s.%s", className, methodName) : logExecution.value();
+            String.format("%s.%s", className, methodName) : logExecution.value();
         
+        // Log des paramètres si demandé
         if (logExecution.includeParams()) {
             Object[] args = joinPoint.getArgs();
-            log.info("{} - Paramètres: {}", message, Arrays.toString(args));
+            log.info("Début: {} - Paramètres: {}", message, Arrays.toString(args));
         } else {
-            log.info(message);
+            log.info("Début: {}", message);
         }
         
         try {
@@ -110,46 +69,66 @@ public class LoggingAspect {
             
             if (logExecution.includeExecutionTime()) {
                 long executionTime = System.currentTimeMillis() - startTime;
-                log.info("{} - Terminée avec succès en {}ms", message, executionTime);
+                log.info("Succès: {} ({}ms)", message, executionTime);
+            } else {
+                log.info("Succès: {}", message);
             }
             
             return result;
         } catch (Exception e) {
             long executionTime = System.currentTimeMillis() - startTime;
-            log.error("{} - Échec après {}ms: {}", message, executionTime, e.getMessage());
+            log.error("Échec: {} ({}ms) - {}", message, executionTime, e.getMessage());
             throw e;
         }
     }
 
-    // Log des appels aux contrôleurs
+    /**
+     * Log des appels aux contrôleurs (niveau DEBUG pour éviter le spam)
+     */
     @Before("controllerMethods()")
     public void logControllerAccess(JoinPoint joinPoint) {
         String className = joinPoint.getTarget().getClass().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
-        
-        log.debug("Appel du contrôleur: {}.{}", className, methodName);
+        log.debug("API: {}.{}", className, methodName);
     }
 
-    // Log spécifique pour les gestionnaires d'exceptions
-    @Before("exceptionHandlerMethods()")
-    public void logExceptionHandler(JoinPoint joinPoint) {
+    /**
+     * Méthode utilitaire pour le logging générique des méthodes
+     */
+    private Object logMethodExecution(ProceedingJoinPoint joinPoint, String layer) throws Throwable {
+        String className = joinPoint.getTarget().getClass().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
-        Object[] args = joinPoint.getArgs();
+        long startTime = System.currentTimeMillis();
         
-        if (args.length > 0 && args[0] instanceof Exception) {
-            Exception ex = (Exception) args[0];
-            log.warn("Gestion d'exception par {} - Type: {}, Message: {}", 
-                    methodName, ex.getClass().getSimpleName(), ex.getMessage());
+        log.debug("{}: Début {}.{}", layer, className, methodName);
+        
+        try {
+            Object result = joinPoint.proceed();
+            long executionTime = System.currentTimeMillis() - startTime;
+            
+            if (executionTime > 1000) { // Log si > 1 seconde
+                log.warn("{}: {}.{} - Exécution lente ({}ms)", layer, className, methodName, executionTime);
+            } else {
+                log.debug("{}: {}.{} - Succès ({}ms)", layer, className, methodName, executionTime);
+            }
+            
+            return result;
+        } catch (Exception e) {
+            long executionTime = System.currentTimeMillis() - startTime;
+            log.error("{}: {}.{} - Échec ({}ms): {}", layer, className, methodName, executionTime, e.getMessage());
+            throw e;
         }
     }
 
-    // Log des exceptions non gérées
-    @AfterThrowing(pointcut = "authenticationServiceMethods() || controllerMethods()", throwing = "exception")
-    public void logException(JoinPoint joinPoint, Throwable exception) {
+    /**
+     * Log des exceptions non gérées dans les services et contrôleurs
+     */
+    @AfterThrowing(pointcut = "serviceMethods() || controllerMethods()", throwing = "exception")
+    public void logUnhandledException(JoinPoint joinPoint, Throwable exception) {
         String className = joinPoint.getTarget().getClass().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
         
-        log.error("Exception dans {}.{}: {} - {}", 
+        log.error("Exception non gérée dans {}.{}: {} - {}", 
                 className, methodName, exception.getClass().getSimpleName(), exception.getMessage());
     }
 }
