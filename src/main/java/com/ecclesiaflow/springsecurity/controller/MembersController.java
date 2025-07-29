@@ -7,6 +7,7 @@ import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.util.MemberMapper;
 import com.ecclesiaflow.springsecurity.util.MemberResponseMapper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -26,7 +27,7 @@ public class MembersController {
     }
 
     @PostMapping(value = "/signup", produces = "application/vnd.ecclesiaflow.members.v2+json")
-    public ResponseEntity<MemberResponse> registerMember(@RequestBody SignUpRequest signUpRequest) {
+    public ResponseEntity<MemberResponse> registerMember(@Valid @RequestBody SignUpRequest signUpRequest) {
         MemberRegistration registration = MemberMapper.fromSignUpRequest(signUpRequest);
         Member member = authenticationService.registerMember(registration);
         MemberResponse response = MemberResponseMapper.fromMember(member, "Member registered");

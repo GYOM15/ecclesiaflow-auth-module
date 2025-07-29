@@ -6,6 +6,7 @@ import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.dto.SigninRequest;
 import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.util.MemberMapper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +21,7 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping(value = "/members/token", produces = "application/vnd.ecclesiaflow.members.v2+json")
-    public ResponseEntity<JwtAuthenticationResponse> getAuthenticatedMember(@RequestBody SigninRequest signinRequest) {
+    public ResponseEntity<JwtAuthenticationResponse> getAuthenticatedMember(@Valid @RequestBody SigninRequest signinRequest) {
         SigninCredentials credentials = MemberMapper.fromSigninRequest(signinRequest);
         return ResponseEntity.ok(authenticationService.getAuthenticatedMember(credentials));
     }
