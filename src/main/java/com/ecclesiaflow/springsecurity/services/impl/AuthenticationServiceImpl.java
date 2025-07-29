@@ -5,72 +5,63 @@ import com.ecclesiaflow.springsecurity.domain.SigninCredentials;
 import com.ecclesiaflow.springsecurity.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.entities.Member;
-import com.ecclesiaflow.springsecurity.entities.Role;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.services.JWTService;
-import com.ecclesiaflow.springsecurity.services.PasswordService;
+import com.ecclesiaflow.springsecurity.services.JwtResponseService;
+import com.ecclesiaflow.springsecurity.services.MemberRegistrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-
+/**
+ * Service d'authentification refactorisé pour respecter le SRP
+ * Délègue les responsabilités spécifiques aux services dédiés
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
     private final MemberRepository memberRepository;
     private final AuthenticationManager authenticationManager;
     private final JWTService jwtService;
-    private final PasswordService passwordService;
+    private final MemberRegistrationService memberRegistrationService;
+    private final JwtResponseService jwtResponseService;
 
     @Override
     @Transactional
     public Member registerMember(MemberRegistration registration) {
-        if (memberRepository.findByEmail(registration.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Un compte avec cet email existe déjà.");
-        }
-        Member member = new Member();
-
-        member.setEmail(registration.getEmail());
-        member.setPassword(passwordService.encodePassword(registration.getPassword()));
-        member.setFirstName(registration.getFirstName());
-        member.setLastName(registration.getLastName());
-        member.setRole(Role.MEMBER);
-
-        return memberRepository.save(member);
+        return memberRegistrationService.registerMember(registration);
     }
 
     @Override
     @Transactional(readOnly = true)
     public JwtAuthenticationResponse getAuthenticatedMember(SigninCredentials credentials) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword()));
+        // Authentification via Spring Security
+        authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword())
+        );
 
-        var member = memberRepository.findByEmail(credentials.getEmail()).orElseThrow(() -> new IllegalArgumentException("Email ou mot de passe incorrect"));
-        var jwt = jwtService.generateToken(member);
-        var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), member);
+        // Récupération du membre authentifié
+        Member member = memberRepository.findByEmail(credentials.getEmail())
+            .orElseThrow(() -> new IllegalArgumentException("Email ou mot de passe incorrect"));
 
-        JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
-        jwtAuthenticationResponse.setToken(jwt);
-        jwtAuthenticationResponse.setRefreshToken(refreshToken);
-        return jwtAuthenticationResponse;
+        // Génération de la réponse JWT
+        return jwtResponseService.createAuthenticationResponse(member);
     }
 
     @Override
     @Transactional(readOnly = true)
     public JwtAuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         String memberEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
-        Member member = memberRepository.findByEmail(memberEmail).orElseThrow();
-        if (jwtService.isTokenValid(refreshTokenRequest.getToken(), member)) {
-            var jwt = jwtService.generateToken(member);
-
-            JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
-            jwtAuthenticationResponse.setToken(jwt);
-            jwtAuthenticationResponse.setRefreshToken(refreshTokenRequest.getToken());
-            return jwtAuthenticationResponse;
+        Member member = memberRepository.findByEmail(memberEmail)
+            .orElseThrow(() -> new IllegalArgumentException("Membre introuvable"));
+        
+        if (!jwtService.isTokenValid(refreshTokenRequest.getToken(), member)) {
+            throw new IllegalArgumentException("Token de rafraîchissement invalide");
         }
-        throw new IllegalArgumentException("Token de rafraîchissement invalide");
+
+        return jwtResponseService.createRefreshResponse(member, refreshTokenRequest.getToken());
     }
 }
