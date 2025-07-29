@@ -20,6 +20,9 @@ public class JWTServiceImpl implements JWTService {
     @Value("${jwt.secret}")
     private String secretKey;
 
+    @Value("${jwt.token.expiration}")
+    private long tokenExpiration;
+
     @Value("${jwt.refresh-token.expiration}")
     private long refreshExpiration;
 
@@ -27,7 +30,7 @@ public class JWTServiceImpl implements JWTService {
     public String generateToken(UserDetails userDetails) {
         return Jwts.builder().setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24))
+                .setExpiration(new Date(System.currentTimeMillis() + tokenExpiration))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
