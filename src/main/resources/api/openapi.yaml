@@ -1,0 +1,219 @@
+openapi: 3.0.3
+info:
+  title: EcclesiaFlow Authentication API
+  description: |
+    API d'authentification centralisée pour EcclesiaFlow
+    
+    **Architecture Multi-Tenant:**
+    - Chaque tenant représente une église
+    - Les pasteurs sont les administrateurs de leur tenant
+    - Un super admin gère tous les tenants
+    
+    **Note:** Ce module se concentre uniquement sur l'authentification.
+    La gestion des membres sera déplacée vers un module séparé.
+  version: 1.0.0
+  contact:
+    name: EcclesiaFlow Team
+    email: support@ecclesiaflow.com
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Serveur de développement
+  - url: https://api.ecclesiaflow.com
+    description: Serveur de production
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/auth/token:
+    post:
+      tags:
+        - Authentication
+      summary: Génération de token d'authentification
+      description: |
+        Authentifie un utilisateur et génère un token JWT pour l'accès aux ressources.
+        
+        **Flux d'authentification:**
+        1. L'utilisateur fournit ses identifiants (email/password)
+        2. Le système valide les identifiants
+        3. Un token JWT et un refresh token sont générés
+        4. Les tokens sont retournés pour les futures requêtes
+      operationId: generateToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SigninRequest'
+            examples:
+              member_login:
+                summary: Connexion d'un membre
+                value:
+                  email: "membre@eglise.com"
+                  password: "motdepasse123"
+              pastor_login:
+                summary: Connexion d'un pasteur (admin tenant)
+                value:
+                  email: "pasteur@eglise.com"
+                  password: "adminpass123"
+      responses:
+        '200':
+          description: Token généré avec succès
+          content:
+            application/vnd.ecclesiaflow.auth.v1+json:
+              schema:
+                $ref: '#/components/schemas/JwtAuthenticationResponse'
+              examples:
+                success_response:
+                  summary: Réponse de succès
+                  value:
+                    token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    refreshToken: "refresh_token_here"
+                    tokenType: "Bearer"
+                    expiresIn: 86400
+        '400':
+          description: Données d'authentification invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Identifiants incorrects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Rafraîchissement du token JWT
+      description: |
+        Génère un nouveau token JWT à partir d'un refresh token valide.
+        
+        **Utilisation:**
+        - Utilisé quand le token JWT principal expire
+        - Évite à l'utilisateur de se reconnecter
+        - Le refresh token a une durée de vie plus longue
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+            examples:
+              refresh_example:
+                summary: Demande de rafraîchissement
+                value:
+                  refreshToken: "refresh_token_here"
+      responses:
+        '200':
+          description: Token rafraîchi avec succès
+          content:
+            application/vnd.ecclesiaflow.auth.v1+json:
+              schema:
+                $ref: '#/components/schemas/JwtAuthenticationResponse'
+        '400':
+          description: Refresh token invalide ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT d'authentification.
+        
+        **Format:** `Authorization: Bearer <token>`
+        
+        **Obtention:** Utilisez l'endpoint `/api/auth/token`
+
+  schemas:
+    SigninRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Adresse email de l'utilisateur
+          example: "utilisateur@eglise.com"
+        password:
+          type: string
+          format: password
+          description: Mot de passe de l'utilisateur
+          example: "motdepasse123"
+          minLength: 6
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: Token de rafraîchissement valide
+          example: "refresh_token_here"
+
+    JwtAuthenticationResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Token JWT d'authentification
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refreshToken:
+          type: string
+          description: Token de rafraîchissement
+          example: "refresh_token_here"
+        tokenType:
+          type: string
+          description: Type de token (toujours "Bearer")
+          example: "Bearer"
+        expiresIn:
+          type: integer
+          description: Durée de validité du token en secondes
+          example: 86400
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Code d'erreur
+          example: "INVALID_CREDENTIALS"
+        message:
+          type: string
+          description: Message d'erreur lisible
+          example: "Email ou mot de passe incorrect"
+        timestamp:
+          type: string
+          format: date-time
+          description: Horodatage de l'erreur
+          example: "2024-01-15T10:30:00Z"
+
+tags:
+  - name: Authentication
+    description: |
+      Opérations d'authentification centralisées
+      
+      **Responsabilités:**
+      - Génération de tokens JWT
+      - Rafraîchissement des tokens
+      - Validation des identifiants
+      
+      **Note:** La gestion des utilisateurs (création, modification, suppression)
+      sera déplacée vers le module `ecclesiaflow-member-management-module`.
