@@ -67,6 +67,5 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return jwtAuthenticationResponse;
         }
         throw new IllegalArgumentException("Token de rafraîchissement invalide");
-        //return null;
     }
 }

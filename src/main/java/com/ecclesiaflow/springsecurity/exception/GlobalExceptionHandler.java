@@ -2,7 +2,7 @@ package com.ecclesiaflow.springsecurity.exception;
 
 import com.ecclesiaflow.springsecurity.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
-//import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -40,10 +40,14 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, message, request.getRequestURI());
     }
 
-//    @ExceptionHandler(ConstraintViolationException.class)
-//    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest request) {
-//        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
-//    }
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest request) {
+        String message = ex.getConstraintViolations().stream()
+                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .findFirst()
+                .orElse("Validation des contraintes échouée.");
+        return buildError(HttpStatus.BAD_REQUEST, message, request.getRequestURI());
+    }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
