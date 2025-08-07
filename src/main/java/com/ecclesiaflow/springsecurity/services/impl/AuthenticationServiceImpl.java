@@ -42,11 +42,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional(readOnly = true)
-    public JwtAuthenticationResponse getAuthenticatedMember(SigninCredentials credentials) {
-        // Authentification via Spring Security
-        authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword())
-        );
+    public AuthenticationResult getAuthenticatedMember(SigninCredentials credentials) throws InvalidCredentialsException, JwtProcessingException {
+        Member authenticatedMember = authenticateMemberWithCredentials(credentials);
+        return createAuthenticationResultWithTokens(authenticatedMember);
+    }
 
     /**
      * Authentifie un membre avec ses identifiants
