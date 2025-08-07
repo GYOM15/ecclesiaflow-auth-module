@@ -5,7 +5,7 @@ import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.entities.Role;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.services.MemberRegistrationService;
-import com.ecclesiaflow.springsecurity.services.PasswordService;
+import com.ecclesiaflow.springsecurity.util.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberRegistrationServiceImpl implements MemberRegistrationService {
     
     private final MemberRepository memberRepository;
-    private final PasswordService passwordService;
+    private final PasswordEncoder passwordEncoder;
     
     @Override
     @Transactional
@@ -44,7 +44,7 @@ public class MemberRegistrationServiceImpl implements MemberRegistrationService 
     private Member createMemberFromRegistration(MemberRegistration registration) {
         Member member = new Member();
         member.setEmail(registration.getEmail());
-        member.setPassword(passwordService.encodePassword(registration.getPassword()));
+        member.setPassword(passwordEncoder.encode(registration.getPassword()));
         member.setFirstName(registration.getFirstName());
         member.setLastName(registration.getLastName());
         member.setRole(Role.MEMBER);

@@ -3,7 +3,7 @@ package com.ecclesiaflow.springsecurity;
 import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.entities.Role;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
-import com.ecclesiaflow.springsecurity.services.PasswordService;
+import com.ecclesiaflow.springsecurity.util.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -18,7 +18,7 @@ public class SpringsecurityApplication implements CommandLineRunner {
 	private MemberRepository memberRepository;
 
 	@Autowired
-	private PasswordService passwordService;
+	private PasswordEncoder passwordEncoder;
 
 	@Value("${admin.email}")
 	private String adminEmail;
@@ -46,7 +46,7 @@ public class SpringsecurityApplication implements CommandLineRunner {
 			member.setEmail(adminEmail);
 			member.setFirstName(adminFirstName);
 			member.setLastName(adminLastName);
-			member.setPassword(passwordService.encodePassword(adminPassword));
+			member.setPassword(passwordEncoder.encode(adminPassword));
 			member.setRole(Role.ADMIN);
 			memberRepository.save(member);
 		}
