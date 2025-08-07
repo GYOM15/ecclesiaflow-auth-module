@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.util;
+package com.ecclesiaflow.springsecurity.encryption;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;

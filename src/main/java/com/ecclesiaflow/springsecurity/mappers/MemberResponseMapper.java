@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.util;
+package com.ecclesiaflow.springsecurity.mappers;
 
 import com.ecclesiaflow.springsecurity.dto.MemberResponse;
 import com.ecclesiaflow.springsecurity.entities.Member;

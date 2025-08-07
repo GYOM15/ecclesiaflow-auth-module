@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.util;
+package com.ecclesiaflow.springsecurity.mappers;
 
 import com.ecclesiaflow.springsecurity.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.domain.SigninCredentials;

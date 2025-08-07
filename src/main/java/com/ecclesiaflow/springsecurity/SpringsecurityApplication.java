@@ -3,7 +3,7 @@ package com.ecclesiaflow.springsecurity;
 import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.entities.Role;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
-import com.ecclesiaflow.springsecurity.util.PasswordEncoder;
+import com.ecclesiaflow.springsecurity.encryption.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;

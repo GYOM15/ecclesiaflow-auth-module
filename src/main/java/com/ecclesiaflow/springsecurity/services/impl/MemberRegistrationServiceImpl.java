@@ -5,7 +5,7 @@ import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.entities.Role;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.services.MemberRegistrationService;
-import com.ecclesiaflow.springsecurity.util.PasswordEncoder;
+import com.ecclesiaflow.springsecurity.encryption.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
