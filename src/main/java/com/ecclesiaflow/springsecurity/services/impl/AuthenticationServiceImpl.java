@@ -1,20 +1,26 @@
 package com.ecclesiaflow.springsecurity.services.impl;
 
+import com.ecclesiaflow.springsecurity.domain.AuthenticationResult;
 import com.ecclesiaflow.springsecurity.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.domain.SigninCredentials;
 import com.ecclesiaflow.springsecurity.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.entities.Member;
+import com.ecclesiaflow.springsecurity.exception.InvalidCredentialsException;
+import com.ecclesiaflow.springsecurity.exception.InvalidTokenException;
+import com.ecclesiaflow.springsecurity.exception.JwtProcessingException;
 import com.ecclesiaflow.springsecurity.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.services.JWTService;
-import com.ecclesiaflow.springsecurity.services.JwtResponseService;
 import com.ecclesiaflow.springsecurity.services.MemberRegistrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
 
 /**
  * Service d'authentification refactorisé pour respecter le SRP
@@ -27,7 +33,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final JWTService jwtService;
     private final MemberRegistrationService memberRegistrationService;
-    private final JwtResponseService jwtResponseService;
 
     @Override
     @Transactional
