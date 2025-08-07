@@ -6,6 +6,7 @@ import com.ecclesiaflow.springsecurity.domain.SigninCredentials;
 import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.exception.InvalidCredentialsException;
+import com.ecclesiaflow.springsecurity.exception.InvalidRequestException;
 import com.ecclesiaflow.springsecurity.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.exception.JwtProcessingException;
 
@@ -21,7 +22,7 @@ public interface AuthenticationService {
      * @return le membre créé
      * @throws InvalidRequestException si les données sont invalides
      */
-    Member registerMember(MemberRegistration memberRegistration);
+    Member registerMember(MemberRegistration memberRegistration) throws InvalidRequestException;
     
     /**
      * Authentifie un membre avec ses identifiants

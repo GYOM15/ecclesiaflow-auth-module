@@ -3,7 +3,6 @@ package com.ecclesiaflow.springsecurity.services.impl;
 import com.ecclesiaflow.springsecurity.domain.AuthenticationResult;
 import com.ecclesiaflow.springsecurity.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.domain.SigninCredentials;
-import com.ecclesiaflow.springsecurity.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.entities.Member;
 import com.ecclesiaflow.springsecurity.exception.InvalidCredentialsException;
@@ -19,8 +18,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.HashMap;
 
 /**
  * Service d'authentification refactorisé pour respecter le SRP
@@ -67,25 +64,27 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * @throws JwtProcessingException si la génération des tokens échoue
      */
     private AuthenticationResult createAuthenticationResultWithTokens(Member member) throws JwtProcessingException {
-        String accessToken = jwtService.generateToken(member);
-        String refreshToken = jwtService.generateRefreshToken(new HashMap<>(),member);
+        String accessToken = jwtService.generateAccessToken(member);
+        String refreshToken = jwtService.generateRefreshToken(member);
         return new AuthenticationResult(member, accessToken, refreshToken);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public AuthenticationResult refreshToken(RefreshTokenRequest refreshTokenRequest) throws InvalidTokenException, JwtProcessingException {
-            String memberEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
-            Member member = memberRepository.findByEmail(memberEmail)
-                .orElseThrow(() -> new InvalidTokenException("Membre introuvable"));
-            
-            if (!jwtService.isTokenValid(refreshTokenRequest.getToken(), member)) {
-                throw new InvalidTokenException("Token de rafraîchissement invalide");
-            }
+    public AuthenticationResult refreshToken(RefreshTokenRequest refreshTokenRequest) 
+            throws InvalidTokenException, JwtProcessingException {
 
-            // Génération du nouveau token d'accès
-            String newAccessToken = jwtService.generateToken(member);
-            return new AuthenticationResult(member, newAccessToken, refreshTokenRequest.getToken());
+        String refreshToken = refreshTokenRequest.getToken();
+        if (!jwtService.isRefreshTokenValid(refreshToken)) throw new InvalidTokenException("Le token de rafraîchissement est invalide ou n'est pas du bon type.");
 
+        String username = jwtService.extractUsername(refreshToken);
+
+        // On récupère l'utilisateur sans utiliser d'identifiants externes injectables
+        Member member = memberRepository.findByEmail(username).orElseThrow(() -> new InvalidTokenException("Aucun membre correspondant au token."));
+
+        // Génération du nouveau token d'accès
+        String newAccessToken = jwtService.generateAccessToken(member);
+
+        return new AuthenticationResult(member, newAccessToken, refreshToken);
     }
 }
