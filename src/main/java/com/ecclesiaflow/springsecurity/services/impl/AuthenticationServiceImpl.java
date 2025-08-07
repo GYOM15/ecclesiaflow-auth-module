@@ -74,15 +74,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional(readOnly = true)
-    public JwtAuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
-        String memberEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
-        Member member = memberRepository.findByEmail(memberEmail)
-            .orElseThrow(() -> new IllegalArgumentException("Membre introuvable"));
-        
-        if (!jwtService.isTokenValid(refreshTokenRequest.getToken(), member)) {
-            throw new IllegalArgumentException("Token de rafraîchissement invalide");
-        }
+    public AuthenticationResult refreshToken(RefreshTokenRequest refreshTokenRequest) throws InvalidTokenException, JwtProcessingException {
+            String memberEmail = jwtService.extractUserName(refreshTokenRequest.getToken());
+            Member member = memberRepository.findByEmail(memberEmail)
+                .orElseThrow(() -> new InvalidTokenException("Membre introuvable"));
+            
+            if (!jwtService.isTokenValid(refreshTokenRequest.getToken(), member)) {
+                throw new InvalidTokenException("Token de rafraîchissement invalide");
+            }
 
-        return jwtResponseService.createRefreshResponse(member, refreshTokenRequest.getToken());
+            // Génération du nouveau token d'accès
+            String newAccessToken = jwtService.generateToken(member);
+            return new AuthenticationResult(member, newAccessToken, refreshTokenRequest.getToken());
+
     }
 }
