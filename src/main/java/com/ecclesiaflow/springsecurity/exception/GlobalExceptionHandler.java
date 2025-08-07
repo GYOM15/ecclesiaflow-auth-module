@@ -21,9 +21,19 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.UNAUTHORIZED, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRequest(InvalidRequestException ex, HttpServletRequest request) {
         return buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(JwtProcessingException.class)
+    public ResponseEntity<ErrorResponse> handleJwtProcessing(JwtProcessingException ex, HttpServletRequest request) {
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Erreur lors du traitement JWT", request.getRequestURI());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -49,7 +59,7 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, message, request.getRequestURI());
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
+    @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
         return buildError(HttpStatus.UNAUTHORIZED, "Email ou mot de passe incorrect.", request.getRequestURI());
     }
