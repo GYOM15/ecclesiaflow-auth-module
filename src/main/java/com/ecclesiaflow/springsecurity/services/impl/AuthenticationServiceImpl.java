@@ -48,12 +48,29 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword())
         );
 
-        // Récupération du membre authentifié
-        Member member = memberRepository.findByEmail(credentials.getEmail())
-            .orElseThrow(() -> new IllegalArgumentException("Email ou mot de passe incorrect"));
+    /**
+     * Authentifie un membre avec ses identifiants
+     * @param credentials les identifiants de connexion
+     * @return le membre authentifié
+     * @throws InvalidCredentialsException si les identifiants sont incorrects
+     */
+    private Member authenticateMemberWithCredentials(SigninCredentials credentials) throws InvalidCredentialsException {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword())
+        );
+        return (Member) authentication.getPrincipal();
+    }
 
-        // Génération de la réponse JWT
-        return jwtResponseService.createAuthenticationResponse(member);
+    /**
+     * Génère les tokens JWT pour un membre authentifié
+     * @param member le membre authentifié
+     * @return le résultat d'authentification avec les tokens
+     * @throws JwtProcessingException si la génération des tokens échoue
+     */
+    private AuthenticationResult createAuthenticationResultWithTokens(Member member) throws JwtProcessingException {
+        String accessToken = jwtService.generateToken(member);
+        String refreshToken = jwtService.generateRefreshToken(new HashMap<>(),member);
+        return new AuthenticationResult(member, accessToken, refreshToken);
     }
 
     @Override
