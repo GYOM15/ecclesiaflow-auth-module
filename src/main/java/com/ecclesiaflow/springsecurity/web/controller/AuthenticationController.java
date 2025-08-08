@@ -26,6 +26,33 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Contrôleur REST pour l'authentification des utilisateurs EcclesiaFlow.
+ * <p>
+ * Cette classe expose les endpoints HTTP pour l'authentification, la génération
+ * de tokens JWT et le rafraîchissement des tokens. Fait partie de la couche web
+ * et orchestre les appels aux services métier.
+ * </p>
+ * 
+ * <p><strong>Responsabilités principales :</strong></p>
+ * <ul>
+ *   <li>Exposition des endpoints d'authentification REST</li>
+ *   <li>Validation des requêtes HTTP entrantes</li>
+ *   <li>Orchestration des appels aux services métier</li>
+ *   <li>Transformation des réponses métier en DTOs web</li>
+ * </ul>
+ * 
+ * <p><strong>Endpoints exposés :</strong></p>
+ * <ul>
+ *   <li>POST /api/auth/token - Authentification et génération de tokens</li>
+ *   <li>POST /api/auth/refresh - Rafraîchissement des tokens</li>
+ * </ul>
+ * 
+ * <p><strong>Garanties :</strong> Thread-safe, stateless, gestion d'erreurs HTTP.</p>
+ * 
+ * @author EcclesiaFlow Team
+ * @since 1.0.0
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/auth")
@@ -34,6 +61,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
+    /**
+     * Génère un token JWT pour l'authentification d'un utilisateur.
+     * 
+     * @param request Requête d'authentification contenant les identifiants de l'utilisateur
+     * @return Réponse d'authentification contenant le token JWT
+     * @throws InvalidCredentialsException si les identifiants sont invalides
+     * @throws InvalidTokenException si le token est invalide
+     * @throws JwtProcessingException si une erreur se produit lors du traitement du token
+     */
     @PostMapping(value = "/token", produces = "application/vnd.ecclesiaflow.auth.v1+json")
     @Operation(
             summary = "Génération de token d'authentification",
@@ -66,6 +102,12 @@ public class AuthenticationController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Rafraîchit un token JWT existant.
+     * 
+     * @param refreshTokenRequest Requête de rafraîchissement du token
+     * @return Réponse d'authentification contenant le nouveau token JWT
+     */
     @PostMapping(value = "/refresh", produces = "application/vnd.ecclesiaflow.auth.v1+json")
     @Operation(
             summary = "Rafraîchissement du token JWT",

@@ -10,8 +10,42 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 
 /**
- * Aspect responsable du logging automatique des opérations critiques
- * Respecte le principe de responsabilité unique en se concentrant uniquement sur le logging
+ * Aspect AOP responsable du logging automatique des opérations critiques EcclesiaFlow.
+ * <p>
+ * Cette classe implémente la programmation orientée aspect pour capturer automatiquement
+ * les appels de méthodes dans les services et contrôleurs, et générer des logs détaillés
+ * pour le monitoring, le debugging et l'audit des opérations système.
+ * </p>
+ * 
+ * <p><strong>Rôle architectural :</strong> Aspect transversal - Logging automatique</p>
+ * 
+ * <p><strong>Dépendances critiques :</strong></p>
+ * <ul>
+ *   <li>Spring AOP - Framework de programmation orientée aspect</li>
+ *   <li>SLF4J/Logback - Framework de logging</li>
+ *   <li>Annotation {@link LogExecution} - Marquage des méthodes à logger</li>
+ * </ul>
+ * 
+ * <p><strong>Responsabilités principales :</strong></p>
+ * <ul>
+ *   <li>Logging automatique des entrées/sorties de méthodes</li>
+ *   <li>Capture des exceptions et erreurs système</li>
+ *   <li>Mesure des temps d'exécution pour le monitoring</li>
+ *   <li>Logging configurable via annotation @LogExecution</li>
+ * </ul>
+ * 
+ * <p><strong>Cas d'utilisation typiques :</strong></p>
+ * <ul>
+ *   <li>Debugging des flux d'authentification</li>
+ *   <li>Monitoring des performances des services</li>
+ *   <li>Audit des opérations sensibles (inscription, connexion)</li>
+ *   <li>Traçabilité des erreurs en production</li>
+ * </ul>
+ * 
+ * <p><strong>Garanties :</strong> Thread-safe, impact minimal sur les performances, logging asynchrone.</p>
+ * 
+ * @author EcclesiaFlow Team
+ * @since 1.0.0
  */
 @Slf4j
 @Aspect
@@ -21,13 +55,13 @@ public class LoggingAspect {
     /**
      * Pointcut pour toutes les méthodes des services
      */
-    @Pointcut("execution(* com.ecclesiaflow.springsecurity.services..*(..))")
+    @Pointcut("execution(* com.ecclesiaflow.springsecurity.business.services..*(..))")
     public void serviceMethods() {}
 
     /**
      * Pointcut pour toutes les méthodes des contrôleurs
      */
-    @Pointcut("execution(* com.ecclesiaflow.springsecurity.controller..*(..))")
+    @Pointcut("execution(* com.ecclesiaflow.springsecurity.web.controller..*(..))")
     public void controllerMethods() {}
 
     /**

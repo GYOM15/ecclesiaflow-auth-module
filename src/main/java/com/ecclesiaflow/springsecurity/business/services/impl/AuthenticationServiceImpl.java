@@ -20,8 +20,35 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Service d'authentification refactorisé pour respecter le SRP
- * Délègue les responsabilités spécifiques aux services dédiés
+ * Implémentation du service d'authentification EcclesiaFlow.
+ * <p>
+ * Cette classe orchestre l'authentification des membres via Spring Security,
+ * la génération de tokens JWT et les opérations de rafraîchissement de tokens.
+ * Respecte le principe de responsabilité unique en déléguant les tâches spécialisées
+ * aux services dédiés.
+ * </p>
+ * 
+ * <p><strong>Rôle architectural :</strong> Service de domaine - Orchestration d'authentification</p>
+ * 
+ * <p><strong>Dépendances critiques :</strong></p>
+ * <ul>
+ *   <li>{@link AuthenticationManager} - Authentification Spring Security</li>
+ *   <li>{@link JWTService} - Génération et validation des tokens JWT</li>
+ *   <li>{@link MemberRegistrationService} - Inscription des nouveaux membres</li>
+ *   <li>{@link MemberRepository} - Accès aux données des membres</li>
+ * </ul>
+ * 
+ * <p><strong>Cas d'utilisation typiques :</strong></p>
+ * <ul>
+ *   <li>Inscription de nouveaux membres via délégation</li>
+ *   <li>Authentification avec génération de tokens JWT</li>
+ *   <li>Rafraîchissement des tokens d'accès expirés</li>
+ * </ul>
+ * 
+ * <p><strong>Garanties :</strong> Thread-safe (stateless), transactionnel selon les méthodes.</p>
+ * 
+ * @author EcclesiaFlow Team
+ * @since 1.0.0
  */
 @Service
 @RequiredArgsConstructor
@@ -44,12 +71,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return createAuthenticationResultWithTokens(authenticatedMember);
     }
 
-    /**
-     * Authentifie un membre avec ses identifiants
-     * @param credentials les identifiants de connexion
-     * @return le membre authentifié
-     * @throws InvalidCredentialsException si les identifiants sont incorrects
-     */
     private Member authenticateMemberWithCredentials(SigninCredentials credentials) throws InvalidCredentialsException {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword())
@@ -57,12 +78,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return (Member) authentication.getPrincipal();
     }
 
-    /**
-     * Génère les tokens JWT pour un membre authentifié
-     * @param member le membre authentifié
-     * @return le résultat d'authentification avec les tokens
-     * @throws JwtProcessingException si la génération des tokens échoue
-     */
     private AuthenticationResult createAuthenticationResultWithTokens(Member member) throws JwtProcessingException {
         String accessToken = jwtService.generateAccessToken(member);
         String refreshToken = jwtService.generateRefreshToken(member);
