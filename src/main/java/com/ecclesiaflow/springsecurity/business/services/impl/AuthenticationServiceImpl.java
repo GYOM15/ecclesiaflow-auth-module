@@ -67,18 +67,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     @Transactional(readOnly = true)
     public AuthenticationResult getAuthenticatedMember(SigninCredentials credentials) throws InvalidCredentialsException, JwtProcessingException {
-        Member authenticatedMember = authenticateMemberWithCredentials(credentials);
-        return createAuthenticationResultWithTokens(authenticatedMember);
+        Member authenticatedMember = authenticateMember(credentials);
+        return generateUserTokens(authenticatedMember);
     }
 
-    private Member authenticateMemberWithCredentials(SigninCredentials credentials) throws InvalidCredentialsException {
+    private Member authenticateMember(SigninCredentials credentials) throws InvalidCredentialsException {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword())
         );
         return (Member) authentication.getPrincipal();
     }
 
-    private AuthenticationResult createAuthenticationResultWithTokens(Member member) throws JwtProcessingException {
+    private AuthenticationResult generateUserTokens(Member member) throws JwtProcessingException {
         String accessToken = jwtService.generateAccessToken(member);
         String refreshToken = jwtService.generateRefreshToken(member);
         return new AuthenticationResult(member, accessToken, refreshToken);
