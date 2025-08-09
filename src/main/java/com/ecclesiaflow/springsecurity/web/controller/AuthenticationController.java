@@ -44,8 +44,8 @@ import org.springframework.web.bind.annotation.RestController;
  * 
  * <p><strong>Endpoints exposés :</strong></p>
  * <ul>
- *   <li>POST /api/auth/token - Authentification et génération de tokens</li>
- *   <li>POST /api/auth/refresh - Rafraîchissement des tokens</li>
+ *   <li>POST /ecclesiaflow/auth/token - Authentification et génération de tokens</li>
+ *   <li>POST /ecclesiaflow/auth/refresh - Rafraîchissement des tokens</li>
  * </ul>
  * 
  * <p><strong>Garanties :</strong> Thread-safe, stateless, gestion d'erreurs HTTP.</p>
@@ -55,7 +55,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/ecclesiaflow/auth")
 @RequiredArgsConstructor
 @Tag(name = "Authentication", description = "API d'authentification centralisée pour EcclesiaFlow")
 public class AuthenticationController {
