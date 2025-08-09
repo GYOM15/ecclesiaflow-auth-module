@@ -2,6 +2,7 @@ package com.ecclesiaflow.springsecurity.web.controller;
 
 import com.ecclesiaflow.springsecurity.business.domain.AuthenticationResult;
 import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
+import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.web.dto.SigninRequest;
@@ -129,7 +130,9 @@ public class AuthenticationController {
             )
     })
     public ResponseEntity<JwtAuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
-        AuthenticationResult authResult = authenticationService.refreshToken(refreshTokenRequest);
+        // Conversion DTO API → Objet métier via mapper
+        TokenRefreshData refreshData = AuthenticationMapper.fromRefreshTokenRequest(refreshTokenRequest);
+        AuthenticationResult authResult = authenticationService.refreshToken(refreshData);
         // Utilisation du mapper pour convertir le domaine en DTO
         JwtAuthenticationResponse response = AuthenticationMapper.toDto(authResult);
         return ResponseEntity.ok(response);

@@ -3,7 +3,7 @@ package com.ecclesiaflow.springsecurity.business.services.impl;
 import com.ecclesiaflow.springsecurity.business.domain.AuthenticationResult;
 import com.ecclesiaflow.springsecurity.business.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
-import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
+import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
@@ -86,10 +86,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional(readOnly = true)
-    public AuthenticationResult refreshToken(RefreshTokenRequest refreshTokenRequest) 
+    public AuthenticationResult refreshToken(TokenRefreshData refreshData) 
             throws InvalidTokenException, JwtProcessingException {
 
-        String refreshToken = refreshTokenRequest.getToken();
+        String refreshToken = refreshData.getRefreshToken();
         if (!jwtService.isRefreshTokenValid(refreshToken)) throw new InvalidTokenException("Le token de rafraîchissement est invalide ou n'est pas du bon type.");
 
         String username = jwtService.extractUsername(refreshToken);

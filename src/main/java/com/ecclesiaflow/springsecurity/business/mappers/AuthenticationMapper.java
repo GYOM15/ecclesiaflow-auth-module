@@ -1,7 +1,9 @@
 package com.ecclesiaflow.springsecurity.business.mappers;
 
 import com.ecclesiaflow.springsecurity.business.domain.AuthenticationResult;
+import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
+import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
 
 /**
  * Mapper statique pour la conversion entre objets métier d'authentification et DTOs web.
@@ -52,5 +54,22 @@ public final class AuthenticationMapper {
         dto.setToken(authResult.getAccessToken());
         dto.setRefreshToken(authResult.getRefreshToken());
         return dto;
+    }
+
+    /**
+     * Convertit une requête de rafraîchissement de token API en objet métier.
+     * <p>
+     * Cette méthode effectue une transformation pure du DTO API vers l'objet métier
+     * correspondant, assurant le découplage entre la couche web et la couche métier.
+     * </p>
+     * 
+     * @param request la requête de rafraîchissement de token API, non null
+     * @return un {@link TokenRefreshData} contenant le refresh token
+     * @throws NullPointerException si request est null
+     * 
+     * @implNote Transformation pure sans validation - la validation est assurée par l'architecture.
+     */
+    public static TokenRefreshData fromRefreshTokenRequest(RefreshTokenRequest request) {
+        return new TokenRefreshData(request.getToken());
     }
 }

@@ -3,7 +3,7 @@ package com.ecclesiaflow.springsecurity.business.services;
 import com.ecclesiaflow.springsecurity.business.domain.AuthenticationResult;
 import com.ecclesiaflow.springsecurity.business.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
-import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
+import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
@@ -87,14 +87,14 @@ public interface AuthenticationService {
      * rafraîchissements jusqu'à son expiration.
      * </p>
      * 
-     * @param refreshTokenRequest requête contenant le refresh token, non null
+     * @param refreshData objet métier contenant le refresh token, non null
      * @return un {@link AuthenticationResult} avec le nouveau token d'accès et l'ancien refresh token
      * @throws InvalidTokenException si le refresh token est invalide, expiré ou de mauvais type
      * @throws JwtProcessingException si la génération du nouveau token d'accès échoue
-     * @throws IllegalArgumentException si refreshTokenRequest est null
+     * @throws IllegalArgumentException si refreshData est null
      * 
      * @implNote Opération en lecture seule, génère un nouveau token d'accès en mémoire.
      */
-    AuthenticationResult refreshToken(RefreshTokenRequest refreshTokenRequest) 
+    AuthenticationResult refreshToken(TokenRefreshData refreshData) 
             throws InvalidTokenException, JwtProcessingException;
 }
