@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/members")
+@RequestMapping("/ecclesiaflow/members")
 @RequiredArgsConstructor
 @Tag(name = "Members (Temporary)", description = "API temporaire - sera migrée vers le module de gestion des membres")
 @Deprecated // Marquer comme deprecated pour indiquer la migration future
