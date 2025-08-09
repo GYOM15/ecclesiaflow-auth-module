@@ -36,7 +36,7 @@ public class RateLimitingInterceptor implements HandlerInterceptor {
         String requestURI = request.getRequestURI();
         
         // Appliquer le rate limiting seulement sur les endpoints sensibles
-        if (requestURI.contains("/api/auth/") || requestURI.contains("/api/members/signup")) {
+        if (requestURI.contains("/ecclesiaflow/auth/") || requestURI.contains("/ecclesiaflow/members/signup")) {
             Bucket bucket = resolveBucket(clientIp);
             
             if (bucket.tryConsume(1)) {
