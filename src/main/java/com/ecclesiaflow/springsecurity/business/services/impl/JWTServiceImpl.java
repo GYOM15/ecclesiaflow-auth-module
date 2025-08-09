@@ -22,14 +22,14 @@ import java.util.function.Function;
  * validation, extraction de claims et vérification d'expiration. Utilise la bibliothèque
  * JJWT pour le traitement sécurisé des tokens avec signature HMAC.
  * </p>
- * 
+ *
  * <p><strong>Dépendances critiques :</strong></p>
  * <ul>
  *   <li>Clé secrète JWT configurée via {@code jwt.secret}</li>
  *   <li>Durées d'expiration configurables via properties Spring</li>
  *   <li>Bibliothèque JJWT pour le traitement sécurisé des tokens</li>
  * </ul>
- * 
+ *
  * <p><strong>Cas d'utilisation typiques :</strong></p>
  * <ul>
  *   <li>Génération de tokens d'accès après authentification réussie</li>
@@ -37,9 +37,9 @@ import java.util.function.Function;
  *   <li>Validation des tokens dans les filtres de sécurité</li>
  *   <li>Extraction des informations utilisateur depuis les tokens</li>
  * </ul>
- * 
+ *
  * <p><strong>Garanties :</strong> Thread-safe (stateless), opérations en mémoire uniquement, signature sécurisée.</p>
- * 
+ *
  * @author EcclesiaFlow Team
  * @since 1.0.0
  */
@@ -59,7 +59,7 @@ public class JWTServiceImpl implements JWTService {
 
     @Override
     public String generateAccessToken(UserDetails userDetails) throws JwtProcessingException {
-            return buildToken(userDetails, accessTokenExpiration, Map.of());
+        return buildToken(userDetails, accessTokenExpiration, Map.of());
     }
 
     @Override
@@ -70,17 +70,13 @@ public class JWTServiceImpl implements JWTService {
 
     @Override
     public String extractUsername(String token) throws JwtProcessingException {
-            return extractClaim(token, Claims::getSubject);
+        return extractClaim(token, Claims::getSubject);
     }
 
     @Override
     public boolean isTokenValid(String token) throws JwtProcessingException {
-        try {
             Claims claims = parseAndValidateClaims(token);
-            return !isTokenExpired(token);
-        } catch (JwtProcessingException e) {
-            return false;
-        }
+            return !claims.getExpiration().before(new Date());
     }
 
     @Override
@@ -88,32 +84,26 @@ public class JWTServiceImpl implements JWTService {
         if (!isTokenValid(token)) {
             return false;
         }
-        
         Claims claims = parseAndValidateClaims(token);
         String tokenType = claims.get("type", String.class);
-        
+
         if (!"refresh".equals(tokenType)) {
             throw new InvalidTokenException("Le token fourni n'est pas un token de rafraîchissement");
         }
-        
         return true;
     }
 
     // ========== PRIVATE HELPERS ==========
 
     private String buildToken(UserDetails userDetails, long expirationTime, Map<String, Object> extraClaims) throws JwtProcessingException {
-        try {
-            return Jwts
-                    .builder()
-                    .setClaims(extraClaims)
-                    .setSubject(userDetails.getUsername())
-                    .setIssuedAt(new Date(System.currentTimeMillis()))
-                    .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
-                    .signWith(getSignKey(), SignatureAlgorithm.HS256)
-                    .compact();
-        } catch (Exception e) {
-            throw new JwtProcessingException("Erreur lors de la génération du token JWT", e);
-        }
+        return Jwts
+                .builder()
+                .setClaims(extraClaims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) throws JwtProcessingException {
@@ -122,19 +112,10 @@ public class JWTServiceImpl implements JWTService {
     }
 
     private Claims parseAndValidateClaims(String token) throws JwtProcessingException {
-        try {
-            return Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token).getBody();
-        } catch (JwtException | IllegalArgumentException e) {
-            throw new JwtProcessingException("Token JWT invalide : " + e.getMessage(), e);
-        }
+        return Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token).getBody();
     }
 
     // ========== SECURITY CHECKS ==========
-
-    private boolean isTokenExpired(String token) throws JwtProcessingException {
-        return extractClaim(token, Claims::getExpiration).before(new Date());
-    }
-
     private Key getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
