@@ -14,6 +14,6 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(rateLimitingInterceptor)
-                .addPathPatterns("/api/auth/**", "/api/members/signup");
+                .addPathPatterns("/ecclesiaflow/auth/**", "/ecclesiaflow/members/signup");
     }
 }
