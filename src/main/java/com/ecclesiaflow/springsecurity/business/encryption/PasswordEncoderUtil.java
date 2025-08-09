@@ -1,6 +1,7 @@
 package com.ecclesiaflow.springsecurity.business.encryption;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,7 +32,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class PasswordEncoder {
+public class PasswordEncoderUtil implements PasswordEncoder {
     
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     
@@ -49,7 +50,13 @@ public class PasswordEncoder {
      * 
      * @implNote Utilise BCryptPasswordEncoder avec les paramètres par défaut.
      */
-    public String encode(String rawPassword) {
+    @Override
+    public String encode(CharSequence rawPassword) {
         return encoder.encode(rawPassword);
+    }
+
+    @Override
+    public boolean matches(CharSequence rawPassword, String encodedPassword) {
+        return encoder.matches(rawPassword, encodedPassword);
     }
 }
