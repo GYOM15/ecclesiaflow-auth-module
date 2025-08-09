@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/adminMembers")
+@RequestMapping("/ecclesiaflow/adminMembers")
 @RequiredArgsConstructor
 public class AdminController {
 
