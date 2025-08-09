@@ -5,7 +5,7 @@ import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.io.entities.Role;
 import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.business.services.MemberRegistrationService;
-import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoder;
+import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p><strong>Dépendances critiques :</strong></p>
  * <ul>
  *   <li>{@link MemberRepository} - Persistance et vérification d'unicité</li>
- *   <li>{@link PasswordEncoder} - Encodage sécurisé des mots de passe</li>
+ *   <li>{@link PasswordEncoderUtil} - Encodage sécurisé des mots de passe</li>
  * </ul>
  * 
  * <p><strong>Cas d'utilisation typiques :</strong></p>
@@ -43,7 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberRegistrationServiceImpl implements MemberRegistrationService {
     
     private final MemberRepository memberRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoderUtil passwordEncoderUtil;
     
     @Override
     @Transactional
@@ -68,7 +68,7 @@ public class MemberRegistrationServiceImpl implements MemberRegistrationService 
     private Member createMemberFromRegistration(MemberRegistration registration) {
         Member member = new Member();
         member.setEmail(registration.getEmail());
-        member.setPassword(passwordEncoder.encode(registration.getPassword()));
+        member.setPassword(passwordEncoderUtil.encode(registration.getPassword()));
         member.setFirstName(registration.getFirstName());
         member.setLastName(registration.getLastName());
         member.setRole(Role.MEMBER);
