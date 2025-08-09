@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.config;
 
+import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
 import com.ecclesiaflow.springsecurity.io.entities.Role;
 import com.ecclesiaflow.springsecurity.business.services.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -27,15 +28,17 @@ public class SecurityConfiguration {
 
     private final MemberService memberService;
 
+    private final PasswordEncoderUtil passwordEncoder;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/members/signup").permitAll()
-                        .requestMatchers("/api/adminMembers").hasAnyAuthority(Role.ADMIN.name())
-                        .requestMatchers("/api/members").hasAnyAuthority(Role.MEMBER.name())
+                        .requestMatchers("/ecclesiaflow/auth/**").permitAll()
+                        .requestMatchers("/ecclesiaflow/members/signup").permitAll()
+                        .requestMatchers("/ecclesiaflow/adminMembers").hasAnyAuthority(Role.ADMIN.name())
+                        .requestMatchers("/ecclesiaflow/members").hasAnyAuthority(Role.MEMBER.name())
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(manager -> manager
@@ -51,7 +54,7 @@ public class SecurityConfiguration {
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(memberService.userDetailsService());
-        authProvider.setPasswordEncoder(passwordEncoder());
+        authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
 
