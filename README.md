@@ -145,10 +145,10 @@ open http://localhost:8080/swagger-ui.html
 
 | Endpoint | Méthode | Description | Auth requise |
 |----------|---------|-------------|--------------|
-| `/api/auth/token` | POST | Génération de token JWT | Non |
-| `/api/auth/refresh` | POST | Rafraîchissement de token | Non |
-| `/api/members/hello` | GET | Test d'authentification | Oui |
-| `/api/members/signup` | POST | Inscription temporaire* | Non |
+| `/ecclesiaflow/auth/token` | POST | Génération de token JWT | Non |
+| `/ecclesiaflow/auth/refresh` | POST | Rafraîchissement de token | Non |
+| `/ecclesiaflow/members/hello` | GET | Test d'authentification | Oui |
+| `/ecclesiaflow/members/signup` | POST | Inscription temporaire* | Non |
 
 *\*Endpoint temporaire - sera migré vers le module de gestion des membres*
 
@@ -156,7 +156,7 @@ open http://localhost:8080/swagger-ui.html
 
 **Authentification :**
 ```bash
-curl -X POST http://localhost:8080/api/auth/token \
+curl -X POST http://localhost:8080/ecclesiaflow/auth/token \
   -H "Content-Type: application/json" \
   -d '{
     "email": "membre@eglise.com",
@@ -166,13 +166,13 @@ curl -X POST http://localhost:8080/api/auth/token \
 
 **Utilisation du token :**
 ```bash
-curl -X GET http://localhost:8080/api/members/hello \
+curl -X GET http://localhost:8080/ecclesiaflow/members/hello \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Documentation interactive
 
-- **Swagger UI** : `http://localhost:8080/swagger-ui.html`
+- **Swagger UI** : `http://localhost:8080/swagger-ui/index.html`
 - **OpenAPI Spec** : `http://localhost:8080/v3/api-docs`
 - **Fichier YAML** : `src/main/resources/api/openapi.yaml`
 
