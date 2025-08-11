@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.business.mappers;
 
-import com.ecclesiaflow.springsecurity.business.domain.AuthenticationResult;
+import com.ecclesiaflow.springsecurity.business.domain.TokenizedMember;
 import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
@@ -17,7 +17,7 @@ import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
  * 
  * <p><strong>Responsabilités principales :</strong></p>
  * <ul>
- *   <li>Conversion des AuthenticationResult vers JwtAuthenticationResponse</li>
+ *   <li>Conversion des TokenizedMember vers JwtAuthenticationResponse</li>
  *   <li>Isolation complète entre couches service et web</li>
  *   <li>Transformation pure sans logique métier</li>
  * </ul>
@@ -49,7 +49,7 @@ public final class AuthenticationMapper {
      * 
      * @implNote Transformation pure sans validation - la validation est assurée par l'architecture.
      */
-    public static JwtAuthenticationResponse toDto(AuthenticationResult authResult) {
+    public static JwtAuthenticationResponse toDto(TokenizedMember authResult) {
         JwtAuthenticationResponse dto = new JwtAuthenticationResponse();
         dto.setToken(authResult.getAccessToken());
         dto.setRefreshToken(authResult.getRefreshToken());

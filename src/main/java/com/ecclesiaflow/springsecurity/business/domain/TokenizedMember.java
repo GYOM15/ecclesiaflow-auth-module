@@ -37,7 +37,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthenticationResult {
+public class TokenizedMember {
     private Member member;
     private String accessToken;
     private String refreshToken;
@@ -45,7 +45,7 @@ public class AuthenticationResult {
     /**
      * Constructeur pour les cas de refresh où on réutilise le refresh token existant
      */
-    public AuthenticationResult(Member member, String accessToken, String existingRefreshToken, boolean reuseRefreshToken) {
+    public TokenizedMember(Member member, String accessToken, String existingRefreshToken, boolean reuseRefreshToken) {
         this.member = member;
         this.accessToken = accessToken;
         this.refreshToken = existingRefreshToken;

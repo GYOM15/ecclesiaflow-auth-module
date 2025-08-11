@@ -1,13 +1,11 @@
 package com.ecclesiaflow.springsecurity.business.services;
 
-import com.ecclesiaflow.springsecurity.business.domain.AuthenticationResult;
+import com.ecclesiaflow.springsecurity.business.domain.TokenizedMember;
 import com.ecclesiaflow.springsecurity.business.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
-import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
-import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 
 /**
@@ -61,20 +59,20 @@ public interface AuthenticationService {
     Member registerMember(MemberRegistration memberRegistration) throws InvalidRequestException;
     
     /**
-     * Authentifie un membre et génère ses tokens JWT d'accès et de rafraîchissement.
+     * Authentifie un membre à partir de ses identifiants.
      * <p>
-     * Cette méthode orchestre l'authentification complète : validation des identifiants
-     * via Spring Security, puis génération des tokens JWT pour l'accès aux ressources protégées.
-     * Combine authentification et génération de tokens en une seule opération atomique.
+     * Cette méthode effectue une authentification pure en validant
+     * l'email et le mot de passe via Spring Security. Elle retourne
+     * uniquement le membre authentifié sans génération de tokens.
      * </p>
      * 
      * @param signinCredentials identifiants de connexion (email et mot de passe), non null
-     * @return un {@link AuthenticationResult} contenant le membre authentifié et ses tokens JWT
+     * @return le {@link Member} authentifié
      * @throws InvalidCredentialsException si l'email ou le mot de passe est incorrect
-     * @throws JwtProcessingException si la génération des tokens échoue
+     * @throws JwtProcessingException si une erreur survient pendant l'authentification
      * @throws IllegalArgumentException si signinCredentials est null
      * 
-     * @implNote Opération en lecture seule sur la base de données, génération de tokens en mémoire.
+     * @implNote Opération en lecture seule sur la base de données, authentification pure sans tokens.
      */
     Member getAuthenticatedMember(SigninCredentials signinCredentials)
             throws InvalidCredentialsException, JwtProcessingException;

@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.controller;
 
-import com.ecclesiaflow.springsecurity.business.domain.AuthenticationResult;
+import com.ecclesiaflow.springsecurity.business.domain.TokenizedMember;
 import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
 import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
@@ -103,8 +103,8 @@ public class AuthenticationController {
     public ResponseEntity<JwtAuthenticationResponse> generateToken(@Valid @RequestBody SigninRequest request) throws InvalidCredentialsException, InvalidTokenException, JwtProcessingException {
         SigninCredentials credentials = MemberMapper.fromSigninRequest(request);
         Member member = authenticationService.getAuthenticatedMember(credentials);
-        AuthenticationResult result = jwtTokenUtil.generateUserTokens(member);
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(result);
+        TokenizedMember tokenizedMember = jwtTokenUtil.generateUserTokens(member);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(tokenizedMember);
         return ResponseEntity.ok(response);
     }
 
@@ -138,9 +138,9 @@ public class AuthenticationController {
         // Conversion DTO API → Objet métier via mapper
         TokenRefreshData refreshData = AuthenticationMapper.fromRefreshTokenRequest(refreshTokenRequest);
         // Rafraîchissement via l'utilitaire technique
-        AuthenticationResult authResult = jwtTokenUtil.refreshToken(refreshData);
+        TokenizedMember refreshedTokenizedMember = jwtTokenUtil.refreshToken(refreshData);
         // Utilisation du mapper pour convertir le domaine en DTO
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(authResult);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(refreshedTokenizedMember);
         return ResponseEntity.ok(response);
     }
 }

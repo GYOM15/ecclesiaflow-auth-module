@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.security;
 
-import com.ecclesiaflow.springsecurity.business.domain.AuthenticationResult;
+import com.ecclesiaflow.springsecurity.business.domain.TokenizedMember;
 import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
@@ -55,16 +55,16 @@ public class JwtTokenUtil {
      * </p>
      * 
      * @param member le membre pour lequel générer les tokens, non null
-     * @return un {@link AuthenticationResult} contenant le membre et ses tokens
+     * @return un {@link TokenizedMember} contenant le membre et ses tokens
      * @throws JwtProcessingException si la génération des tokens échoue
      * @throws IllegalArgumentException si member est null
      * 
      * @implNote Opération en mémoire uniquement, aucun accès à la base de données.
      */
-    public AuthenticationResult generateUserTokens(Member member) throws JwtProcessingException {
+    public TokenizedMember generateUserTokens(Member member) throws JwtProcessingException {
         String accessToken = jwtProcessor.generateAccessToken(member);
         String refreshToken = jwtProcessor.generateRefreshToken(member);
-        return new AuthenticationResult(member, accessToken, refreshToken);
+        return new TokenizedMember(member, accessToken, refreshToken);
     }
 
     /**
@@ -76,7 +76,7 @@ public class JwtTokenUtil {
      * </p>
      * 
      * @param refreshData objet contenant le refresh token, non null
-     * @return un {@link AuthenticationResult} avec le nouveau token d'accès et l'ancien refresh token
+     * @return un {@link TokenizedMember} avec le nouveau token d'accès et l'ancien refresh token
      * @throws InvalidTokenException si le refresh token est invalide, expiré ou de mauvais type
      * @throws JwtProcessingException si la génération du nouveau token d'accès échoue
      * @throws IllegalArgumentException si refreshData est null
@@ -84,7 +84,7 @@ public class JwtTokenUtil {
      * @implNote Opération en lecture seule sur la base de données, génère un nouveau token en mémoire.
      */
     @Transactional(readOnly = true)
-    public AuthenticationResult refreshToken(TokenRefreshData refreshData) 
+    public TokenizedMember refreshToken(TokenRefreshData refreshData) 
             throws InvalidTokenException, JwtProcessingException {
 
         String refreshToken = refreshData.getRefreshToken();
@@ -101,6 +101,6 @@ public class JwtTokenUtil {
         // Génération du nouveau token d'accès
         String newAccessToken = jwtProcessor.generateAccessToken(member);
         
-        return new AuthenticationResult(member, newAccessToken, refreshToken);
+        return new TokenizedMember(member, newAccessToken, refreshToken);
     }
 }
