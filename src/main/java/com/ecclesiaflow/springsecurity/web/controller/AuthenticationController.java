@@ -3,6 +3,7 @@ package com.ecclesiaflow.springsecurity.web.controller;
 import com.ecclesiaflow.springsecurity.business.domain.AuthenticationResult;
 import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
 import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
+import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.web.dto.SigninRequest;
@@ -10,6 +11,7 @@ import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
+import com.ecclesiaflow.springsecurity.web.security.JwtTokenUtil;
 import com.ecclesiaflow.springsecurity.business.mappers.AuthenticationMapper;
 import com.ecclesiaflow.springsecurity.business.mappers.MemberMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,14 +34,14 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>
  * Cette classe expose les endpoints HTTP pour l'authentification, la génération
  * de tokens JWT et le rafraîchissement des tokens. Fait partie de la couche web
- * et orchestre les appels aux services métier.
+ * et orchestre les appels aux services métier et utilitaires techniques.
  * </p>
  * 
  * <p><strong>Responsabilités principales :</strong></p>
  * <ul>
  *   <li>Exposition des endpoints d'authentification REST</li>
  *   <li>Validation des requêtes HTTP entrantes</li>
- *   <li>Orchestration des appels aux services métier</li>
+ *   <li>Orchestration entre services métier et utilitaires techniques</li>
  *   <li>Transformation des réponses métier en DTOs web</li>
  * </ul>
  * 
@@ -58,9 +60,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/ecclesiaflow/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "API d'authentification centralisée pour EcclesiaFlow")
+@Tag(name = "Authentication", description = "API d'authentification EcclesiaFlow")
 public class AuthenticationController {
+
     private final AuthenticationService authenticationService;
+    private final JwtTokenUtil jwtTokenUtil;
 
     /**
      * Génère un token JWT pour l'authentification d'un utilisateur.
@@ -73,8 +77,8 @@ public class AuthenticationController {
      */
     @PostMapping(value = "/token", produces = "application/vnd.ecclesiaflow.auth.v1+json")
     @Operation(
-            summary = "Génération de token d'authentification",
-            description = "Authentifie un utilisateur et génère un token JWT pour l'accès aux ressources"
+            summary = "Génération de token JWT",
+            description = "Authentifie un utilisateur et génère un token JWT d'accès ainsi qu'un refresh token"
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -98,8 +102,9 @@ public class AuthenticationController {
     })
     public ResponseEntity<JwtAuthenticationResponse> generateToken(@Valid @RequestBody SigninRequest request) throws InvalidCredentialsException, InvalidTokenException, JwtProcessingException {
         SigninCredentials credentials = MemberMapper.fromSigninRequest(request);
-        AuthenticationResult authResult = authenticationService.getAuthenticatedMember(credentials);
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(authResult);
+        Member member = authenticationService.getAuthenticatedMember(credentials);
+        AuthenticationResult result = jwtTokenUtil.generateUserTokens(member);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(result);
         return ResponseEntity.ok(response);
     }
 
@@ -132,7 +137,8 @@ public class AuthenticationController {
     public ResponseEntity<JwtAuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
         // Conversion DTO API → Objet métier via mapper
         TokenRefreshData refreshData = AuthenticationMapper.fromRefreshTokenRequest(refreshTokenRequest);
-        AuthenticationResult authResult = authenticationService.refreshToken(refreshData);
+        // Rafraîchissement via l'utilitaire technique
+        AuthenticationResult authResult = jwtTokenUtil.refreshToken(refreshData);
         // Utilisation du mapper pour convertir le domaine en DTO
         JwtAuthenticationResponse response = AuthenticationMapper.toDto(authResult);
         return ResponseEntity.ok(response);

@@ -76,25 +76,8 @@ public interface AuthenticationService {
      * 
      * @implNote Opération en lecture seule sur la base de données, génération de tokens en mémoire.
      */
-    AuthenticationResult getAuthenticatedMember(SigninCredentials signinCredentials)
+    Member getAuthenticatedMember(SigninCredentials signinCredentials)
             throws InvalidCredentialsException, JwtProcessingException;
     
-    /**
-     * Rafraîchit un token d'accès à partir d'un refresh token valide.
-     * <p>
-     * Valide le refresh token, extrait l'utilisateur associé et génère un nouveau
-     * token d'accès. Le refresh token reste inchangé pour permettre de futurs
-     * rafraîchissements jusqu'à son expiration.
-     * </p>
-     * 
-     * @param refreshData objet métier contenant le refresh token, non null
-     * @return un {@link AuthenticationResult} avec le nouveau token d'accès et l'ancien refresh token
-     * @throws InvalidTokenException si le refresh token est invalide, expiré ou de mauvais type
-     * @throws JwtProcessingException si la génération du nouveau token d'accès échoue
-     * @throws IllegalArgumentException si refreshData est null
-     * 
-     * @implNote Opération en lecture seule, génère un nouveau token d'accès en mémoire.
-     */
-    AuthenticationResult refreshToken(TokenRefreshData refreshData) 
-            throws InvalidTokenException, JwtProcessingException;
+
 }
