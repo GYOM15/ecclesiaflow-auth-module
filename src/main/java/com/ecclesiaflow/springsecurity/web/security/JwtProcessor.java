@@ -1,14 +1,13 @@
-package com.ecclesiaflow.springsecurity.business.services.impl;
+package com.ecclesiaflow.springsecurity.web.security;
 
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
-import com.ecclesiaflow.springsecurity.business.services.JWTService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
@@ -16,12 +15,14 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Implémentation du service JWT pour la gestion des tokens d'authentification EcclesiaFlow.
+ * Processeur JWT pour la couche web d'EcclesiaFlow.
  * <p>
- * Cette classe implémente toutes les opérations liées aux tokens JWT : génération,
- * validation, extraction de claims et vérification d'expiration. Utilise la bibliothèque
- * JJWT pour le traitement sécurisé des tokens avec signature HMAC.
+ * Cette classe gère toutes les opérations techniques liées aux tokens JWT :
+ * génération, validation, extraction de claims et vérification d'expiration.
+ * Utilise la bibliothèque JJWT pour le traitement sécurisé des tokens avec signature HMAC.
  * </p>
+ *
+ * <p><strong>Rôle architectural :</strong> Composant web - Processeur technique JWT</p>
  *
  * <p><strong>Dépendances critiques :</strong></p>
  * <ul>
@@ -43,8 +44,8 @@ import java.util.function.Function;
  * @author EcclesiaFlow Team
  * @since 1.0.0
  */
-@Service
-public class JWTServiceImpl implements JWTService {
+@Component
+public class JwtProcessor {
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -57,29 +58,24 @@ public class JWTServiceImpl implements JWTService {
 
     // ========== PUBLIC API ==========
 
-    @Override
     public String generateAccessToken(UserDetails userDetails) throws JwtProcessingException {
         return buildToken(userDetails, accessTokenExpiration, Map.of());
     }
 
-    @Override
     public String generateRefreshToken(UserDetails userDetails) throws JwtProcessingException {
         Map<String, Object> extraClaims = Map.of("type", "refresh");
         return buildToken(userDetails, refreshTokenExpiration, extraClaims);
     }
 
-    @Override
     public String extractUsername(String token) throws JwtProcessingException {
         return extractClaim(token, Claims::getSubject);
     }
 
-    @Override
     public boolean isTokenValid(String token) throws JwtProcessingException {
             Claims claims = parseAndValidateClaims(token);
             return !claims.getExpiration().before(new Date());
     }
 
-    @Override
     public boolean isRefreshTokenValid(String token) throws JwtProcessingException, InvalidTokenException {
         if (!isTokenValid(token)) {
             return false;

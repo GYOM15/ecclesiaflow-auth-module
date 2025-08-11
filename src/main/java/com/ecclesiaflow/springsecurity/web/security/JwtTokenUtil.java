@@ -2,7 +2,6 @@ package com.ecclesiaflow.springsecurity.web.security;
 
 import com.ecclesiaflow.springsecurity.business.domain.AuthenticationResult;
 import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
-import com.ecclesiaflow.springsecurity.business.services.JWTService;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
@@ -44,7 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class JwtTokenUtil {
 
-    private final JWTService jwtService;
+    private final JwtProcessor jwtProcessor;
     private final MemberRepository memberRepository;
 
     /**
@@ -63,8 +62,8 @@ public class JwtTokenUtil {
      * @implNote Opération en mémoire uniquement, aucun accès à la base de données.
      */
     public AuthenticationResult generateUserTokens(Member member) throws JwtProcessingException {
-        String accessToken = jwtService.generateAccessToken(member);
-        String refreshToken = jwtService.generateRefreshToken(member);
+        String accessToken = jwtProcessor.generateAccessToken(member);
+        String refreshToken = jwtProcessor.generateRefreshToken(member);
         return new AuthenticationResult(member, accessToken, refreshToken);
     }
 
@@ -89,18 +88,18 @@ public class JwtTokenUtil {
             throws InvalidTokenException, JwtProcessingException {
 
         String refreshToken = refreshData.getRefreshToken();
-        if (!jwtService.isRefreshTokenValid(refreshToken)) {
+        if (!jwtProcessor.isRefreshTokenValid(refreshToken)) {
             throw new InvalidTokenException("Le token de rafraîchissement est invalide ou n'est pas du bon type.");
         }
 
-        String username = jwtService.extractUsername(refreshToken);
+        String username = jwtProcessor.extractUsername(refreshToken);
 
         // On récupère l'utilisateur sans utiliser d'identifiants externes injectables
         Member member = memberRepository.findByEmail(username)
                 .orElseThrow(() -> new InvalidTokenException("Aucun membre correspondant au token."));
 
         // Génération du nouveau token d'accès
-        String newAccessToken = jwtService.generateAccessToken(member);
+        String newAccessToken = jwtProcessor.generateAccessToken(member);
         
         return new AuthenticationResult(member, newAccessToken, refreshToken);
     }

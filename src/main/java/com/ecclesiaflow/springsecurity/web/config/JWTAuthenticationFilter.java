@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.config;
 
-import com.ecclesiaflow.springsecurity.business.services.JWTService;
+import com.ecclesiaflow.springsecurity.web.security.JwtProcessor;
 import com.ecclesiaflow.springsecurity.business.services.MemberService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,7 +22,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JWTService jwtService;
+    private final JwtProcessor jwtProcessor;
     private final MemberService memberService;
 
 
@@ -44,12 +44,12 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         jwt = authorizationHeader.substring(7);
-        userEmail = jwtService.extractUsername(jwt);
+        userEmail = jwtProcessor.extractUsername(jwt);
 
         if(StringUtils.isNotEmpty(userEmail) && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = memberService.userDetailsService().loadUserByUsername(userEmail);
 
-            if (jwtService.isTokenValid(jwt)) {
+            if (jwtProcessor.isTokenValid(jwt)) {
                 SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken
                         (
