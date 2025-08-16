@@ -1,8 +1,8 @@
 package com.ecclesiaflow.springsecurity.web.controller;
 
-import com.ecclesiaflow.springsecurity.business.domain.TokenizedMember;
+import com.ecclesiaflow.springsecurity.business.domain.Tokens;
 import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
-import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
+import com.ecclesiaflow.springsecurity.business.domain.RefreshTokenCredentials;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
@@ -11,9 +11,10 @@ import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
-import com.ecclesiaflow.springsecurity.web.security.JwtTokenUtil;
+import com.ecclesiaflow.springsecurity.web.security.Jwt;
 import com.ecclesiaflow.springsecurity.business.mappers.AuthenticationMapper;
 import com.ecclesiaflow.springsecurity.business.mappers.MemberMapper;
+import com.ecclesiaflow.springsecurity.web.security.JwtProcessor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -64,7 +65,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
-    private final JwtTokenUtil jwtTokenUtil;
+    private final Jwt jwt;
+    private final JwtProcessor jwtProcessor;
 
     /**
      * Génère un token JWT pour l'authentification d'un utilisateur.
@@ -103,8 +105,8 @@ public class AuthenticationController {
     public ResponseEntity<JwtAuthenticationResponse> generateToken(@Valid @RequestBody SigninRequest request) throws InvalidCredentialsException, InvalidTokenException, JwtProcessingException {
         SigninCredentials credentials = MemberMapper.fromSigninRequest(request);
         Member member = authenticationService.getAuthenticatedMember(credentials);
-        TokenizedMember tokenizedMember = jwtTokenUtil.generateUserTokens(member);
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(tokenizedMember);
+        Tokens tokens = jwt.generateUserTokens(member);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(tokens);
         return ResponseEntity.ok(response);
     }
 
@@ -135,12 +137,11 @@ public class AuthenticationController {
             )
     })
     public ResponseEntity<JwtAuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
-        // Conversion DTO API → Objet métier via mapper
-        TokenRefreshData refreshData = AuthenticationMapper.fromRefreshTokenRequest(refreshTokenRequest);
-        // Rafraîchissement via l'utilitaire technique
-        TokenizedMember refreshedTokenizedMember = jwtTokenUtil.refreshToken(refreshData);
-        // Utilisation du mapper pour convertir le domaine en DTO
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(refreshedTokenizedMember);
+        RefreshTokenCredentials refreshTokenCredentials = AuthenticationMapper.fromRefreshTokenRequest(refreshTokenRequest);
+        String email = jwt.validateAndExtractEmail(refreshTokenCredentials.getRefreshToken());
+        Member member = authenticationService.getMemberByEmail(email);
+        Tokens refreshedTokens = jwt.refreshTokenForMember(refreshTokenCredentials.getRefreshToken(), member);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(refreshedTokens);
         return ResponseEntity.ok(response);
     }
 }
