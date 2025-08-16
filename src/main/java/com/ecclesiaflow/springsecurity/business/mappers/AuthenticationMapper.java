@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.business.mappers;
 
-import com.ecclesiaflow.springsecurity.business.domain.TokenizedMember;
-import com.ecclesiaflow.springsecurity.business.domain.TokenRefreshData;
+import com.ecclesiaflow.springsecurity.business.domain.Tokens;
+import com.ecclesiaflow.springsecurity.business.domain.RefreshTokenCredentials;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
 
@@ -17,7 +17,7 @@ import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
  * 
  * <p><strong>Responsabilités principales :</strong></p>
  * <ul>
- *   <li>Conversion des TokenizedMember vers JwtAuthenticationResponse</li>
+ *   <li>Conversion des Tokens vers JwtAuthenticationResponse</li>
  *   <li>Isolation complète entre couches service et web</li>
  *   <li>Transformation pure sans logique métier</li>
  * </ul>
@@ -43,16 +43,16 @@ public final class AuthenticationMapper {
      * les tokens JWT nécessaires à la réponse API.
      * </p>
      * 
-     * @param authResult le résultat d'authentification métier, non null
+     * @param tokens le résultat d'authentification métier, non null
      * @return un {@link JwtAuthenticationResponse} contenant les tokens JWT
-     * @throws NullPointerException si authResult est null
+     * @throws NullPointerException si tokens est null
      * 
      * @implNote Transformation pure sans validation - la validation est assurée par l'architecture.
      */
-    public static JwtAuthenticationResponse toDto(TokenizedMember authResult) {
+    public static JwtAuthenticationResponse toDto(Tokens tokens) {
         JwtAuthenticationResponse dto = new JwtAuthenticationResponse();
-        dto.setToken(authResult.getAccessToken());
-        dto.setRefreshToken(authResult.getRefreshToken());
+        dto.setToken(tokens.getAccessToken());
+        dto.setRefreshToken(tokens.getRefreshToken());
         return dto;
     }
 
@@ -64,12 +64,12 @@ public final class AuthenticationMapper {
      * </p>
      * 
      * @param request la requête de rafraîchissement de token API, non null
-     * @return un {@link TokenRefreshData} contenant le refresh token
+     * @return un {@link RefreshTokenCredentials} contenant le refresh token
      * @throws NullPointerException si request est null
      * 
      * @implNote Transformation pure sans validation - la validation est assurée par l'architecture.
      */
-    public static TokenRefreshData fromRefreshTokenRequest(RefreshTokenRequest request) {
-        return new TokenRefreshData(request.getToken());
+    public static RefreshTokenCredentials fromRefreshTokenRequest(RefreshTokenRequest request) {
+        return new RefreshTokenCredentials(request.getToken());
     }
 }
