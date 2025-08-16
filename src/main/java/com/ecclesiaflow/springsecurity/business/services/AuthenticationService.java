@@ -1,12 +1,13 @@
 package com.ecclesiaflow.springsecurity.business.services;
 
-import com.ecclesiaflow.springsecurity.business.domain.TokenizedMember;
 import com.ecclesiaflow.springsecurity.business.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
+import com.ecclesiaflow.springsecurity.web.exception.MemberNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Interface du service d'authentification centralisée pour EcclesiaFlow.
@@ -76,6 +77,19 @@ public interface AuthenticationService {
      */
     Member getAuthenticatedMember(SigninCredentials signinCredentials)
             throws InvalidCredentialsException, JwtProcessingException;
-    
+
+
+    /**
+     * Récupère un membre par son email.
+     * <p>
+     * Méthode métier pour récupérer un membre existant par son adresse email.
+     * Utilisée notamment lors du processus de rafraîchissement des tokens.
+     * </p>
+     *
+     * @param email l'adresse email du membre à récupérer
+     * @return le membre correspondant à l'email
+     * @throws MemberNotFoundException si aucun membre n'est trouvé pour cet email
+     */
+    Member getMemberByEmail(String email) throws MemberNotFoundException ;
 
 }
