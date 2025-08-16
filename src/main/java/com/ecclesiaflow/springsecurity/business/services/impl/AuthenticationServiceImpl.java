@@ -3,16 +3,21 @@ package com.ecclesiaflow.springsecurity.business.services.impl;
 import com.ecclesiaflow.springsecurity.business.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
+import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.business.services.MemberRegistrationService;
+import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
+import com.ecclesiaflow.springsecurity.web.exception.MemberNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 /**
  * Implémentation du service d'authentification EcclesiaFlow.
@@ -48,6 +53,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final AuthenticationManager authenticationManager;
     private final MemberRegistrationService memberRegistrationService;
+    private final MemberRepository memberRepository;
 
     @Override
     @Transactional
@@ -66,5 +72,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword())
         );
         return (Member) authentication.getPrincipal();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Member getMemberByEmail(String email) throws MemberNotFoundException {
+        return memberRepository.findByEmail(email)
+                .orElseThrow(() -> new MemberNotFoundException("Membre introuvable pour l'email: " + email));
     }
 }
