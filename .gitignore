@@ -1,0 +1,81 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### SÉCURITÉ - FICHIERS SENSIBLES ###
+# Variables d'environnement (contiennent des secrets)
+.env
+.env.local
+.env.production
+.env.staging
+
+# Fichiers de configuration avec secrets
+application-*.properties
+
+# Certificats SSL
+*.p12
+*.jks
+*.keystore
+*.truststore
+*.pem
+*.key
+*.crt
+
+# Logs avec données sensibles
+logs/
+*.log
+*.log.*
+
+# Base de données locale
+*.db
+*.sqlite
+*.sqlite3
+
+### DÉVELOPPEMENT ###
+# Fichiers temporaires
+*.tmp
+*.temp
+*~
+
+# Fichiers de sauvegarde
+*.bak
+*.backup
+
+# Fichiers OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
