@@ -27,18 +27,19 @@ public class RateLimitingInterceptor implements HandlerInterceptor {
     }
 
     private Bucket resolveBucket(String key) {
-        return cache.computeIfAbsent(key, k -> createNewBucket());
+        return cache.computeIfAbsent(key != null ? key : "unknown", k -> createNewBucket());
     }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String clientIp = getClientIP(request);
         String requestURI = request.getRequestURI();
-        
+        if (requestURI == null) {
+            return true;
+        }
         // Appliquer le rate limiting seulement sur les endpoints sensibles
         if (requestURI.contains("/ecclesiaflow/auth/") || requestURI.contains("/ecclesiaflow/members/signup")) {
             Bucket bucket = resolveBucket(clientIp);
-            
             if (bucket.tryConsume(1)) {
                 return true;
             } else {
@@ -48,14 +49,15 @@ public class RateLimitingInterceptor implements HandlerInterceptor {
                 return false;
             }
         }
-        
         return true;
     }
 
     private String getClientIP(HttpServletRequest request) {
         String xfHeader = request.getHeader("X-Forwarded-For");
         if (xfHeader == null) {
-            return request.getRemoteAddr();
+            // Gérer le cas où l'adresse IP est null
+            String remoteAddr = request.getRemoteAddr();
+            return remoteAddr != null ? remoteAddr : "unknown";
         }
         return xfHeader.split(",")[0];
     }
