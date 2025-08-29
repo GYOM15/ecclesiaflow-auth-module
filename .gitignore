@@ -41,6 +41,7 @@ build/
 
 # Fichiers de configuration avec secrets
 application-*.properties
+application.properties
 
 # Certificats SSL
 *.p12
