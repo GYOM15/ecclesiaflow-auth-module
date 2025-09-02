@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.dto;
 
+import com.ecclesiaflow.springsecurity.business.domain.MemberRegistration;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -24,7 +25,7 @@ import lombok.Data;
  * <ul>
  *   <li>Réception des données d'inscription via formulaire web</li>
  *   <li>Validation automatique par Spring Boot</li>
- *   <li>Conversion en objet métier {@link com.ecclesiaflow.springsecurity.business.domain.MemberRegistration}</li>
+ *   <li>Conversion en objet métier {@link MemberRegistration}</li>
  * </ul>
  * 
  * <p><strong>Garanties :</strong> Thread-safe, validation automatique.</p>

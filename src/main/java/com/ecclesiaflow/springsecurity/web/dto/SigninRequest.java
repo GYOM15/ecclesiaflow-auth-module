@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.dto;
 
+import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -22,7 +23,7 @@ import lombok.Data;
  * <ul>
  *   <li>Réception des identifiants via formulaire de connexion</li>
  *   <li>Validation automatique par Spring Boot</li>
- *   <li>Conversion en objet métier {@link com.ecclesiaflow.springsecurity.business.domain.SigninCredentials}</li>
+ *   <li>Conversion en objet métier {@link SigninCredentials}</li>
  * </ul>
  * 
  * <p><strong>Garanties :</strong> Thread-safe, validation automatique.</p>
