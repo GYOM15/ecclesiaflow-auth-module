@@ -14,7 +14,9 @@ import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.web.security.Jwt;
 import com.ecclesiaflow.springsecurity.business.mappers.AuthenticationMapper;
 import com.ecclesiaflow.springsecurity.business.mappers.MemberMapper;
-import com.ecclesiaflow.springsecurity.web.security.JwtProcessor;
+import com.ecclesiaflow.springsecurity.business.mappers.TemporaryTokenMapper;
+import com.ecclesiaflow.springsecurity.web.dto.TemporaryTokenRequest;
+import com.ecclesiaflow.springsecurity.web.dto.TemporaryTokenResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -66,7 +68,7 @@ public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
     private final Jwt jwt;
-    private final JwtProcessor jwtProcessor;
+    private final TemporaryTokenMapper temporaryTokenMapper;
 
     /**
      * Génère un token JWT pour l'authentification d'un utilisateur.
