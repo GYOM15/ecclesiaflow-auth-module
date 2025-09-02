@@ -138,7 +138,7 @@ public class AuthenticationController {
                     content = @Content
             )
     })
-    public ResponseEntity<JwtAuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+    public ResponseEntity<JwtAuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) throws InvalidTokenException, JwtProcessingException {
         RefreshTokenCredentials refreshTokenCredentials = AuthenticationMapper.fromRefreshTokenRequest(refreshTokenRequest);
         String email = jwt.validateAndExtractEmail(refreshTokenCredentials.getRefreshToken());
         Member member = authenticationService.getMemberByEmail(email);
