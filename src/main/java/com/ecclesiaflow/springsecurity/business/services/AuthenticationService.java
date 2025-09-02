@@ -7,7 +7,6 @@ import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException
 import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import com.ecclesiaflow.springsecurity.web.exception.MemberNotFoundException;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Interface du service d'authentification centralisée pour EcclesiaFlow.

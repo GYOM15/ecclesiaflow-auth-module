@@ -7,8 +7,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
  * <p>
  * Cette interface définit les services nécessaires à l'intégration avec Spring Security,
  * notamment la fourniture d'un {@link UserDetailsService} pour l'authentification.
- * Respecte le principe de responsabilité unique en se concentrant sur les services
- * liés aux membres pour le framework de sécurité.
  * </p>
  * 
  * <p><strong>Rôle architectural :</strong> Service de domaine - Intégration Spring Security</p>
