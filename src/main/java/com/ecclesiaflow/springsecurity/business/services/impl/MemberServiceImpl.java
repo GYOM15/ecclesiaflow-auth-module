@@ -3,7 +3,6 @@ package com.ecclesiaflow.springsecurity.business.services.impl;
 import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.business.services.MemberService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -14,8 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>
  * Cette classe fournit les services nécessaires à l'intégration avec Spring Security,
  * notamment la création d'un {@link UserDetailsService} pour l'authentification.
- * Respecte le principe de responsabilité unique en se concentrant sur les services
- * liés aux membres pour Spring Security.
  * </p>
  * 
  * <p><strong>Rôle architectural :</strong> Service de domaine - Intégration Spring Security</p>

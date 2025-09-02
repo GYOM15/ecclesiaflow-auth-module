@@ -7,8 +7,7 @@ import com.ecclesiaflow.springsecurity.io.entities.Member;
  * Service de domaine dédié à l'enregistrement de nouveaux membres EcclesiaFlow.
  * <p>
  * Cette interface définit les opérations d'inscription et de validation des nouveaux
- * membres dans le système. Respecte le principe de responsabilité unique (SRP)
- * en se concentrant uniquement sur l'enregistrement.
+ * membres dans le système.
  * </p>
  * 
  * <p><strong>Responsabilités principales :</strong></p>

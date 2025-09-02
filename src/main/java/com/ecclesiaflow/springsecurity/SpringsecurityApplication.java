@@ -26,12 +26,6 @@ public class SpringsecurityApplication implements CommandLineRunner {
 	@Value("${admin.password}")
 	private String adminPassword;
 
-	@Value("${admin.firstName:Admin}")
-	private String adminFirstName;
-
-	@Value("${admin.lastName:User}")
-	private String adminLastName;
-
 	public static void main(String[] args) {
 		SpringApplication.run(SpringsecurityApplication.class, args);
 	}
@@ -42,10 +36,7 @@ public class SpringsecurityApplication implements CommandLineRunner {
 		Member adminAccount = memberRepository.findByRole(Role.ADMIN);
 		if (adminAccount == null) {
 			Member member = new Member();
-
 			member.setEmail(adminEmail);
-			member.setFirstName(adminFirstName);
-			member.setLastName(adminLastName);
 			member.setPassword(passwordEncoderUtil.encode(adminPassword));
 			member.setRole(Role.ADMIN);
 			memberRepository.save(member);

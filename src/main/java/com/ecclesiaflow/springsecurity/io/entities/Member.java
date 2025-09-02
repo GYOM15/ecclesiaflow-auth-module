@@ -6,6 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -46,17 +47,6 @@ public class Member implements UserDetails {
     @UuidGenerator
     @Column(name = "id", columnDefinition = "BINARY(16)", updatable = false, nullable = false)
     private UUID id;
-
-    /**
-     * Prénom du membre.
-     */
-    private String firstName;
-
-    /**
-     * Nom du membre.
-     */
-    private String lastName;
-
     /**
      * Adresse e-mail du membre, utilisée comme identifiant pour la connexion.
      */
@@ -71,6 +61,7 @@ public class Member implements UserDetails {
      * Rôle du membre dans l'application, déterminant ses autorisations.
      */
     private Role role;
+    private LocalDateTime updatedAt;
 
     /**
      * Retourne les autorisations du membre sous forme de collection de {@link GrantedAuthority}.
@@ -158,59 +149,6 @@ public class Member implements UserDetails {
     }
 
     // Getters and setters
-    /**
-     * Retourne l'identifiant unique du membre.
-     *
-     * @return Identifiant unique du membre
-     */
-    public UUID getId() {
-        return id;
-    }
-
-    /**
-     * Définit l'identifiant unique du membre.
-     *
-     * @param id Identifiant unique du membre
-     */
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    /**
-     * Retourne le prénom du membre.
-     *
-     * @return Prénom du membre
-     */
-    public String getFirstName() {
-        return firstName;
-    }
-
-    /**
-     * Définit le prénom du membre.
-     *
-     * @param firstName Prénom du membre
-     */
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    /**
-     * Retourne le nom du membre.
-     *
-     * @return Nom du membre
-     */
-    public String getLastName() {
-        return lastName;
-    }
-
-    /**
-     * Définit le nom du membre.
-     *
-     * @param lastName Nom du membre
-     */
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
 
     /**
      * Retourne l'adresse e-mail du membre.
@@ -255,5 +193,9 @@ public class Member implements UserDetails {
      */
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

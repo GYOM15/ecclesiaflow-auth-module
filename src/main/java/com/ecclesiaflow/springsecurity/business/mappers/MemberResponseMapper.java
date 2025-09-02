@@ -50,8 +50,6 @@ public class MemberResponseMapper {
     public static MemberResponse fromMember(Member member, String message, String token) {
         return MemberResponse.builder()
                 .message(message)
-                .firstName(member.getFirstName())
-                .lastName(member.getLastName())
                 .password(member.getPassword())
                 .email(member.getEmail())
                 .role(member.getRole().name())
