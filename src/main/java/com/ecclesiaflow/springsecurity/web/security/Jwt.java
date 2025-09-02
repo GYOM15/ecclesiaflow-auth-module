@@ -104,4 +104,36 @@ public class Jwt {
         return new Tokens(newAccessToken, refreshToken);
     }
 
+    /**
+     * Génère un token temporaire JWT sécurisé pour la définition de mot de passe.
+     * <p>
+     * Cette méthode utilise le JwtProcessor pour créer un token temporaire sécurisé
+     * destiné à permettre à un membre de définir son mot de passe après confirmation d'email.
+     * Opération technique pure qui respecte l'architecture en couches.
+     * </p>
+     *
+     * @param email l'email du membre pour lequel générer le token temporaire
+     * @return un token JWT temporaire sécurisé
+     * @throws JwtProcessingException si la génération du token échoue
+     */
+    public String generateTemporaryToken(String email) throws JwtProcessingException {
+        return jwtProcessor.generateTemporaryToken(email);
+    }
+
+    /**
+     * Valide un token temporaire JWT pour un email donné.
+     * <p>
+     * Cette méthode utilise le JwtProcessor pour valider un token temporaire
+     * et vérifier qu'il correspond à l'email fourni. Opération technique pure
+     * qui respecte l'architecture en couches.
+     * </p>
+     *
+     * @param token le token temporaire à valider
+     * @param email l'email du membre pour lequel valider le token
+     * @return true si le token est valide et correspond à l'email, false sinon
+     */
+    public boolean validateTemporaryToken(String token, String email) {
+        return jwtProcessor.validateTemporaryToken(token, email);
+    }
+
 }
