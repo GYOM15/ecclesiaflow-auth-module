@@ -47,8 +47,6 @@ public class MemberMapper {
      */
     public static MemberRegistration fromSignUpRequest(SignUpRequest req) {
         return new MemberRegistration(
-            req.getFirstName(),
-            req.getLastName(),
             req.getEmail(),
             req.getPassword()
         );

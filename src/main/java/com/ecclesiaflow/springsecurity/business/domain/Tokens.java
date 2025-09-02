@@ -1,6 +1,5 @@
 package com.ecclesiaflow.springsecurity.business.domain;
 
-import com.ecclesiaflow.springsecurity.io.entities.Member;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
