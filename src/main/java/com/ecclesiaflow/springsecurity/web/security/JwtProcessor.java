@@ -56,6 +56,9 @@ public class JwtProcessor {
     @Value("${jwt.refresh-token.expiration}")
     private long refreshTokenExpiration;
 
+    @Value("${jwt.temporary-token.expiration:900000}") // 1 heure par défaut
+    private long temporaryTokenExpiration;
+
     // ========== PUBLIC API ==========
 
     public String generateAccessToken(UserDetails userDetails) throws JwtProcessingException {
@@ -72,21 +75,74 @@ public class JwtProcessor {
     }
 
     public boolean isTokenValid(String token) throws JwtProcessingException {
-            Claims claims = parseAndValidateClaims(token);
-            return !claims.getExpiration().before(new Date());
+        Claims claims = parseAndValidateClaims(token);
+        return !isExpired(claims);
     }
 
     public boolean isRefreshTokenValid(String token) throws JwtProcessingException, InvalidTokenException {
-        if (!isTokenValid(token)) {
-            return false;
-        }
+        // Parse and validate claims once
         Claims claims = parseAndValidateClaims(token);
+        if (isExpired(claims)) return false;
+        // Check if it's a refresh token
         String tokenType = claims.get("type", String.class);
-
         if (!"refresh".equals(tokenType)) {
             throw new InvalidTokenException("Le token fourni n'est pas un token de rafraîchissement");
         }
         return true;
+    }
+
+    /**
+     * Génère un token temporaire JWT sécurisé pour la définition de mot de passe.
+     * <p>
+     * Ce token est utilisé après confirmation d'email pour permettre à un membre
+     * de définir son mot de passe. Il a une durée de vie limitée et est marqué
+     * comme token temporaire pour éviter toute confusion avec les tokens d'accès.
+     * </p>
+     *
+     * @param email l'email du membre pour lequel générer le token temporaire
+     * @return un token JWT temporaire sécurisé
+     * @throws JwtProcessingException si la génération du token échoue
+     */
+    public String generateTemporaryToken(String email) throws JwtProcessingException {
+        Map<String, Object> extraClaims = Map.of(
+            "type", "temporary",
+            "purpose", "password_setup"
+        );
+        
+        return Jwts
+                .builder()
+                .setClaims(extraClaims)
+                .setSubject(email)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + temporaryTokenExpiration))
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
+     * Valide un token temporaire pour un email spécifique.
+     * <p>
+     * Cette méthode vérifie que le token est valide, non expiré, qu'il s'agit
+     * bien d'un token temporaire et que l'email correspond au sujet du token.
+     * </p>
+     *
+     * @param token le token temporaire à valider
+     * @param email l'email du membre pour lequel valider le token
+     * @return true si le token est valide et correspond à l'email
+     * @throws JwtProcessingException si une erreur se produit lors du traitement
+     */
+    public boolean validateTemporaryToken(String token, String email) throws JwtProcessingException, InvalidTokenException {
+        Claims claims = parseAndValidateClaims(token);
+        if (isExpired(claims)) return false;
+
+        String type = claims.get("type", String.class);
+        String purpose = claims.get("purpose", String.class);
+
+        if (!"temporary".equals(type) || !"password_setup".equals(purpose)) {
+            throw new InvalidTokenException("Le token fourni n'est pas un token temporaire valide");
+        }
+
+        return email.equals(claims.getSubject());
     }
 
     // ========== PRIVATE HELPERS ==========
@@ -109,6 +165,10 @@ public class JwtProcessor {
 
     private Claims parseAndValidateClaims(String token) throws JwtProcessingException {
         return Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token).getBody();
+    }
+
+    private boolean isExpired(Claims claims) {
+        return claims.getExpiration().before(new Date());
     }
 
     // ========== SECURITY CHECKS ==========
