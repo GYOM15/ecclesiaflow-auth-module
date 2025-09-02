@@ -48,7 +48,7 @@ public class MemberRegistrationServiceImpl implements MemberRegistrationService 
     @Override
     @Transactional
     public Member registerMember(MemberRegistration registration) {
-        if (isEmailAlreadyUsed(registration.getEmail())) {
+        if (isEmailAlreadyUsed(registration.email())) {
             throw new IllegalArgumentException("Un compte avec cet email existe déjà.");
         }
 
@@ -67,10 +67,8 @@ public class MemberRegistrationServiceImpl implements MemberRegistrationService 
      */
     private Member createMemberFromRegistration(MemberRegistration registration) {
         Member member = new Member();
-        member.setEmail(registration.getEmail());
-        member.setPassword(passwordEncoderUtil.encode(registration.getPassword()));
-        member.setFirstName(registration.getFirstName());
-        member.setLastName(registration.getLastName());
+        member.setEmail(registration.email());
+        member.setPassword(passwordEncoderUtil.encode(registration.password()));
         member.setRole(Role.MEMBER);
         return member;
     }
