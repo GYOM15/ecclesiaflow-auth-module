@@ -146,4 +146,38 @@ public class AuthenticationController {
         JwtAuthenticationResponse response = AuthenticationMapper.toDto(refreshedTokens);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Génère un token temporaire pour la confirmation d'inscription.
+     *
+     * @param temporaryTokenRequest Requête contenant l'email pour générer le token temporaire
+     * @return Réponse contenant le token temporaire
+     */
+    @PostMapping(value = "/temporary-token", produces = "application/vnd.ecclesiaflow.auth.v1+json")
+    @Operation(
+            summary = "Génération de token temporaire",
+            description = "Génère un token temporaire pour la confirmation d'inscription d'un membre"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Token temporaire généré avec succès",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = TemporaryTokenResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Email invalide",
+                    content = @Content
+            )
+    })
+    public ResponseEntity<TemporaryTokenResponse> generateTemporaryToken(@Valid @RequestBody TemporaryTokenRequest temporaryTokenRequest) throws InvalidTokenException, JwtProcessingException {
+        String email = temporaryTokenMapper.extractEmail(temporaryTokenRequest);
+        String temporaryToken = jwt.generateTemporaryToken(email);
+        TemporaryTokenResponse response = temporaryTokenMapper.toResponse(temporaryToken);
+        return ResponseEntity.ok(response);
+    }
+
 }
