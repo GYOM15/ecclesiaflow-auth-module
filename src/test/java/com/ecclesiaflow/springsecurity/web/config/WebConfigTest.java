@@ -1,5 +1,7 @@
 package com.ecclesiaflow.springsecurity.web.config;
 
+import com.ecclesiaflow.springsecurity.application.config.RateLimitingInterceptor;
+import com.ecclesiaflow.springsecurity.application.config.WebConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

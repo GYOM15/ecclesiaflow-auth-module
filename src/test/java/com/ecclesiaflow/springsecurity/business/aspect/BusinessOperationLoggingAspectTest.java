@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.business.aspect;
 
+import com.ecclesiaflow.springsecurity.application.logging.aspect.BusinessOperationLoggingAspect;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.Signature;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +16,6 @@ import ch.qos.logback.core.read.ListAppender;
 import org.slf4j.LoggerFactory;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Tests unitaires pour BusinessOperationLoggingAspect

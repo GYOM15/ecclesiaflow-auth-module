@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.web.config;
+package com.ecclesiaflow.springsecurity.application.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;

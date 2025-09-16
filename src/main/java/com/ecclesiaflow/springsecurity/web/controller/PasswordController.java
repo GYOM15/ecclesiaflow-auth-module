@@ -89,7 +89,6 @@ public class PasswordController {
         );
 
         TemporaryTokenResponse response = temporaryTokenMapper.toResponse(
-                isValidToken,
                 temporaryTokenRequest.getTemporaryToken()
         );
 

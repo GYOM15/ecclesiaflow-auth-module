@@ -1,5 +1,7 @@
 package com.ecclesiaflow.springsecurity.web.config;
 
+import com.ecclesiaflow.springsecurity.application.config.JWTAuthenticationFilter;
+import com.ecclesiaflow.springsecurity.application.config.SecurityConfiguration;
 import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
 import com.ecclesiaflow.springsecurity.business.services.MemberService;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,9 +17,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;

@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.business.aspect;
+package com.ecclesiaflow.springsecurity.application.logging.aspect;
 
 import com.ecclesiaflow.springsecurity.io.annotation.LogExecution;
 import lombok.extern.slf4j.Slf4j;

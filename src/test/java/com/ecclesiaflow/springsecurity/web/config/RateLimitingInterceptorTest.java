@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.config;
 
+import com.ecclesiaflow.springsecurity.application.config.RateLimitingInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;

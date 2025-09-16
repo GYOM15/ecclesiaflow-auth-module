@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.web.config;
+package com.ecclesiaflow.springsecurity.application.config;
 
 import com.ecclesiaflow.springsecurity.web.security.JwtProcessor;
 import com.ecclesiaflow.springsecurity.business.services.MemberService;

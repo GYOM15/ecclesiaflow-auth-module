@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.web.config;
+package com.ecclesiaflow.springsecurity.application.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

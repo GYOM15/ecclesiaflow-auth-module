@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.config;
 
+import com.ecclesiaflow.springsecurity.application.config.JWTAuthenticationFilter;
 import com.ecclesiaflow.springsecurity.business.services.MemberService;
 import com.ecclesiaflow.springsecurity.web.security.JwtProcessor;
 import jakarta.servlet.FilterChain;

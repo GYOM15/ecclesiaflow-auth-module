@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.web.config;
+package com.ecclesiaflow.springsecurity.application.config;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;

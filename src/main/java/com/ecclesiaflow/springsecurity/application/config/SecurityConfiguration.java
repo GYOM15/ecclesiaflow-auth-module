@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.web.config;
+package com.ecclesiaflow.springsecurity.application.config;
 
 import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
 import com.ecclesiaflow.springsecurity.io.entities.Role;
