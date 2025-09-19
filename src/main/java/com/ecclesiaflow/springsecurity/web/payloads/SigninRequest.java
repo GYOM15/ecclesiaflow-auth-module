@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.web.dto;
+package com.ecclesiaflow.springsecurity.web.payloads;
 
 import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
 import jakarta.validation.constraints.Email;

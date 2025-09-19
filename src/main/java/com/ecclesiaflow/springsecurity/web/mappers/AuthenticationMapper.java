@@ -3,7 +3,7 @@ package com.ecclesiaflow.springsecurity.web.mappers;
 import com.ecclesiaflow.springsecurity.business.domain.Tokens;
 import com.ecclesiaflow.springsecurity.business.domain.RefreshTokenCredentials;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
-import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
+import com.ecclesiaflow.springsecurity.web.payloads.RefreshTokenRequest;
 
 /**
  * Mapper statique pour la conversion entre objets métier d'authentification et DTOs web.

@@ -2,7 +2,7 @@ package com.ecclesiaflow.springsecurity.web.controller;
 
 import com.ecclesiaflow.springsecurity.business.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.web.dto.MemberResponse;
-import com.ecclesiaflow.springsecurity.web.dto.SignUpRequest;
+import com.ecclesiaflow.springsecurity.web.payloads.SignUpRequest;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.web.mappers.MemberMapper;

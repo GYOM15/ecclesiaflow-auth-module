@@ -3,7 +3,7 @@ package com.ecclesiaflow.springsecurity.business.mappers;
 import com.ecclesiaflow.springsecurity.business.domain.Tokens;
 import com.ecclesiaflow.springsecurity.business.domain.RefreshTokenCredentials;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
-import com.ecclesiaflow.springsecurity.web.dto.RefreshTokenRequest;
+import com.ecclesiaflow.springsecurity.web.payloads.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.web.mappers.AuthenticationMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

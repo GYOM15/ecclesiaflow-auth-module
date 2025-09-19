@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.web.dto;
+package com.ecclesiaflow.springsecurity.web.payloads;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

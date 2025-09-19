@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.mappers;
 
-import com.ecclesiaflow.springsecurity.web.dto.TemporaryTokenRequest;
+import com.ecclesiaflow.springsecurity.web.payloads.TemporaryTokenRequest;
 import com.ecclesiaflow.springsecurity.web.dto.TemporaryTokenResponse;
 import org.springframework.stereotype.Component;
 

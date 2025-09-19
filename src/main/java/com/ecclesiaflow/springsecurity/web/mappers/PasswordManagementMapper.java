@@ -3,7 +3,7 @@ package com.ecclesiaflow.springsecurity.web.mappers;
 
 import com.ecclesiaflow.springsecurity.business.domain.PasswordManagement;
 import com.ecclesiaflow.springsecurity.web.dto.PasswordManagementResponse;
-import com.ecclesiaflow.springsecurity.web.dto.SetPasswordRequest;
+import com.ecclesiaflow.springsecurity.web.payloads.SetPasswordRequest;
 import org.springframework.stereotype.Component;
 
 @Component
