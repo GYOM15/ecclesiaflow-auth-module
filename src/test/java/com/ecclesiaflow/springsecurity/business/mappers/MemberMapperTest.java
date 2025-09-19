@@ -4,6 +4,7 @@ import com.ecclesiaflow.springsecurity.business.domain.MemberRegistration;
 import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
 import com.ecclesiaflow.springsecurity.web.dto.SignUpRequest;
 import com.ecclesiaflow.springsecurity.web.dto.SigninRequest;
+import com.ecclesiaflow.springsecurity.web.mappers.MemberMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

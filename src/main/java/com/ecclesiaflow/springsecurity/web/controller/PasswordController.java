@@ -1,8 +1,8 @@
 package com.ecclesiaflow.springsecurity.web.controller;
 
 import com.ecclesiaflow.springsecurity.business.domain.PasswordManagement;
-import com.ecclesiaflow.springsecurity.business.mappers.PasswordManagementMapper;
-import com.ecclesiaflow.springsecurity.business.mappers.TemporaryTokenMapper;
+import com.ecclesiaflow.springsecurity.web.mappers.PasswordManagementMapper;
+import com.ecclesiaflow.springsecurity.web.mappers.TemporaryTokenMapper;
 import com.ecclesiaflow.springsecurity.business.services.PasswordService;
 import com.ecclesiaflow.springsecurity.web.dto.*;
 import com.ecclesiaflow.springsecurity.web.security.Jwt;

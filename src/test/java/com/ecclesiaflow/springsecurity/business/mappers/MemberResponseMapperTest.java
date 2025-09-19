@@ -3,14 +3,11 @@ package com.ecclesiaflow.springsecurity.business.mappers;
 import com.ecclesiaflow.springsecurity.web.dto.MemberResponse;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.io.entities.Role;
+import com.ecclesiaflow.springsecurity.web.mappers.MemberResponseMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;

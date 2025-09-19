@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.business.mappers;
+package com.ecclesiaflow.springsecurity.web.mappers;
 
 
 import com.ecclesiaflow.springsecurity.business.domain.PasswordManagement;

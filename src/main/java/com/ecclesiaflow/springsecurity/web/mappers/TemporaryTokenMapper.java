@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.business.mappers;
+package com.ecclesiaflow.springsecurity.web.mappers;
 
 import com.ecclesiaflow.springsecurity.web.dto.TemporaryTokenRequest;
 import com.ecclesiaflow.springsecurity.web.dto.TemporaryTokenResponse;
