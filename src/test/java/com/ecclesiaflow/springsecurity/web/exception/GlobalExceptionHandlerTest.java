@@ -1,6 +1,7 @@
 package com.ecclesiaflow.springsecurity.web.exception;
 
 import com.ecclesiaflow.springsecurity.web.dto.ErrorResponse;
+import com.ecclesiaflow.springsecurity.web.exception.advice.GlobalExceptionHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

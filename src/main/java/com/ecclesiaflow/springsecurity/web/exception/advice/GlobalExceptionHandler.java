@@ -1,6 +1,7 @@
-package com.ecclesiaflow.springsecurity.web.exception;
+package com.ecclesiaflow.springsecurity.web.exception.advice;
 
 import com.ecclesiaflow.springsecurity.web.dto.ErrorResponse;
+import com.ecclesiaflow.springsecurity.web.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
