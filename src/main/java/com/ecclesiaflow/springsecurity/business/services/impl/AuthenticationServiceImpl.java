@@ -8,7 +8,7 @@ import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.business.services.MemberRegistrationService;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
-import com.ecclesiaflow.springsecurity.web.exception.MemberNotFoundException;
+import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

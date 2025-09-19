@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.exception;
 
+import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
 import com.ecclesiaflow.springsecurity.web.dto.ErrorResponse;
 import com.ecclesiaflow.springsecurity.web.exception.advice.GlobalExceptionHandler;
 import jakarta.servlet.http.HttpServletRequest;

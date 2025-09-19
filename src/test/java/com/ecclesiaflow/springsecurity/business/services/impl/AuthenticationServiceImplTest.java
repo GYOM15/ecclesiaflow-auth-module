@@ -6,9 +6,7 @@ import com.ecclesiaflow.springsecurity.business.services.MemberRegistrationServi
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.io.entities.Role;
 import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
-import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
-import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
-import com.ecclesiaflow.springsecurity.web.exception.MemberNotFoundException;
+import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +24,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
