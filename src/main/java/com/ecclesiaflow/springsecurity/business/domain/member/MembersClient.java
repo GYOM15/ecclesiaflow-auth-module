@@ -1,6 +1,4 @@
-package com.ecclesiaflow.springsecurity.business.services;
-
-import reactor.core.publisher.Mono;
+package com.ecclesiaflow.springsecurity.business.domain.member;
 
 /**
  * Service pour communiquer avec le module Members d'EcclesiaFlow.
@@ -20,7 +18,7 @@ import reactor.core.publisher.Mono;
  * @author EcclesiaFlow Team
  * @since 1.0.0
  */
-public interface MembersModuleService {
+public interface MembersClient {
     
     /**
      * Vérifie si un membre avec cet email est confirmé.

@@ -1,6 +1,6 @@
-package com.ecclesiaflow.springsecurity.business.services.impl;
+package com.ecclesiaflow.springsecurity.web.client;
 
-import com.ecclesiaflow.springsecurity.business.services.MembersModuleService;
+import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class MembersModuleServiceImpl implements MembersModuleService {
+public class MembersClientImpl implements MembersClient {
 
     private final WebClient membersWebClient;
 

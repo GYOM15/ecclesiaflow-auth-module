@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.business.services.impl;
 
 import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
-import com.ecclesiaflow.springsecurity.business.services.MembersModuleService;
+import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
 import com.ecclesiaflow.springsecurity.business.services.PasswordService;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.io.entities.Role;
@@ -20,7 +20,7 @@ public class PasswordServiceImpl implements PasswordService {
     private final MemberRepository memberRepository;
     private final PasswordEncoderUtil passwordEncoder;
     private final Jwt jwt;
-    private final MembersModuleService membersModuleService;
+    private final MembersClient membersClient;
 
     @Override
     @Transactional
@@ -30,7 +30,7 @@ public class PasswordServiceImpl implements PasswordService {
             throw new RuntimeException("Token temporaire invalide ou expiré");
         }
         // Vérifier la confirmation via le module Members
-        if (membersModuleService.isEmailNotConfirmed(email)) {
+        if (membersClient.isEmailNotConfirmed(email)) {
             throw new RuntimeException("Le compte doit être confirmé avant de définir un mot de passe");
         }
 
@@ -53,7 +53,7 @@ public class PasswordServiceImpl implements PasswordService {
     @Transactional
     public void changePassword(String email, String currentPassword, String newPassword) {
         // Vérifier la confirmation via le module Members
-        if (membersModuleService.isEmailNotConfirmed(email)) {
+        if (membersClient.isEmailNotConfirmed(email)) {
             throw new RuntimeException("Le compte doit être confirmé pour changer le mot de passe");
         }
 
