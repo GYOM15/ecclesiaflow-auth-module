@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.security;
 
-import com.ecclesiaflow.springsecurity.business.domain.Tokens;
+import com.ecclesiaflow.springsecurity.business.domain.token.Tokens;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.io.entities.Role;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;

@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.business.domain;
+package com.ecclesiaflow.springsecurity.business.domain.token;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
