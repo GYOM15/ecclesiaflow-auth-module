@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.business.services.impl;
 
-import com.ecclesiaflow.springsecurity.business.domain.MemberRegistration;
+import com.ecclesiaflow.springsecurity.business.domain.member.MemberRegistration;
 import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.io.entities.Role;

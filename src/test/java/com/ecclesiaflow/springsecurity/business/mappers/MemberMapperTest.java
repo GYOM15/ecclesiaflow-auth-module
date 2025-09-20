@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.business.mappers;
 
-import com.ecclesiaflow.springsecurity.business.domain.MemberRegistration;
-import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
+import com.ecclesiaflow.springsecurity.business.domain.member.MemberRegistration;
+import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
 import com.ecclesiaflow.springsecurity.web.payloads.SignUpRequest;
 import com.ecclesiaflow.springsecurity.web.payloads.SigninRequest;
 import com.ecclesiaflow.springsecurity.web.mappers.MemberMapper;

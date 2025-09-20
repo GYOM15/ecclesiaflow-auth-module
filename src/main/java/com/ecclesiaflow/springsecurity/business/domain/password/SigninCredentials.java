@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.business.domain;
+package com.ecclesiaflow.springsecurity.business.domain.password;
 
 /**
  * Objet métier représentant les identifiants de connexion d'un utilisateur.

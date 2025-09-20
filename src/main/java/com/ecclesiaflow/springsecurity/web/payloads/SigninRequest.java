@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.payloads;
 
-import com.ecclesiaflow.springsecurity.business.domain.SigninCredentials;
+import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

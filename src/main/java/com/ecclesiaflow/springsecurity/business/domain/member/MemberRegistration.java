@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.business.domain;
+package com.ecclesiaflow.springsecurity.business.domain.member;
 
 /**
  * Objet métier représentant les données d'inscription d'un nouveau membre EcclesiaFlow.

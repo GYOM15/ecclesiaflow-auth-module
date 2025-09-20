@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.payloads;
 
-import com.ecclesiaflow.springsecurity.business.domain.MemberRegistration;
+import com.ecclesiaflow.springsecurity.business.domain.member.MemberRegistration;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
