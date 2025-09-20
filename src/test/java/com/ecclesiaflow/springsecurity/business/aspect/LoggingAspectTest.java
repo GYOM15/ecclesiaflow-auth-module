@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.business.aspect;
 
 import com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect;
-import com.ecclesiaflow.springsecurity.io.annotation.LogExecution;
+import com.ecclesiaflow.springsecurity.application.logging.annotation.LogExecution;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.Signature;

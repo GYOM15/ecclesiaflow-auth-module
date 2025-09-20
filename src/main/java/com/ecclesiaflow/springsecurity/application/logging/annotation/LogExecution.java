@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.io.annotation;
+package com.ecclesiaflow.springsecurity.application.logging.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
