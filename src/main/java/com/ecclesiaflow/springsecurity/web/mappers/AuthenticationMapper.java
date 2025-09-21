@@ -51,8 +51,8 @@ public final class AuthenticationMapper {
      */
     public static JwtAuthenticationResponse toDto(UserTokens userTokens) {
         JwtAuthenticationResponse dto = new JwtAuthenticationResponse();
-        dto.setToken(userTokens.getAccessToken());
-        dto.setRefreshToken(userTokens.getRefreshToken());
+        dto.setToken(userTokens.accessToken());
+        dto.setRefreshToken(userTokens.refreshToken());
         return dto;
     }
 

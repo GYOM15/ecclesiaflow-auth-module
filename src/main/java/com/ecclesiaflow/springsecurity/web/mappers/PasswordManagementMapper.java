@@ -10,8 +10,8 @@ public class PasswordManagementMapper {
     public static PasswordManagementResponse toDtoWithTokens(String message, UserTokens userTokens, Long expiresIn) {
         return PasswordManagementResponse.builder()
                 .message(message)
-                .accessToken(userTokens.getAccessToken())
-                .refreshToken(userTokens.getRefreshToken())
+                .accessToken(userTokens.accessToken())
+                .refreshToken(userTokens.refreshToken())
                 .expiresIn(expiresIn)
                 .build();
     }

@@ -1,9 +1,5 @@
 package com.ecclesiaflow.springsecurity.business.domain.token;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
  * Objet métier représentant le résultat d'une authentification réussie.
  * <p>
@@ -33,10 +29,5 @@ import lombok.NoArgsConstructor;
  * @author EcclesiaFlow Team
  * @since 1.0.0
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class UserTokens {
-    private String accessToken;
-    private String refreshToken;
+public record UserTokens (String accessToken,String refreshToken) {
 }
