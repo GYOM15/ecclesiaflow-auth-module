@@ -91,4 +91,21 @@ public interface AuthenticationService {
      */
     Member getMemberByEmail(String email) throws MemberNotFoundException ;
 
+    /**
+     * Valide un token temporaire et extrait l'email du membre.
+     * <p>
+     * Cette méthode valide la signature, l'expiration et le format du token temporaire
+     * généré lors de la confirmation d'un membre. Elle respecte le principe SRP en
+     * se concentrant uniquement sur la validation d'authentification.
+     * </p>
+     * 
+     * @param temporaryToken le token temporaire JWT à valider
+     * @return l'email du membre extrait du token validé
+     * @throws InvalidCredentialsException si le token est invalide, expiré ou malformé
+     * @throws IllegalArgumentException si temporaryToken est null ou vide
+     * 
+     * @implNote Utilise le service JWT pour la validation technique du token.
+     */
+    String getEmailFromValidatedTempToken(String temporaryToken) throws InvalidCredentialsException;
+
 }

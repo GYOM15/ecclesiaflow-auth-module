@@ -9,6 +9,7 @@ import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.business.services.MemberRegistrationService;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
+import com.ecclesiaflow.springsecurity.web.security.Jwt;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -51,6 +52,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final MemberRegistrationService memberRegistrationService;
     private final MemberRepository memberRepository;
+    private final Jwt jwt;
 
     @Override
     @Transactional
@@ -76,5 +78,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public Member getMemberByEmail(String email) throws MemberNotFoundException {
         return memberRepository.findByEmail(email)
                 .orElseThrow(() -> new MemberNotFoundException("Membre introuvable pour l'email: " + email));
+    }
+
+    @Override
+    public String getEmailFromValidatedTempToken(String temporaryToken) throws InvalidCredentialsException {
+        if (temporaryToken == null || temporaryToken.trim().isEmpty()) {
+            throw new IllegalArgumentException("Le token temporaire ne peut pas être null ou vide");
+        }
+        String email = jwt.extractEmailFromTemporaryToken(temporaryToken);
+        if (!jwt.validateTemporaryToken(temporaryToken, email)) {
+            throw new InvalidCredentialsException("Token temporaire invalide ou expiré");
+        }
+        return email;
     }
 }
