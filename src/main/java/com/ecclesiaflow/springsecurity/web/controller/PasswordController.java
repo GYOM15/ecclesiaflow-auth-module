@@ -1,13 +1,13 @@
 package com.ecclesiaflow.springsecurity.web.controller;
 
-import com.ecclesiaflow.springsecurity.business.domain.password.PasswordManagement;
+import com.ecclesiaflow.springsecurity.business.domain.token.Tokens;
+import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.mappers.PasswordManagementMapper;
-import com.ecclesiaflow.springsecurity.web.mappers.TemporaryTokenMapper;
 import com.ecclesiaflow.springsecurity.business.services.PasswordService;
+import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.web.dto.*;
 import com.ecclesiaflow.springsecurity.web.payloads.ChangePasswordRequest;
 import com.ecclesiaflow.springsecurity.web.payloads.SetPasswordRequest;
-import com.ecclesiaflow.springsecurity.web.payloads.TempTokenValidationRequest;
 import com.ecclesiaflow.springsecurity.web.security.Jwt;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,35 +29,40 @@ import org.springframework.web.bind.annotation.*;
 public class PasswordController {
 
     private final PasswordService passwordService;
+    private final AuthenticationService authenticationService;
     private final Jwt jwt;
-    private final TemporaryTokenMapper temporaryTokenMapper;
-    private final PasswordManagementMapper passwordManagementMapper;
+    
+    @Value("${jwt.token.expiration}")
+    private long accessTokenExpiration;
 
-    /**
-     * Définit le mot de passe initial d'un membre.
-     */
     @PostMapping(value = "/password", produces = "application/vnd.ecclesiaflow.auth.v1+json")
     @Operation(summary = "Définir le mot de passe initial",
-            description = "Définit le mot de passe initial d'un membre après confirmation")
+            description = "Définit le mot de passe initial d'un membre après confirmation et génère automatiquement " +
+                         "ses tokens d'authentification (access token et refresh token) pour une connexion immédiate. " +
+                         "Le token temporaire doit être fourni dans le header Authorization au format 'Bearer {token}' " +
+                         "pour des raisons de sécurité.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Mot de passe défini avec succès", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Token invalide ou données incorrectes", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Mot de passe défini avec succès et tokens générés", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Token invalide ou données incorrectes", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Header Authorization manquant ou format invalide", content = @Content)
     })
     public ResponseEntity<PasswordManagementResponse> setPassword(
+            @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody SetPasswordRequest passwordRequest) {
-        PasswordManagement passwordManagement = passwordManagementMapper.fromSetPasswordRequest(passwordRequest);
-        passwordService.setInitialPassword(
-                passwordManagement.getEmail(),
-                passwordManagement.getPassword(),
-                passwordManagement.getTemporaryToken()
+
+        String temporaryToken = extractTokenFromHeader(authorizationHeader);
+        String validatedEmail = authenticationService.getEmailFromValidatedTempToken(temporaryToken);
+        passwordService.setInitialPassword(validatedEmail, passwordRequest.getPassword());
+        Member member = authenticationService.getMemberByEmail(validatedEmail);
+        Tokens tokens = jwt.generateUserTokens(member);
+        PasswordManagementResponse response = PasswordManagementMapper.toDtoWithTokens(
+            "Mot de passe défini avec succès. Vous êtes maintenant connecté.",
+            tokens,
+            accessTokenExpiration / 1000
         );
-        PasswordManagementResponse passwordManagementResponse = PasswordManagementMapper.toDto("Mot de passe défini avec succès");
-        return ResponseEntity.ok(passwordManagementResponse);
+        return ResponseEntity.ok(response);
     }
 
-    /**
-     * Change le mot de passe d'un membre.
-     */
     @PostMapping(value = "/new-password", produces = "application/vnd.ecclesiaflow.auth.v1+json")
     @Operation(summary = "Changer le mot de passe",
             description = "Change le mot de passe d'un membre authentifié")
@@ -73,28 +79,10 @@ public class PasswordController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * Valide un token temporaire.
-     */
-    @PostMapping(value = "/temporary-valid-token", produces = "application/vnd.ecclesiaflow.auth.v1+json")
-    @Operation(summary = "Validation de token temporaire",
-            description = "Valide un token temporaire pour un email donné")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Token valide", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Token invalide ou expiré", content = @Content)
-    })
-    public ResponseEntity<TemporaryTokenResponse> validateTemporaryToken(
-            @Valid @RequestBody TempTokenValidationRequest temporaryTokenRequest) {
-
-        boolean isValidToken = jwt.validateTemporaryToken(
-                temporaryTokenRequest.getTemporaryToken(),
-                temporaryTokenRequest.getEmail()
-        );
-
-        TemporaryTokenResponse response = temporaryTokenMapper.toResponse(
-                temporaryTokenRequest.getTemporaryToken()
-        );
-
-        return isValidToken ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
+    private String extractTokenFromHeader(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Header Authorization manquant ou format invalide. Format attendu: Bearer {token}");
+        }
+        return authorizationHeader.substring(7);
     }
 }
