@@ -70,6 +70,6 @@ public final class AuthenticationMapper {
      * @implNote Transformation pure sans validation - la validation est assurée par l'architecture.
      */
     public static TokenCredentials fromRefreshTokenRequest(RefreshTokenRequest request) {
-        return new TokenCredentials(request.getToken());
+        return new TokenCredentials(request.getRefreshToken());
     }
 }

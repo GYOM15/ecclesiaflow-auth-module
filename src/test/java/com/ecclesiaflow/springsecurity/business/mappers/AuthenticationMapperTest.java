@@ -77,14 +77,14 @@ class AuthenticationMapperTest {
         // Given
         String refreshToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh";
         RefreshTokenRequest request = new RefreshTokenRequest();
-        request.setToken(refreshToken);
+        request.setRefreshToken(refreshToken);
 
         // When
         TokenCredentials credentials = AuthenticationMapper.fromRefreshTokenRequest(request);
 
         // Then
         assertThat(credentials).isNotNull();
-        assertThat(credentials.getToken()).isEqualTo(refreshToken);
+        assertThat(credentials.token()).isEqualTo(refreshToken);
     }
 
     @Test
@@ -92,14 +92,14 @@ class AuthenticationMapperTest {
     void shouldHandleRefreshTokenRequestWithNullToken() {
         // Given
         RefreshTokenRequest request = new RefreshTokenRequest();
-        request.setToken(null);
+        request.setRefreshToken(null);
 
         // When
         TokenCredentials credentials = AuthenticationMapper.fromRefreshTokenRequest(request);
 
         // Then
         assertThat(credentials).isNotNull();
-        assertThat(credentials.getToken()).isNull();
+        assertThat(credentials.token()).isNull();
     }
 
     @Test
