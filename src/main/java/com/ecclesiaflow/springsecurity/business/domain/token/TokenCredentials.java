@@ -32,10 +32,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RefreshTokenCredentials {
+public class TokenCredentials {
     
     /**
      * Le refresh token JWT à valider et utiliser pour générer un nouveau access token.
      */
-    private String refreshToken;
+    private String Token;
 }

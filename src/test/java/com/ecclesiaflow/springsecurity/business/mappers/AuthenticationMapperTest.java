@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.business.mappers;
 
-import com.ecclesiaflow.springsecurity.business.domain.token.Tokens;
-import com.ecclesiaflow.springsecurity.business.domain.token.RefreshTokenCredentials;
+import com.ecclesiaflow.springsecurity.business.domain.token.TokenCredentials;
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.web.payloads.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.web.mappers.AuthenticationMapper;
@@ -20,15 +20,15 @@ import static org.assertj.core.api.Assertions.*;
 class AuthenticationMapperTest {
 
     @Test
-    @DisplayName("Devrait convertir Tokens vers JwtAuthenticationResponse correctement")
+    @DisplayName("Devrait convertir UserTokens vers JwtAuthenticationResponse correctement")
     void shouldConvertTokensToJwtAuthenticationResponse() {
         // Given
         String accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.access";
         String refreshToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh";
-        Tokens tokens = new Tokens(accessToken, refreshToken);
+        UserTokens userTokens = new UserTokens(accessToken, refreshToken);
 
         // When
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(tokens);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(userTokens);
 
         // Then
         assertThat(response).isNotNull();
@@ -40,14 +40,14 @@ class AuthenticationMapperTest {
     @DisplayName("Devrait gérer les tokens avec des valeurs nulles")
     void shouldHandleTokensWithNullValues() {
         // Given
-        Tokens tokensWithNullAccess = new Tokens(null, "refreshToken");
-        Tokens tokensWithNullRefresh = new Tokens("accessToken", null);
-        Tokens tokensWithBothNull = new Tokens(null, null);
+        UserTokens userTokensWithNullAccess = new UserTokens(null, "refreshToken");
+        UserTokens userTokensWithNullRefresh = new UserTokens("accessToken", null);
+        UserTokens userTokensWithBothNull = new UserTokens(null, null);
 
         // When
-        JwtAuthenticationResponse response1 = AuthenticationMapper.toDto(tokensWithNullAccess);
-        JwtAuthenticationResponse response2 = AuthenticationMapper.toDto(tokensWithNullRefresh);
-        JwtAuthenticationResponse response3 = AuthenticationMapper.toDto(tokensWithBothNull);
+        JwtAuthenticationResponse response1 = AuthenticationMapper.toDto(userTokensWithNullAccess);
+        JwtAuthenticationResponse response2 = AuthenticationMapper.toDto(userTokensWithNullRefresh);
+        JwtAuthenticationResponse response3 = AuthenticationMapper.toDto(userTokensWithBothNull);
 
         // Then
         assertThat(response1).isNotNull();
@@ -64,7 +64,7 @@ class AuthenticationMapperTest {
     }
 
     @Test
-    @DisplayName("Devrait lancer NullPointerException pour Tokens null")
+    @DisplayName("Devrait lancer NullPointerException pour UserTokens null")
     void shouldThrowNullPointerExceptionForNullTokens() {
         // When & Then
         assertThatThrownBy(() -> AuthenticationMapper.toDto(null))
@@ -72,7 +72,7 @@ class AuthenticationMapperTest {
     }
 
     @Test
-    @DisplayName("Devrait convertir RefreshTokenRequest vers RefreshTokenCredentials correctement")
+    @DisplayName("Devrait convertir RefreshTokenRequest vers TokenCredentials correctement")
     void shouldConvertRefreshTokenRequestToCredentials() {
         // Given
         String refreshToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh";
@@ -80,11 +80,11 @@ class AuthenticationMapperTest {
         request.setToken(refreshToken);
 
         // When
-        RefreshTokenCredentials credentials = AuthenticationMapper.fromRefreshTokenRequest(request);
+        TokenCredentials credentials = AuthenticationMapper.fromRefreshTokenRequest(request);
 
         // Then
         assertThat(credentials).isNotNull();
-        assertThat(credentials.getRefreshToken()).isEqualTo(refreshToken);
+        assertThat(credentials.getToken()).isEqualTo(refreshToken);
     }
 
     @Test
@@ -95,11 +95,11 @@ class AuthenticationMapperTest {
         request.setToken(null);
 
         // When
-        RefreshTokenCredentials credentials = AuthenticationMapper.fromRefreshTokenRequest(request);
+        TokenCredentials credentials = AuthenticationMapper.fromRefreshTokenRequest(request);
 
         // Then
         assertThat(credentials).isNotNull();
-        assertThat(credentials.getRefreshToken()).isNull();
+        assertThat(credentials.getToken()).isNull();
     }
 
     @Test
@@ -116,10 +116,10 @@ class AuthenticationMapperTest {
         // Given
         String originalAccessToken = "access.token.with.special.chars!@#$%";
         String originalRefreshToken = "refresh.token.with.unicode.éàùç";
-        Tokens originalTokens = new Tokens(originalAccessToken, originalRefreshToken);
+        UserTokens originalUserTokens = new UserTokens(originalAccessToken, originalRefreshToken);
 
         // When
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(originalTokens);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(originalUserTokens);
 
         // Then
         assertThat(response.getToken()).isEqualTo(originalAccessToken);
@@ -136,11 +136,11 @@ class AuthenticationMapperTest {
         // Given
         String accessToken = "accessToken";
         String refreshToken = "refreshToken";
-        Tokens tokens = new Tokens(accessToken, refreshToken);
+        UserTokens userTokens = new UserTokens(accessToken, refreshToken);
 
         // When
-        JwtAuthenticationResponse response1 = AuthenticationMapper.toDto(tokens);
-        JwtAuthenticationResponse response2 = AuthenticationMapper.toDto(tokens);
+        JwtAuthenticationResponse response1 = AuthenticationMapper.toDto(userTokens);
+        JwtAuthenticationResponse response2 = AuthenticationMapper.toDto(userTokens);
 
         // Then
         assertThat(response1).isNotSameAs(response2);
@@ -158,10 +158,10 @@ class AuthenticationMapperTest {
         // Given
         String longAccessToken = "a".repeat(1000);
         String longRefreshToken = "b".repeat(1500);
-        Tokens tokens = new Tokens(longAccessToken, longRefreshToken);
+        UserTokens userTokens = new UserTokens(longAccessToken, longRefreshToken);
 
         // When
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(tokens);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(userTokens);
 
         // Then
         assertThat(response).isNotNull();
@@ -175,10 +175,10 @@ class AuthenticationMapperTest {
     @DisplayName("Devrait gérer les tokens vides")
     void shouldHandleEmptyTokens() {
         // Given
-        Tokens tokensWithEmptyStrings = new Tokens("", "");
+        UserTokens userTokensWithEmptyStrings = new UserTokens("", "");
 
         // When
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(tokensWithEmptyStrings);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(userTokensWithEmptyStrings);
 
         // Then
         assertThat(response).isNotNull();

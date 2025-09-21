@@ -1,8 +1,8 @@
 package com.ecclesiaflow.springsecurity.web.controller;
 
-import com.ecclesiaflow.springsecurity.business.domain.token.Tokens;
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
-import com.ecclesiaflow.springsecurity.business.domain.token.RefreshTokenCredentials;
+import com.ecclesiaflow.springsecurity.business.domain.token.TokenCredentials;
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
@@ -52,7 +52,7 @@ class AuthenticationControllerTest {
 
         SigninCredentials credentials = new SigninCredentials("user@example.com", "password123");
         Member member = new Member();
-        Tokens tokens = new Tokens("access-token-123", "refresh-token-456");
+        UserTokens userTokens = new UserTokens("access-token-123", "refresh-token-456");
         JwtAuthenticationResponse expectedResponse = new JwtAuthenticationResponse();
         expectedResponse.setToken("access-token-123");
         expectedResponse.setRefreshToken("refresh-token-456");
@@ -65,11 +65,11 @@ class AuthenticationControllerTest {
                     .thenReturn(credentials);
 
             // ✅ Mock statique AuthenticationMapper
-            mockedMapper.when(() -> AuthenticationMapper.toDto(tokens))
+            mockedMapper.when(() -> AuthenticationMapper.toDto(userTokens))
                     .thenReturn(expectedResponse);
 
             when(authenticationService.getAuthenticatedMember(any(SigninCredentials.class))).thenReturn(member);
-            when(jwt.generateUserTokens(any(Member.class))).thenReturn(tokens);
+            when(jwt.generateUserTokens(any(Member.class))).thenReturn(userTokens);
 
             // When
             ResponseEntity<JwtAuthenticationResponse> response = authenticationController.generateToken(request);
@@ -91,9 +91,9 @@ class AuthenticationControllerTest {
         RefreshTokenRequest request = new RefreshTokenRequest();
         request.setToken("refresh-token-456");
 
-        RefreshTokenCredentials refreshTokenCredentials = new RefreshTokenCredentials("refresh-token-456");
+        TokenCredentials tokenCredentials = new TokenCredentials("refresh-token-456");
         Member member = new Member();
-        Tokens tokens = new Tokens("new-access-token-123", "new-refresh-token-456");
+        UserTokens userTokens = new UserTokens("new-access-token-123", "new-refresh-token-456");
         JwtAuthenticationResponse expectedResponse = new JwtAuthenticationResponse();
         expectedResponse.setToken("new-access-token-123");
         expectedResponse.setRefreshToken("new-refresh-token-456");
@@ -101,13 +101,13 @@ class AuthenticationControllerTest {
         try (MockedStatic<AuthenticationMapper> mockedMapper = mockStatic(AuthenticationMapper.class)) {
             // ✅ mock statiques correctement
             mockedMapper.when(() -> AuthenticationMapper.fromRefreshTokenRequest(request))
-                    .thenReturn(refreshTokenCredentials);
-            mockedMapper.when(() -> AuthenticationMapper.toDto(tokens))
+                    .thenReturn(tokenCredentials);
+            mockedMapper.when(() -> AuthenticationMapper.toDto(userTokens))
                     .thenReturn(expectedResponse);
 
             when(jwt.validateAndExtractEmail("refresh-token-456")).thenReturn("user@example.com");
             when(authenticationService.getMemberByEmail("user@example.com")).thenReturn(member);
-            when(jwt.refreshTokenForMember("refresh-token-456", member)).thenReturn(tokens);
+            when(jwt.refreshTokenForMember("refresh-token-456", member)).thenReturn(userTokens);
 
             // When
             ResponseEntity<JwtAuthenticationResponse> response = authenticationController.refreshToken(request);

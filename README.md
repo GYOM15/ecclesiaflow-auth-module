@@ -27,8 +27,8 @@ Un service d'authentification robuste et sécurisé conçu pour supporter l'arch
 
 Ce module fournit les services d'authentification centralisée pour l'écosystème EcclesiaFlow :
 
-- **Génération de tokens JWT** pour l'accès aux ressources
-- **Rafraîchissement automatique** des tokens expirés
+- **Génération de userTokens JWT** pour l'accès aux ressources
+- **Rafraîchissement automatique** des userTokens expirés
 - **Validation des identifiants** avec sécurité renforcée
 - **Support multi-tenant** prêt pour l'architecture distribuée
 
@@ -235,7 +235,7 @@ public ResponseEntity<JwtAuthenticationResponse> generateToken(...)
 
 - ✅ Secrets externalisés (pas de hardcoding)
 - ✅ Tokens avec expiration courte
-- ✅ Refresh tokens pour l'UX
+- ✅ Refresh userTokens pour l'UX
 - ✅ Validation stricte des entrées
 - ✅ Logging des tentatives d'authentification
 

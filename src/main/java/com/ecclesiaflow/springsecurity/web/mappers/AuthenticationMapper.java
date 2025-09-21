@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.web.mappers;
 
-import com.ecclesiaflow.springsecurity.business.domain.token.Tokens;
-import com.ecclesiaflow.springsecurity.business.domain.token.RefreshTokenCredentials;
+import com.ecclesiaflow.springsecurity.business.domain.token.TokenCredentials;
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.web.payloads.RefreshTokenRequest;
 
@@ -17,7 +17,7 @@ import com.ecclesiaflow.springsecurity.web.payloads.RefreshTokenRequest;
  * 
  * <p><strong>Responsabilités principales :</strong></p>
  * <ul>
- *   <li>Conversion des Tokens vers JwtAuthenticationResponse</li>
+ *   <li>Conversion des UserTokens vers JwtAuthenticationResponse</li>
  *   <li>Isolation complète entre couches service et web</li>
  *   <li>Transformation pure sans logique métier</li>
  * </ul>
@@ -40,19 +40,19 @@ public final class AuthenticationMapper {
      * <p>
      * Cette méthode effectue une transformation pure des données d'authentification
      * du domaine métier vers le format attendu par la couche web. Extrait uniquement
-     * les tokens JWT nécessaires à la réponse API.
+     * les userTokens JWT nécessaires à la réponse API.
      * </p>
      * 
-     * @param tokens le résultat d'authentification métier, non null
-     * @return un {@link JwtAuthenticationResponse} contenant les tokens JWT
-     * @throws NullPointerException si tokens est null
+     * @param userTokens le résultat d'authentification métier, non null
+     * @return un {@link JwtAuthenticationResponse} contenant les userTokens JWT
+     * @throws NullPointerException si userTokens est null
      * 
      * @implNote Transformation pure sans validation - la validation est assurée par l'architecture.
      */
-    public static JwtAuthenticationResponse toDto(Tokens tokens) {
+    public static JwtAuthenticationResponse toDto(UserTokens userTokens) {
         JwtAuthenticationResponse dto = new JwtAuthenticationResponse();
-        dto.setToken(tokens.getAccessToken());
-        dto.setRefreshToken(tokens.getRefreshToken());
+        dto.setToken(userTokens.getAccessToken());
+        dto.setRefreshToken(userTokens.getRefreshToken());
         return dto;
     }
 
@@ -64,12 +64,12 @@ public final class AuthenticationMapper {
      * </p>
      * 
      * @param request la requête de rafraîchissement de token API, non null
-     * @return un {@link RefreshTokenCredentials} contenant le refresh token
+     * @return un {@link TokenCredentials} contenant le refresh token
      * @throws NullPointerException si request est null
      * 
      * @implNote Transformation pure sans validation - la validation est assurée par l'architecture.
      */
-    public static RefreshTokenCredentials fromRefreshTokenRequest(RefreshTokenRequest request) {
-        return new RefreshTokenCredentials(request.getToken());
+    public static TokenCredentials fromRefreshTokenRequest(RefreshTokenRequest request) {
+        return new TokenCredentials(request.getToken());
     }
 }

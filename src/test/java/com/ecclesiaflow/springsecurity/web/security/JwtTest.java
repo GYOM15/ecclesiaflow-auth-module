@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.security;
 
-import com.ecclesiaflow.springsecurity.business.domain.token.Tokens;
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.io.entities.Role;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
@@ -56,12 +56,12 @@ class JwtTest {
         when(jwtProcessor.generateRefreshToken(testMember)).thenReturn(expectedRefreshToken);
 
         // When
-        Tokens tokens = jwt.generateUserTokens(testMember);
+        UserTokens userTokens = jwt.generateUserTokens(testMember);
 
         // Then
-        assertThat(tokens).isNotNull();
-        assertThat(tokens.getAccessToken()).isEqualTo(expectedAccessToken);
-        assertThat(tokens.getRefreshToken()).isEqualTo(expectedRefreshToken);
+        assertThat(userTokens).isNotNull();
+        assertThat(userTokens.getAccessToken()).isEqualTo(expectedAccessToken);
+        assertThat(userTokens.getRefreshToken()).isEqualTo(expectedRefreshToken);
         
         verify(jwtProcessor).generateAccessToken(testMember);
         verify(jwtProcessor).generateRefreshToken(testMember);
@@ -185,12 +185,12 @@ class JwtTest {
         when(jwtProcessor.generateAccessToken(testMember)).thenReturn(newAccessToken);
 
         // When
-        Tokens refreshedTokens = jwt.refreshTokenForMember(oldRefreshToken, testMember);
+        UserTokens refreshedUserTokens = jwt.refreshTokenForMember(oldRefreshToken, testMember);
 
         // Then
-        assertThat(refreshedTokens).isNotNull();
-        assertThat(refreshedTokens.getAccessToken()).isEqualTo(newAccessToken);
-        assertThat(refreshedTokens.getRefreshToken()).isEqualTo(oldRefreshToken);
+        assertThat(refreshedUserTokens).isNotNull();
+        assertThat(refreshedUserTokens.getAccessToken()).isEqualTo(newAccessToken);
+        assertThat(refreshedUserTokens.getRefreshToken()).isEqualTo(oldRefreshToken);
         
         verify(jwtProcessor).generateAccessToken(testMember);
     }
@@ -224,12 +224,12 @@ class JwtTest {
         when(jwtProcessor.generateRefreshToken(any())).thenReturn("refresh.token");
 
         // When
-        Tokens userTokens = jwt.generateUserTokens(testMember);
-        Tokens adminTokens = jwt.generateUserTokens(adminMember);
+        UserTokens userTokens = jwt.generateUserTokens(testMember);
+        UserTokens adminUserTokens = jwt.generateUserTokens(adminMember);
 
         // Then
         assertThat(userTokens).isNotNull();
-        assertThat(adminTokens).isNotNull();
+        assertThat(adminUserTokens).isNotNull();
         
         verify(jwtProcessor, times(2)).generateAccessToken(any());
         verify(jwtProcessor, times(2)).generateRefreshToken(any());
@@ -249,12 +249,12 @@ class JwtTest {
 
         // When
         String extractedEmail = jwt.validateAndExtractEmail(refreshToken);
-        Tokens refreshedTokens = jwt.refreshTokenForMember(refreshToken, testMember);
+        UserTokens refreshedUserTokens = jwt.refreshTokenForMember(refreshToken, testMember);
 
         // Then
         assertThat(extractedEmail).isEqualTo(email);
-        assertThat(refreshedTokens.getAccessToken()).isEqualTo(newAccessToken);
-        assertThat(refreshedTokens.getRefreshToken()).isEqualTo(refreshToken);
+        assertThat(refreshedUserTokens.getAccessToken()).isEqualTo(newAccessToken);
+        assertThat(refreshedUserTokens.getRefreshToken()).isEqualTo(refreshToken);
         
         // Vérifier que les opérations sont indépendantes
         verify(jwtProcessor).isRefreshTokenValid(refreshToken);

@@ -1,8 +1,8 @@
 package com.ecclesiaflow.springsecurity.web.controller;
 
-import com.ecclesiaflow.springsecurity.business.domain.token.Tokens;
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
-import com.ecclesiaflow.springsecurity.business.domain.token.RefreshTokenCredentials;
+import com.ecclesiaflow.springsecurity.business.domain.token.TokenCredentials;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.web.payloads.RefreshTokenRequest;
@@ -114,8 +114,8 @@ public class AuthenticationController {
     public ResponseEntity<JwtAuthenticationResponse> generateToken(@Valid @RequestBody SigninRequest request) throws InvalidCredentialsException, InvalidTokenException, JwtProcessingException {
         SigninCredentials credentials = MemberMapper.fromSigninRequest(request);
         Member member = authenticationService.getAuthenticatedMember(credentials);
-        Tokens tokens = jwt.generateUserTokens(member);
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(tokens);
+        UserTokens userTokens = jwt.generateUserTokens(member);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(userTokens);
         return ResponseEntity.ok(response);
     }
 
@@ -149,11 +149,11 @@ public class AuthenticationController {
             )
     })
     public ResponseEntity<JwtAuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) throws InvalidTokenException, JwtProcessingException {
-        RefreshTokenCredentials refreshTokenCredentials = AuthenticationMapper.fromRefreshTokenRequest(refreshTokenRequest);
-        String email = jwt.validateAndExtractEmail(refreshTokenCredentials.getRefreshToken());
+        TokenCredentials tokenCredentials = AuthenticationMapper.fromRefreshTokenRequest(refreshTokenRequest);
+        String email = jwt.validateAndExtractEmail(tokenCredentials.getToken());
         Member member = authenticationService.getMemberByEmail(email);
-        Tokens refreshedTokens = jwt.refreshTokenForMember(refreshTokenCredentials.getRefreshToken(), member);
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(refreshedTokens);
+        UserTokens refreshedUserTokens = jwt.refreshTokenForMember(tokenCredentials.getToken(), member);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(refreshedUserTokens);
         return ResponseEntity.ok(response);
     }
 

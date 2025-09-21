@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.security;
 
-import com.ecclesiaflow.springsecurity.business.domain.token.Tokens;
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
@@ -51,16 +51,16 @@ public class Jwt {
      * </p>
      * 
      * @param member le membre pour lequel générer les tokens, non null
-     * @return un {@link Tokens} contenant le membre et ses tokens
+     * @return un {@link UserTokens} contenant le membre et ses tokens
      * @throws JwtProcessingException si la génération des tokens échoue
      * @throws IllegalArgumentException si member est null
      * 
      * @implNote Opération en mémoire uniquement, aucun accès à la base de données.
      */
-    public Tokens generateUserTokens(Member member) throws JwtProcessingException {
+    public UserTokens generateUserTokens(Member member) throws JwtProcessingException {
         String accessToken = jwtProcessor.generateAccessToken(member);
         String refreshToken = jwtProcessor.generateRefreshToken(member);
-        return new Tokens(accessToken, refreshToken);
+        return new UserTokens(accessToken, refreshToken);
     }
 
     /**
@@ -94,14 +94,14 @@ public class Jwt {
      *
      * @param refreshToken l'ancien refresh token à conserver
      * @param member le membre pour lequel générer le nouveau token d'accès
-     * @return un {@link Tokens} avec le nouveau token d'accès et l'ancien refresh token
+     * @return un {@link UserTokens} avec le nouveau token d'accès et l'ancien refresh token
      * @throws JwtProcessingException si la génération du token échoue
      */
-    public Tokens refreshTokenForMember(String refreshToken, Member member)
+    public UserTokens refreshTokenForMember(String refreshToken, Member member)
             throws JwtProcessingException {
 
         String newAccessToken = jwtProcessor.generateAccessToken(member);
-        return new Tokens(newAccessToken, refreshToken);
+        return new UserTokens(newAccessToken, refreshToken);
     }
 
     /**

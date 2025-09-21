@@ -52,7 +52,7 @@ Un module d'authentification est le **gardien** de votre application. Il répond
 ### Questions à se poser avant de commencer
 
 1. **Quel type d'utilisateurs ?** → Membres d'église, pasteurs, super admin
-2. **Quelle durée de session ?** → 24h pour l'UX, refresh tokens pour la sécurité
+2. **Quelle durée de session ?** → 24h pour l'UX, refresh userTokens pour la sécurité
 3. **Quelle architecture ?** → Microservices, donc stateless obligatoire
 4. **Quelle sécurité ?** → BCrypt + JWT + Rate limiting
 

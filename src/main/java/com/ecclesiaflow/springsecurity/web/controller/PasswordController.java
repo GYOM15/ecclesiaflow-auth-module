@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.controller;
 
-import com.ecclesiaflow.springsecurity.business.domain.token.Tokens;
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.mappers.PasswordManagementMapper;
 import com.ecclesiaflow.springsecurity.business.services.PasswordService;
@@ -77,10 +77,10 @@ public class PasswordController {
         String validatedEmail = authenticationService.getEmailFromValidatedTempToken(temporaryToken);
         passwordService.setInitialPassword(validatedEmail, passwordRequest.getPassword());
         Member member = authenticationService.getMemberByEmail(validatedEmail);
-        Tokens tokens = jwt.generateUserTokens(member);
+        UserTokens userTokens = jwt.generateUserTokens(member);
         PasswordManagementResponse response = PasswordManagementMapper.toDtoWithTokens(
             "Mot de passe défini avec succès. Vous êtes maintenant connecté.",
-            tokens,
+                userTokens,
             accessTokenExpiration / 1000
         );
         return ResponseEntity.ok(response);

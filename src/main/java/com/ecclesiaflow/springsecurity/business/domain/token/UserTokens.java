@@ -36,7 +36,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Tokens {
+public class UserTokens {
     private String accessToken;
     private String refreshToken;
 }
