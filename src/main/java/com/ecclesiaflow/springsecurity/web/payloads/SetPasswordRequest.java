@@ -20,12 +20,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(description = "Requête pour définir le mot de passe initial")
 public class SetPasswordRequest {
-
-    @NotBlank(message = "L'email est obligatoire")
-    @Email(message = "L'email doit être valide")
-    @Schema(description = "Email du membre", example = "membre@ecclesiaflow.com")
-    private String email;
-
     @NotBlank(message = "Le mot de passe est obligatoire")
     @Size(min = 8, message = "Le mot de passe doit contenir au moins 8 caractères")
     @Pattern(
