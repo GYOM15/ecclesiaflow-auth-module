@@ -42,23 +42,6 @@ import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundExcepti
 public interface AuthenticationService {
     
     /**
-     * Enregistre un nouveau membre dans le système EcclesiaFlow.
-     * <p>
-     * Cette méthode valide les données d'inscription, vérifie l'unicité de l'email
-     * et crée un nouveau compte membre avec encodage sécurisé du mot de passe.
-     * Opération transactionnelle qui garantit la cohérence des données.
-     * </p>
-     * 
-     * @param memberRegistration données d'inscription du nouveau membre, non null
-     * @return le membre enregistré avec son identifiant UUID généré
-     * @throws InvalidRequestException si les données sont invalides ou l'email déjà utilisé
-     * @throws IllegalArgumentException si memberRegistration est null
-     * 
-     * @implNote Délègue à MemberRegistrationService pour respecter la séparation des responsabilités.
-     */
-    Member registerMember(MemberRegistration memberRegistration) throws InvalidRequestException;
-    
-    /**
      * Authentifie un membre à partir de ses identifiants.
      * <p>
      * Cette méthode effectue une authentification pure en validant

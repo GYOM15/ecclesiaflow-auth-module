@@ -1,12 +1,10 @@
 package com.ecclesiaflow.springsecurity.business.services.impl;
 
-import com.ecclesiaflow.springsecurity.business.domain.member.MemberRegistration;
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
-import com.ecclesiaflow.springsecurity.business.services.MemberRegistrationService;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
 import com.ecclesiaflow.springsecurity.web.security.Jwt;
@@ -31,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
  * <p><strong>Dépendances critiques :</strong></p>
  * <ul>
  *   <li>{@link AuthenticationManager} - Authentification Spring Security</li>
- *   <li>{@link MemberRegistrationService} - Inscription des nouveaux membres</li>
  * </ul>
  * 
  * <p><strong>Cas d'utilisation typiques :</strong></p>
@@ -50,15 +47,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final AuthenticationManager authenticationManager;
-    private final MemberRegistrationService memberRegistrationService;
     private final MemberRepository memberRepository;
     private final Jwt jwt;
-
-    @Override
-    @Transactional
-    public Member registerMember(MemberRegistration registration) {
-        return memberRegistrationService.registerMember(registration);
-    }
 
     @Override
     @Transactional(readOnly = true)
