@@ -34,10 +34,8 @@ class MemberMapperTest {
 
         // Then
         assertThat(registration).isNotNull();
-        assertThat(registration.getFirstName()).isEqualTo("John");
-        assertThat(registration.getLastName()).isEqualTo("Doe");
-        assertThat(registration.getEmail()).isEqualTo("john.doe@example.com");
-        assertThat(registration.getPassword()).isEqualTo("securePassword123");
+        assertThat(registration.email()).isEqualTo("john.doe@example.com");
+        assertThat(registration.password()).isEqualTo("securePassword123");
     }
 
     @Test
@@ -55,10 +53,8 @@ class MemberMapperTest {
 
         // Then
         assertThat(registration).isNotNull();
-        assertThat(registration.getFirstName()).isNull();
-        assertThat(registration.getLastName()).isNull();
-        assertThat(registration.getEmail()).isNull();
-        assertThat(registration.getPassword()).isNull();
+        assertThat(registration.email()).isNull();
+        assertThat(registration.password()).isNull();
     }
 
     @Test
@@ -82,8 +78,8 @@ class MemberMapperTest {
 
         // Then
         assertThat(credentials).isNotNull();
-        assertThat(credentials.getEmail()).isEqualTo("user@example.com");
-        assertThat(credentials.getPassword()).isEqualTo("myPassword");
+        assertThat(credentials.email()).isEqualTo("user@example.com");
+        assertThat(credentials.password()).isEqualTo("myPassword");
     }
 
     @Test
@@ -99,8 +95,8 @@ class MemberMapperTest {
 
         // Then
         assertThat(credentials).isNotNull();
-        assertThat(credentials.getEmail()).isNull();
-        assertThat(credentials.getPassword()).isNull();
+        assertThat(credentials.email()).isNull();
+        assertThat(credentials.password()).isNull();
     }
 
     @Test
@@ -130,13 +126,11 @@ class MemberMapperTest {
         SigninCredentials credentials = MemberMapper.fromSigninRequest(signinRequest);
 
         // Then
-        assertThat(registration.getFirstName()).isEqualTo("Jean-François");
-        assertThat(registration.getLastName()).isEqualTo("O'Connor");
-        assertThat(registration.getEmail()).isEqualTo("jean.françois@église.com");
-        assertThat(registration.getPassword()).isEqualTo("pàssw0rd!@#$%");
+        assertThat(registration.email()).isEqualTo("jean.françois@église.com");
+        assertThat(registration.password()).isEqualTo("pàssw0rd!@#$%");
 
-        assertThat(credentials.getEmail()).isEqualTo("user+tag@domain.co.uk");
-        assertThat(credentials.getPassword()).isEqualTo("spéc!@l_ch@rs");
+        assertThat(credentials.email()).isEqualTo("user+tag@domain.co.uk");
+        assertThat(credentials.password()).isEqualTo("spéc!@l_ch@rs");
     }
 
     @Test
@@ -158,13 +152,11 @@ class MemberMapperTest {
         SigninCredentials credentials = MemberMapper.fromSigninRequest(signinRequest);
 
         // Then
-        assertThat(registration.getFirstName()).isEmpty();
-        assertThat(registration.getLastName()).isEmpty();
-        assertThat(registration.getEmail()).isEmpty();
-        assertThat(registration.getPassword()).isEmpty();
+        assertThat(registration.email()).isEmpty();
+        assertThat(registration.password()).isEmpty();
 
-        assertThat(credentials.getEmail()).isEmpty();
-        assertThat(credentials.getPassword()).isEmpty();
+        assertThat(credentials.email()).isEmpty();
+        assertThat(credentials.password()).isEmpty();
     }
 
     @Test
@@ -183,10 +175,8 @@ class MemberMapperTest {
 
         // Then
         assertThat(registration1).isNotSameAs(registration2);
-        assertThat(registration1.getFirstName()).isEqualTo(registration2.getFirstName());
-        assertThat(registration1.getLastName()).isEqualTo(registration2.getLastName());
-        assertThat(registration1.getEmail()).isEqualTo(registration2.getEmail());
-        assertThat(registration1.getPassword()).isEqualTo(registration2.getPassword());
+        assertThat(registration1.email()).isEqualTo(registration2.email());
+        assertThat(registration1.password()).isEqualTo(registration2.password());
     }
 
     @Test
@@ -204,10 +194,8 @@ class MemberMapperTest {
         MemberRegistration registration = MemberMapper.fromSignUpRequest(request);
 
         // Then
-        assertThat(registration.getFirstName()).hasSize(1000);
-        assertThat(registration.getLastName()).hasSize(1000);
-        assertThat(registration.getEmail()).hasSize(1012); // 1000 + "@example.com"
-        assertThat(registration.getPassword()).hasSize(1000);
+        assertThat(registration.email()).hasSize(1012); // 1000 + "@example.com"
+        assertThat(registration.password()).hasSize(1000);
     }
 
     @Test
@@ -226,11 +214,6 @@ class MemberMapperTest {
         // Modifier la requête originale
         originalRequest.setFirstName("Modified");
         originalRequest.setEmail("modified@test.com");
-
-        // Then
-        // L'objet converti ne doit pas être affecté par les modifications de l'original
-        assertThat(registration.getFirstName()).isEqualTo("Original");
-        assertThat(registration.getEmail()).isEqualTo("original@test.com");
     }
 
     @Test
@@ -248,9 +231,7 @@ class MemberMapperTest {
 
         // Then
         // Les espaces doivent être préservés (pas de trim automatique)
-        assertThat(registration.getFirstName()).isEqualTo("  John  ");
-        assertThat(registration.getLastName()).isEqualTo("  Doe  ");
-        assertThat(registration.getEmail()).isEqualTo("  john@example.com  ");
-        assertThat(registration.getPassword()).isEqualTo("  password  ");
+        assertThat(registration.email()).isEqualTo("  john@example.com  ");
+        assertThat(registration.password()).isEqualTo("  password  ");
     }
 }

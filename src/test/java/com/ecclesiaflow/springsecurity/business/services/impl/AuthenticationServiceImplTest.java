@@ -143,8 +143,8 @@ class AuthenticationServiceImplTest {
         // Then
         verify(authenticationManager).authenticate(argThat(token -> {
             UsernamePasswordAuthenticationToken authToken = (UsernamePasswordAuthenticationToken) token;
-            return testCredentials.getEmail().equals(authToken.getName()) &&
-                   testCredentials.getPassword().equals(authToken.getCredentials());
+            return testCredentials.email().equals(authToken.getName()) &&
+                   testCredentials.password().equals(authToken.getCredentials());
         }));
     }
 

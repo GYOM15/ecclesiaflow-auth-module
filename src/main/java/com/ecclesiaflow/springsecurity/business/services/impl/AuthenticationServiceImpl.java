@@ -58,7 +58,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private Member authenticateMember(SigninCredentials credentials) throws InvalidCredentialsException, JwtProcessingException {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(credentials.getEmail(), credentials.getPassword())
+                new UsernamePasswordAuthenticationToken(credentials.email(), credentials.password())
         );
         return (Member) authentication.getPrincipal();
     }
