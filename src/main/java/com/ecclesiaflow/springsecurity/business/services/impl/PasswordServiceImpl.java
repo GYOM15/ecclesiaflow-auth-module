@@ -6,6 +6,7 @@ import com.ecclesiaflow.springsecurity.business.services.PasswordService;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.io.entities.Role;
 import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
+import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,15 +25,10 @@ public class PasswordServiceImpl implements PasswordService {
     @Transactional
     public void setInitialPassword(String email, String password) {
         if (membersClient.isEmailNotConfirmed(email)) {
-            throw new RuntimeException("Le compte doit être confirmé avant de définir un mot de passe");
+            throw new InvalidRequestException("Le compte doit être confirmé avant de définir un mot de passe");
         }
-        
-        Member member = memberRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    Member newMember = new Member();
-                    newMember.setEmail(email);
-                    return newMember;
-                });
+        Member member =  new Member();
+        member.setEmail(email);
         member.setPassword(passwordEncoder.encode(password));
         member.setRole(Role.MEMBER);
         member.setUpdatedAt(LocalDateTime.now());
@@ -44,7 +40,7 @@ public class PasswordServiceImpl implements PasswordService {
     public void changePassword(String email, String currentPassword, String newPassword) {
         // Vérifier la confirmation via le module Members
         if (membersClient.isEmailNotConfirmed(email)) {
-            throw new RuntimeException("Le compte doit être confirmé pour changer le mot de passe");
+            throw new InvalidRequestException("Le compte doit être confirmé pour changer le mot de passe");
         }
 
         // Récupérer le membre
