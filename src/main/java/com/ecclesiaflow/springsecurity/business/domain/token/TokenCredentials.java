@@ -1,41 +1,33 @@
 package com.ecclesiaflow.springsecurity.business.domain.token;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
- * Objet métier représentant les données nécessaires pour rafraîchir un token JWT.
+ * Objet métier représentant les données nécessaires pour les opérations sur les tokens JWT
+ * de façon générale.
  * <p>
- * Cette classe fait partie de la couche métier et encapsule les informations
- * nécessaires pour rafraîchir un token JWT. Elle assure le découplage entre
- * la couche API (DTOs) et la couche métier.
+ * Cette classe encapsule les informations
+ * nécessaires pour manipuler les tokens JWT (temporary token, refresh, validation).
+ * Elle assure le découplage entre la couche API (DTOs) et la couche métier.
  * </p>
- * 
+ *
  * <p><strong>Responsabilité :</strong></p>
  * <ul>
- *   <li>Encapsuler les données de rafraîchissement pour les opérations métier</li>
+ *   <li>Encapsuler les données de token pour les opérations métier</li>
  *   <li>Maintenir l'indépendance de la couche métier vis-à-vis des DTOs API</li>
+ *   <li>Fournir une représentation métier unifiée pour tous types de tokens</li>
  * </ul>
- * 
+ *
  * <p><strong>Cas d'utilisation typiques :</strong></p>
  * <ul>
- *   <li>Validation et rafraîchissement de tokens JWT</li>
- *   <li>Génération de nouveaux access tokens</li>
+ *   <li>Validation de tokens JWT</li>
+ *   <li>Rafraîchissement de tokens JWT</li>
+ *   <li>Génération de nouveaux tokens</li>
+ *   <li>Extraction d'informations depuis les tokens</li>
  * </ul>
- * 
+ *
  * <p><strong>Garanties :</strong> Immutable après construction, validation métier.</p>
- * 
+ *
  * @author EcclesiaFlow Team
  * @since 1.0.0
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class TokenCredentials {
-    
-    /**
-     * Le refresh token JWT à valider et utiliser pour générer un nouveau access token.
-     */
-    private String Token;
+public record TokenCredentials (String token) {
 }

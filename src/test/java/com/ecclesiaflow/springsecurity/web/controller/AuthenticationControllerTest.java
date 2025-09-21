@@ -89,7 +89,7 @@ class AuthenticationControllerTest {
     void refreshToken_ShouldReturnNewJwtAuthenticationResponse() {
         // Given
         RefreshTokenRequest request = new RefreshTokenRequest();
-        request.setToken("refresh-token-456");
+        request.setRefreshToken("refresh-token-456");
 
         TokenCredentials tokenCredentials = new TokenCredentials("refresh-token-456");
         Member member = new Member();
