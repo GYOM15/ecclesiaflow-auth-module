@@ -1,23 +1,18 @@
 package com.ecclesiaflow.springsecurity.web.mappers;
 
-
-import com.ecclesiaflow.springsecurity.business.domain.password.PasswordManagement;
+import com.ecclesiaflow.springsecurity.business.domain.token.Tokens;
 import com.ecclesiaflow.springsecurity.web.dto.PasswordManagementResponse;
-import com.ecclesiaflow.springsecurity.web.payloads.SetPasswordRequest;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PasswordManagementMapper {
 
-    public PasswordManagement fromSetPasswordRequest(SetPasswordRequest passwordRequest) {
-        return new PasswordManagement(passwordRequest.getEmail(),
-                                      passwordRequest.getPassword(),
-                                      passwordRequest.getTemporaryToken());
-    }
-
-    public static PasswordManagementResponse toDto(String message) {
+    public static PasswordManagementResponse toDtoWithTokens(String message, Tokens tokens, Long expiresIn) {
         return PasswordManagementResponse.builder()
                 .message(message)
+                .accessToken(tokens.getAccessToken())
+                .refreshToken(tokens.getRefreshToken())
+                .expiresIn(expiresIn)
                 .build();
     }
 }
