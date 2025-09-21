@@ -34,8 +34,4 @@ public class SetPasswordRequest {
     )
     @Schema(description = "Nouveau mot de passe", example = "MonMotDePasse123!")
     private String password;
-
-    @NotBlank(message = "Le token temporaire est obligatoire")
-    @Schema(description = "Token temporaire pour autoriser l'opération", example = "eyJhbGciOiJIUzI1NiJ9...")
-    private String temporaryToken;
 }

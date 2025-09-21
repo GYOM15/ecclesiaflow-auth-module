@@ -1,9 +1,5 @@
 package com.ecclesiaflow.springsecurity.business.services;
 
-import reactor.core.publisher.Mono;
-
-import java.util.UUID;
-
 /**
  * Service pour la gestion des mots de passe des membres.
  * 
@@ -20,13 +16,15 @@ public interface PasswordService {
 
     /**
      * Définit le mot de passe initial d'un membre après confirmation.
+     * <p>
+     * La validation d'authentification est déléguée à AuthenticationService.
+     * </p>
      * 
-     * @param email Email du membre
+     * @param email Email du membre (déjà validé par AuthenticationService)
      * @param password Nouveau mot de passe
-     * @param temporaryToken Token temporaire pour autoriser l'opération
-     * @throws RuntimeException si le token est invalide ou si le membre n'existe pas
+     * @throws RuntimeException si le membre n'existe pas ou si l'opération échoue
      */
-    void setInitialPassword(String email, String password, String temporaryToken);
+    void setInitialPassword(String email, String password);
 
     /**
      * Change le mot de passe d'un membre authentifié.
