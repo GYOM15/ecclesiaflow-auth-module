@@ -1,8 +1,5 @@
 package com.ecclesiaflow.springsecurity.business.domain.password;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * Objet métier représentant le résultat d'une authentification réussie.
@@ -33,11 +30,5 @@ import lombok.NoArgsConstructor;
  * @author EcclesiaFlow Team
  * @since 1.0.0
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class PasswordManagement {
-    private String email;
-    private String password;
-    private String temporaryToken;
+public record PasswordManagement(String password, String temporaryToken) {
 }

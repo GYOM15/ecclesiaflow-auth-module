@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.controller;
 
+import com.ecclesiaflow.springsecurity.business.domain.password.PasswordManagement;
 import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.mappers.PasswordManagementMapper;
@@ -74,8 +75,9 @@ public class PasswordController {
             @Valid @RequestBody SetPasswordRequest passwordRequest) {
 
         String temporaryToken = extractTokenFromHeader(authorizationHeader);
-        String validatedEmail = authenticationService.getEmailFromValidatedTempToken(temporaryToken);
-        passwordService.setInitialPassword(validatedEmail, passwordRequest.getPassword());
+        PasswordManagement passwordManagement = new PasswordManagement(passwordRequest.getPassword(), temporaryToken);
+        String validatedEmail = authenticationService.getEmailFromValidatedTempToken(passwordManagement.temporaryToken());
+        passwordService.setInitialPassword(validatedEmail, passwordManagement.password());
         Member member = authenticationService.getMemberByEmail(validatedEmail);
         UserTokens userTokens = jwt.generateUserTokens(member);
         PasswordManagementResponse response = PasswordManagementMapper.toDtoWithTokens(
