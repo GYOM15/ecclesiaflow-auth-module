@@ -1,10 +1,8 @@
 package com.ecclesiaflow.springsecurity.business.services;
 
-import com.ecclesiaflow.springsecurity.business.domain.member.MemberRegistration;
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
-import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
 
@@ -40,7 +38,7 @@ import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundExcepti
  * @since 1.0.0
  */
 public interface AuthenticationService {
-    
+
     /**
      * Authentifie un membre à partir de ses identifiants.
      * <p>
