@@ -136,4 +136,19 @@ public class Jwt {
         return jwtProcessor.validateTemporaryToken(token, email);
     }
 
+    /**
+     * Extrait l'email d'un token temporaire JWT.
+     * <p>
+     * Cette méthode utilise le JwtProcessor pour extraire l'email (username)
+     * d'un token temporaire. Opération technique pure qui respecte l'architecture en couches.
+     * </p>
+     *
+     * @param temporaryToken le token temporaire dont extraire l'email
+     * @return l'email extrait du token
+     * @throws JwtProcessingException si l'extraction échoue ou si le token est malformé
+     */
+    public String extractEmailFromTemporaryToken(String temporaryToken) throws JwtProcessingException {
+        return jwtProcessor.extractUsername(temporaryToken);
+    }
+
 }
