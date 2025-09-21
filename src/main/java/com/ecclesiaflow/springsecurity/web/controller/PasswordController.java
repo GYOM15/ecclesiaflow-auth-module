@@ -9,8 +9,10 @@ import com.ecclesiaflow.springsecurity.web.dto.*;
 import com.ecclesiaflow.springsecurity.web.payloads.ChangePasswordRequest;
 import com.ecclesiaflow.springsecurity.web.payloads.SetPasswordRequest;
 import com.ecclesiaflow.springsecurity.web.security.Jwt;
+import com.ecclesiaflow.springsecurity.web.exception.model.ApiErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,9 +44,30 @@ public class PasswordController {
                          "Le token temporaire doit être fourni dans le header Authorization au format 'Bearer {token}' " +
                          "pour des raisons de sécurité.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Mot de passe défini avec succès et tokens générés", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Token invalide ou données incorrectes", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Header Authorization manquant ou format invalide", content = @Content)
+            @ApiResponse(
+                    responseCode = "200", 
+                    description = "Mot de passe défini avec succès et tokens générés", 
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = PasswordManagementResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400", 
+                    description = "Token invalide ou données incorrectes", 
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401", 
+                    description = "Header Authorization manquant ou format invalide", 
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class)
+                    )
+            )
     })
     public ResponseEntity<PasswordManagementResponse> setPassword(
             @RequestHeader("Authorization") String authorizationHeader,
@@ -67,8 +90,18 @@ public class PasswordController {
     @Operation(summary = "Changer le mot de passe",
             description = "Change le mot de passe d'un membre authentifié")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Mot de passe changé avec succès", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Mot de passe actuel incorrect", content = @Content)
+            @ApiResponse(
+                    responseCode = "200", 
+                    description = "Mot de passe changé avec succès"
+            ),
+            @ApiResponse(
+                    responseCode = "400", 
+                    description = "Mot de passe actuel incorrect", 
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class)
+                    )
+            )
     })
     public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
         passwordService.changePassword(

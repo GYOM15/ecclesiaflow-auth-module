@@ -17,6 +17,7 @@ import com.ecclesiaflow.springsecurity.web.mappers.MemberMapper;
 import com.ecclesiaflow.springsecurity.web.mappers.TemporaryTokenMapper;
 import com.ecclesiaflow.springsecurity.web.payloads.TemporaryTokenRequest;
 import com.ecclesiaflow.springsecurity.web.dto.TemporaryTokenResponse;
+import com.ecclesiaflow.springsecurity.web.exception.model.ApiErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -96,12 +97,18 @@ public class AuthenticationController {
             @ApiResponse(
                     responseCode = "400",
                     description = "Données d'authentification invalides",
-                    content = @Content
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class)
+                    )
             ),
             @ApiResponse(
                     responseCode = "401",
                     description = "Identifiants incorrects",
-                    content = @Content
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class)
+                    )
             )
     })
     public ResponseEntity<JwtAuthenticationResponse> generateToken(@Valid @RequestBody SigninRequest request) throws InvalidCredentialsException, InvalidTokenException, JwtProcessingException {
@@ -135,7 +142,10 @@ public class AuthenticationController {
             @ApiResponse(
                     responseCode = "400",
                     description = "Refresh token invalide ou expiré",
-                    content = @Content
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class)
+                    )
             )
     })
     public ResponseEntity<JwtAuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) throws InvalidTokenException, JwtProcessingException {
@@ -170,7 +180,10 @@ public class AuthenticationController {
             @ApiResponse(
                     responseCode = "400",
                     description = "Email invalide",
-                    content = @Content
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class)
+                    )
             )
     })
     public ResponseEntity<TemporaryTokenResponse> generateTemporaryToken(@Valid @RequestBody TemporaryTokenRequest temporaryTokenRequest) throws InvalidTokenException, JwtProcessingException {
