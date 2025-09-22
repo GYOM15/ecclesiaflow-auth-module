@@ -1,8 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.mappers;
 
-import com.ecclesiaflow.springsecurity.business.domain.member.MemberRegistration;
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
-import com.ecclesiaflow.springsecurity.web.payloads.SignUpRequest;
 import com.ecclesiaflow.springsecurity.web.payloads.SigninRequest;
 
 /**
@@ -33,25 +31,6 @@ import com.ecclesiaflow.springsecurity.web.payloads.SigninRequest;
  * @since 1.0.0
  */
 public class MemberMapper {
-    
-    /**
-     * Convertit une requête d'inscription web en objet métier MemberRegistration.
-     * <p>
-     * Cette méthode effectue une transformation directe des champs sans validation
-     * supplémentaire, la validation ayant été effectuée au niveau DTO.
-     * </p>
-     * 
-     * @param req la requête d'inscription provenant de la couche web, non null
-     * @return un objet MemberRegistration contenant les données d'inscription
-     * @throws NullPointerException si req est null
-     */
-    public static MemberRegistration fromSignUpRequest(SignUpRequest req) {
-        return new MemberRegistration(
-            req.getEmail(),
-            req.getPassword()
-        );
-    }
-
     /**
      * Convertit une requête de connexion web en objet métier SigninCredentials.
      * <p>

@@ -152,8 +152,8 @@ public class AuthenticationController {
         TokenCredentials tokenCredentials = new TokenCredentials(refreshTokenRequest.getRefreshToken());
         String email = jwt.validateAndExtractEmail(tokenCredentials.token());
         Member member = authenticationService.getMemberByEmail(email);
-        UserTokens refreshedUserTokens = jwt.refreshTokenForMember(tokenCredentials.token(), member);
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(refreshedUserTokens);
+        UserTokens userTokens = jwt.refreshTokenForMember(tokenCredentials.token(), member);
+        JwtAuthenticationResponse response = AuthenticationMapper.toDto(userTokens);
         return ResponseEntity.ok(response);
     }
 
