@@ -4,7 +4,7 @@ import com.ecclesiaflow.springsecurity.business.domain.member.MemberRegistration
 import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
 import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.business.domain.member.Role;
-import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
+import com.ecclesiaflow.springsecurity.business.domain.member.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

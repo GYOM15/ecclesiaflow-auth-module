@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.business.services.impl;
 
-import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
+import com.ecclesiaflow.springsecurity.business.domain.member.MemberRepository;
 import com.ecclesiaflow.springsecurity.business.services.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetailsService;
