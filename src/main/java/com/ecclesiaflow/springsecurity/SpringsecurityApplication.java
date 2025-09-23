@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity;
 
 import com.ecclesiaflow.springsecurity.io.entities.Member;
-import com.ecclesiaflow.springsecurity.io.entities.Role;
+import com.ecclesiaflow.springsecurity.business.domain.member.Role;
 import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
 import org.springframework.beans.factory.annotation.Autowired;

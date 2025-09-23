@@ -4,7 +4,7 @@ import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
 import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
 import com.ecclesiaflow.springsecurity.business.services.PasswordService;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
-import com.ecclesiaflow.springsecurity.io.entities.Role;
+import com.ecclesiaflow.springsecurity.business.domain.member.Role;
 import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
 import lombok.RequiredArgsConstructor;

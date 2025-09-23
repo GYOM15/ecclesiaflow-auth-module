@@ -2,7 +2,7 @@ package com.ecclesiaflow.springsecurity.io.repository;
 
 import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
 import com.ecclesiaflow.springsecurity.io.entities.Member;
-import com.ecclesiaflow.springsecurity.io.entities.Role;
+import com.ecclesiaflow.springsecurity.business.domain.member.Role;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Optional;
 import java.util.UUID;

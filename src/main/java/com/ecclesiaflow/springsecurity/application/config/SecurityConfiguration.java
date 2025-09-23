@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.application.config;
 
 import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
-import com.ecclesiaflow.springsecurity.io.entities.Role;
+import com.ecclesiaflow.springsecurity.business.domain.member.Role;
 import com.ecclesiaflow.springsecurity.business.services.MemberService;
 import com.ecclesiaflow.springsecurity.web.security.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;

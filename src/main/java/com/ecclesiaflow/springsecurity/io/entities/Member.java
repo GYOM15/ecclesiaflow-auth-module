@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.io.entities;
 
+import com.ecclesiaflow.springsecurity.business.domain.member.Role;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.security.core.GrantedAuthority;
