@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.business.services.impl;
 
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
-import com.ecclesiaflow.springsecurity.io.entities.Member;
+import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;

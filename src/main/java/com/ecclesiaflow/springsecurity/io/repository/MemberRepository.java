@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.io.repository;
 
-import com.ecclesiaflow.springsecurity.io.entities.Member;
+import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.business.domain.member.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 

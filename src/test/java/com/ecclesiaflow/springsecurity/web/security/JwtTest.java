@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.web.security;
 
 import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
-import com.ecclesiaflow.springsecurity.io.entities.Member;
+import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.business.domain.member.Role;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;

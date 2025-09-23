@@ -3,7 +3,7 @@ package com.ecclesiaflow.springsecurity.web.controller;
 import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
 import com.ecclesiaflow.springsecurity.business.domain.token.TokenCredentials;
-import com.ecclesiaflow.springsecurity.io.entities.Member;
+import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.web.payloads.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.web.payloads.SigninRequest;

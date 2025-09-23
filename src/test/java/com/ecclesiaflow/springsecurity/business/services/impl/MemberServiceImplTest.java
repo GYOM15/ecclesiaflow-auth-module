@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.business.services.impl;
 
-import com.ecclesiaflow.springsecurity.io.entities.Member;
+import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.business.domain.member.Role;
 import com.ecclesiaflow.springsecurity.io.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;

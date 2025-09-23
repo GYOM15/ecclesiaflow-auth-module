@@ -2,7 +2,7 @@ package com.ecclesiaflow.springsecurity.web.controller;
 
 import com.ecclesiaflow.springsecurity.business.domain.password.PasswordManagement;
 import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
-import com.ecclesiaflow.springsecurity.io.entities.Member;
+import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.web.mappers.PasswordManagementMapper;
 import com.ecclesiaflow.springsecurity.business.services.PasswordService;
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
