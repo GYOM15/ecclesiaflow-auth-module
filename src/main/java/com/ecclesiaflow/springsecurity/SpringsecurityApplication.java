@@ -11,6 +11,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @SpringBootApplication
 public class SpringsecurityApplication implements CommandLineRunner {
 
@@ -35,10 +37,11 @@ public class SpringsecurityApplication implements CommandLineRunner {
 	public void run(String... args) {
 		Member adminAccount = memberRepository.findByRole(Role.ADMIN);
 		if (adminAccount == null) {
-			Member member = new Member();
-			member.setEmail(adminEmail);
-			member.setPassword(passwordEncoderUtil.encode(adminPassword));
-			member.setRole(Role.ADMIN);
+			Member member = Member.builder().
+					email(adminEmail).
+					password(passwordEncoderUtil.encode(adminPassword)).
+					role(Role.ADMIN).
+					build();
 			memberRepository.save(member);
 		}
 	}

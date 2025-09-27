@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,11 +28,10 @@ public class PasswordServiceImpl implements PasswordService {
         if (membersClient.isEmailNotConfirmed(email)) {
             throw new InvalidRequestException("Le compte doit être confirmé avant de définir un mot de passe");
         }
-        Member member =  new Member();
-        member.setEmail(email);
-        member.setPassword(passwordEncoder.encode(password));
-        member.setRole(Role.MEMBER);
-        member.setUpdatedAt(LocalDateTime.now());
+        Member member = Member.builder().
+                email(email).password(passwordEncoder.encode(password)).
+                role(Role.MEMBER).
+                build();
         memberRepository.save(member);
     }
 
@@ -56,9 +56,10 @@ public class PasswordServiceImpl implements PasswordService {
             throw new RuntimeException("Mot de passe actuel incorrect");
         }
 
-        // Encoder et stocker le nouveau mot de passe
-        member.setPassword(passwordEncoder.encode(newPassword));
-        member.setUpdatedAt(LocalDateTime.now());
-        memberRepository.save(member);
+        Member updatedMember = member.toBuilder().
+                password(passwordEncoder.encode(newPassword)).
+                updatedAt(LocalDateTime.now()).
+                build();
+        memberRepository.save(updatedMember);
     }
 }

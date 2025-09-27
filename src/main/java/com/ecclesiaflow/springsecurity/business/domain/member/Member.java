@@ -1,201 +1,47 @@
 package com.ecclesiaflow.springsecurity.business.domain.member;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
+import lombok.Builder;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
 /**
- * Entité JPA représentant un membre EcclesiaFlow dans la base de données.
+ * Objet de domaine représentant un membre EcclesiaFlow.
  * <p>
- * Cette classe implémente {@link UserDetails} pour l'intégration avec Spring Security,
- * permettant l'authentification et l'autorisation des membres. Utilise UUID comme
- * identifiant primaire pour garantir l'unicité dans un environnement multi-tenant.
+ * Cette classe représente un membre dans la couche business, complètement indépendante
+ * des frameworks externes (persistance, sécurité). C'est un objet de domaine pur
+ * qui ne contient que la logique métier essentielle.
  * </p>
  * 
- * <p><strong>Dépendances critiques :</strong></p>
+ * <p><strong>Rôle architectural :</strong> Objet de domaine pur - Entité métier</p>
+ * 
+ * <p><strong>Principe SOLID respecté :</strong></p>
  * <ul>
- *   <li>JPA/Hibernate pour la persistance</li>
- *   <li>Spring Security pour l'authentification</li>
- *   <li>UUID Generator pour les identifiants uniques</li>
+ *   <li><strong>SRP</strong> - Responsabilité unique : représenter un membre</li>
+ *   <li><strong>DIP</strong> - Complètement indépendant des frameworks externes</li>
+ *   <li><strong>OCP</strong> - Extensible sans modification</li>
  * </ul>
  * 
- * <p><strong>Garanties :</strong> Thread-safe pour les opérations de lecture, 
- * gestion transactionnelle via JPA.</p>
- *
+ * <p><strong>Avantages de l'objet domain pur :</strong></p>
+ * <ul>
+ *   <li>Logique métier centralisée sans dépendances externes</li>
+ *   <li>Testable unitairement sans aucun contexte framework</li>
+ *   <li>Indépendant de Spring Security, JPA, etc.</li>
+ *   <li>Respecte parfaitement l'architecture hexagonale</li>
+ * </ul>
+ * 
  * @author EcclesiaFlow Team
  * @since 1.0.0
  */
-@Entity
-@Table(name = "member")
-public class Member implements UserDetails {
-
-    /**
-     * Identifiant unique du membre, généré automatiquement via UUID.
-     * <p>
-     * Assure l'unicité du membre dans la base de données.
-     * </p>
-     */
-    @Id
-    @GeneratedValue(generator = "uuid2")
-    @UuidGenerator
-    @Column(name = "id", columnDefinition = "BINARY(16)", updatable = false, nullable = false)
-    private UUID id;
-    /**
-     * Adresse e-mail du membre, utilisée comme identifiant pour la connexion.
-     */
-    private String email;
-
-    /**
-     * Mot de passe du membre, stocké de manière sécurisée.
-     */
-    private String password;
-
-    /**
-     * Rôle du membre dans l'application, déterminant ses autorisations.
-     */
-    private Role role;
-    private LocalDateTime updatedAt;
-
-    /**
-     * Retourne les autorisations du membre sous forme de collection de {@link GrantedAuthority}.
-     * <p>
-     * Dans ce cas, l'autorisation est basée sur le rôle du membre.
-     * </p>
-     *
-     * @return Collection d'autorisations
-     */
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
-    }
-
-    /**
-     * Retourne l'identifiant du membre, qui est son adresse e-mail.
-     *
-     * @return Identifiant du membre
-     */
-    @Override
-    public String getUsername() {
-        return email;
-    }
-
-    /**
-     * Retourne le mot de passe du membre.
-     *
-     * @return Mot de passe du membre
-     */
-    @Override
-    public String getPassword() {
-        return password;
-    }
-
-    /**
-     * Indique si le compte du membre n'est pas expiré.
-     * <p>
-     * Dans ce cas, les comptes ne sont jamais expirés.
-     * </p>
-     *
-     * @return Vrai si le compte n'est pas expiré
-     */
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    /**
-     * Indique si le compte du membre n'est pas verrouillé.
-     * <p>
-     * Dans ce cas, les comptes ne sont jamais verrouillés.
-     * </p>
-     *
-     * @return Vrai si le compte n'est pas verrouillé
-     */
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    /**
-     * Indique si les informations d'identification du membre n'ont pas expiré.
-     * <p>
-     * Dans ce cas, les informations d'identification ne sont jamais expirées.
-     * </p>
-     *
-     * @return Vrai si les informations d'identification n'ont pas expiré
-     */
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    /**
-     * Indique si le compte du membre est activé.
-     * <p>
-     * Dans ce cas, les comptes sont toujours activés.
-     * </p>
-     *
-     * @return Vrai si le compte est activé
-     */
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
-
-    // Getters and setters
-
-    /**
-     * Retourne l'adresse e-mail du membre.
-     *
-     * @return Adresse e-mail du membre
-     */
-    public String getEmail() {
-        return email;
-    }
-
-    /**
-     * Définit l'adresse e-mail du membre.
-     *
-     * @param email Adresse e-mail du membre
-     */
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    /**
-     * Définit le mot de passe du membre.
-     *
-     * @param password Mot de passe du membre
-     */
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    /**
-     * Retourne le rôle du membre.
-     *
-     * @return Rôle du membre
-     */
-    public Role getRole() {
-        return role;
-    }
-
-    /**
-     * Définit le rôle du membre.
-     *
-     * @param role Rôle du membre
-     */
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+@Getter
+@Builder(toBuilder = true)
+public class Member {
+    private final UUID id;
+    private final String email;
+    private final String password;
+    private final LocalDateTime createdAt;
+    private final LocalDateTime updatedAt;
+    @Builder.Default
+    private final Role role = Role.MEMBER;
 }
