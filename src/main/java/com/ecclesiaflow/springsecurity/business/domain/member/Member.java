@@ -44,4 +44,6 @@ public class Member {
     private final LocalDateTime updatedAt;
     @Builder.Default
     private final Role role = Role.MEMBER;
+    @Builder.Default
+    private final boolean enabled = false;
 }

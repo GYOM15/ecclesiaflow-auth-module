@@ -60,6 +60,7 @@ public class MemberPersistenceMapper {
                 password(entity.getPassword()).
                 createdAt(entity.getCreatedAt()).
                 updatedAt(entity.getUpdatedAt()).
+                enabled(entity.isEnabled()).
                 build();
     }
 
@@ -86,6 +87,7 @@ public class MemberPersistenceMapper {
                 password(domain.getPassword()).
                 createdAt(domain.getCreatedAt()).
                 updatedAt(domain.getUpdatedAt()).
+                enabled(domain.isEnabled()).
                 build();
     }
 }

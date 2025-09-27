@@ -125,8 +125,7 @@ public class MemberUserDetailsAdapter implements UserDetails {
      */
     @Override
     public boolean isEnabled() {
-        // TODO: Retourner member.isEnabled() quand disponible
-        return true;
+        return member.isEnabled();
     }
 
     /**
