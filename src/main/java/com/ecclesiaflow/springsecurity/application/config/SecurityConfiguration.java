@@ -39,9 +39,8 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/ecclesiaflow/auth/**").permitAll()
-                        .requestMatchers("/ecclesiaflow/members/signup").permitAll()
-                        .requestMatchers("/ecclesiaflow/adminMembers").hasAnyAuthority(Role.ADMIN.name())
-                        .requestMatchers("/ecclesiaflow/members").hasAnyAuthority(Role.MEMBER.name())
+                        .requestMatchers("/ecclesiaflow/adminMembers").hasAnyAuthority("ROLE_"+Role.ADMIN.name())
+                        .requestMatchers("/ecclesiaflow/members").hasAnyAuthority("ROLE_"+Role.MEMBER.name())
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(manager -> manager
@@ -58,9 +57,8 @@ public class SecurityConfiguration {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(memberService.userDetailsService());
-        authProvider.setPasswordEncoder(passwordEncoder);
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(memberService.userDetailsService());
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
