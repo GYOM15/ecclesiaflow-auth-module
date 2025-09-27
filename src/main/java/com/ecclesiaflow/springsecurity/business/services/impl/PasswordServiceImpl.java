@@ -28,10 +28,22 @@ public class PasswordServiceImpl implements PasswordService {
         if (membersClient.isEmailNotConfirmed(email)) {
             throw new InvalidRequestException("Le compte doit être confirmé avant de définir un mot de passe");
         }
-        Member member = Member.builder().
-                email(email).password(passwordEncoder.encode(password)).
-                role(Role.MEMBER).
-                build();
+        Member member = memberRepository.findByEmail(email)
+                .map(existing -> {
+                    if (existing.isEnabled()) {
+                        throw new InvalidRequestException("Le mot de passe a déjà été défini pour ce compte");
+                    }
+                    return existing.toBuilder()
+                            .password(passwordEncoder.encode(password))
+                            .enabled(true)
+                            .build();
+                })
+                .orElse(Member.builder()
+                        .email(email.toLowerCase().trim())
+                        .password(passwordEncoder.encode(password))
+                        .role(Role.MEMBER)
+                        .enabled(true)
+                        .build());
         memberRepository.save(member);
     }
 
