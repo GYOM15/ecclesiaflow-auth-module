@@ -46,7 +46,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @author EcclesiaFlow Team
  * @since 1.0.0
  * @see ApiErrorResponse
- * @see com.ecclesiaflow.springsecurity.web.exception.advices.GlobalExceptionHandler
+ * @see com.ecclesiaflow.springsecurity.web.exception.advice.GlobalExceptionHandler
  */
 @Schema(description = "Détail d'une erreur de validation")
 public record ValidationError(
