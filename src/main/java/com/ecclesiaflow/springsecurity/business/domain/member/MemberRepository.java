@@ -1,39 +1,40 @@
 package com.ecclesiaflow.springsecurity.business.domain.member;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.Optional;
-import java.util.UUID;
+import  com.ecclesiaflow.springsecurity.io.persistence.repositories.impl.MemberRepositoryImpl;
 
 /**
- * Repository Spring Data JPA pour la gestion des entités Member.
+ * Interface de Repository pour le domaine Membre.
  * <p>
- * Cette interface définit les opérations de persistance pour les membres EcclesiaFlow.
- * Étend {@link JpaRepository} pour bénéficier des opérations CRUD standard et
- * ajoute des méthodes de recherche spécifiques au domaine métier.
+ * Elle définit le contrat pour les opérations de persistance et de récupération des objets
+ * de domaine {@link Member}, tel que requis par la logique métier de la couche de domaine.
  * </p>
- * 
- * <p><strong>Rôle architectural :</strong> Couche d'accès aux données (Repository Pattern)</p>
- * 
- * <p><strong>Dépendances critiques :</strong></p>
+ *
+ * <p><strong>Rôle architectural :</strong> Port de Domaine (Couche Business/Domaine)</p>
+ *
+ * <p><strong>Responsabilités :</strong></p>
  * <ul>
- *   <li>Spring Data JPA - Génération automatique des implémentations</li>
- *   <li>Base de données relationnelle - Stockage persistant</li>
+ * <li>Définir les contrats pour la gestion des {@link Member}s de domaine.</li>
+ * <li>Permettre à la couche domaine d'interagir avec la persistance sans connaître son implémentation.</li>
  * </ul>
- * 
+ *
+ * <p><strong>Dépendances :</strong> Aucune dépendance directe vers des frameworks de persistance.</p>
+ *
+ * <p><strong>Implémentation :</strong> Sera implémentée par  {@link  MemberRepositoryImpl}
+ * dans la couche d'infrastructure (IO), qui utilisera une technologie de persistance spécifique
+ * (ex: Spring Data JPA via {@code SpringDataMemberRepository}).</p>
+ *
  * <p><strong>Cas d'utilisation typiques :</strong></p>
  * <ul>
- *   <li>Recherche de membre par email lors de l'authentification</li>
- *   <li>Recherche de membre par rôle pour les autorisations</li>
- *   <li>Opérations CRUD standard via JpaRepository</li>
+ * <li>Recherche d'un membre par email (authentification, gestion de compte).</li>
+ * <li>Recherche d'un membre par rôle (autorisations, requêtes métier spécifiques).</li>
+ * <li>Opérations de sauvegarde (création/mise à jour) et de suppression de membres.</li>
  * </ul>
- * 
- * <p><strong>Garanties :</strong> Thread-safe, transactionnel, gestion automatique des connexions.</p>
- * 
+ *
  * @author EcclesiaFlow Team
  * @since 1.0.0
  */
-public interface MemberRepository extends JpaRepository<Member, UUID> {
+public interface MemberRepository{
 
     /**
      * Recherche un membre par son adresse email.
@@ -64,4 +65,30 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
      * @implNote Génère automatiquement la requête SQL : SELECT * FROM members WHERE role = ? LIMIT 1
      */
     Member findByRole(Role role);
+
+    /**
+     * Sauvegarde un membre (création ou mise à jour).
+     * <p>
+     * Si le membre n'existe pas (id null), il sera créé.
+     * Si le membre existe, il sera mis à jour.
+     * </p>
+     *
+     * @param member le membre à sauvegarder, non null
+     * @return le membre sauvegardé avec les données actualisées
+     * @throws IllegalArgumentException si member est null
+     */
+    Member save(Member member);
+
+    /**
+     * Supprime un membre du système.
+     * <p>
+     * Attention : cette opération est irréversible et peut affecter
+     * l'intégrité référentielle avec d'autres modules.
+     * </p>
+     *
+     * @param member le membre à supprimer, non null
+     * @throws IllegalArgumentException si member est null
+     * @throws IllegalStateException si le membre n'existe pas
+     */
+    void delete(Member member);
 }
