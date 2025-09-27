@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,14 +28,27 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
 
     /**
-     * @param request
-     * @param response
-     * @param filterChain
-     * @throws ServletException
-     * @throws IOException
+     * Exécute le filtrage JWT pour chaque requête HTTP entrante.
+     * <p>
+     * Cette méthode :
+     * <ul>
+     *   <li>Vérifie la présence d'un header {@code Authorization} avec un token Bearer</li>
+     *   <li>Extrait et valide le JWT via {@link JwtProcessor}</li>
+     *   <li>Charge l'utilisateur via {@link MemberService}</li>
+     *   <li>Met à jour le {@link SecurityContext} si l'authentification est valide</li>
+     * </ul>
+     *
+     * @param request     la requête HTTP entrante
+     * @param response    la réponse HTTP en cours de construction
+     * @param filterChain la chaîne des filtres Spring Security
+     * @throws ServletException si une erreur de servlet survient
+     * @throws IOException      si une erreur d'entrée/sortie survient lors du traitement
      */
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(        @NonNull HttpServletRequest request,
+                                            @NonNull HttpServletResponse response,
+                                            @NonNull FilterChain filterChain
+    )
             throws ServletException, IOException {
         
         final String authorizationHeader = request.getHeader("Authorization");
