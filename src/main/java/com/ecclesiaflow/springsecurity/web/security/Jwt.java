@@ -2,6 +2,7 @@ package com.ecclesiaflow.springsecurity.web.security;
 
 import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.domain.member.Member;
+import com.ecclesiaflow.springsecurity.business.services.adapters.MemberUserDetailsAdapter;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import lombok.RequiredArgsConstructor;
@@ -58,8 +59,9 @@ public class Jwt {
      * @implNote Opération en mémoire uniquement, aucun accès à la base de données.
      */
     public UserTokens generateUserTokens(Member member) throws JwtProcessingException {
-        String accessToken = jwtProcessor.generateAccessToken(member);
-        String refreshToken = jwtProcessor.generateRefreshToken(member);
+        MemberUserDetailsAdapter userDetails = new MemberUserDetailsAdapter(member);
+        String accessToken = jwtProcessor.generateAccessToken(userDetails);
+        String refreshToken = jwtProcessor.generateRefreshToken(userDetails);
         return new UserTokens(accessToken, refreshToken);
     }
 
@@ -99,8 +101,8 @@ public class Jwt {
      */
     public UserTokens refreshTokenForMember(String refreshToken, Member member)
             throws JwtProcessingException {
-
-        String newAccessToken = jwtProcessor.generateAccessToken(member);
+        MemberUserDetailsAdapter userDetails = new MemberUserDetailsAdapter(member);
+        String newAccessToken = jwtProcessor.generateAccessToken(userDetails);
         return new UserTokens(newAccessToken, refreshToken);
     }
 
