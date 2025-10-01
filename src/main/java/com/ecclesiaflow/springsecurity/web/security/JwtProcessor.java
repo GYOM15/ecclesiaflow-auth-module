@@ -81,6 +81,8 @@ public class JwtProcessor {
             isValid = true;
         } catch (ExpiredJwtException e) {
             isValid = false;
+        } catch (JwtException e) {
+            isValid = false;
         }
         return isValid;
     }
