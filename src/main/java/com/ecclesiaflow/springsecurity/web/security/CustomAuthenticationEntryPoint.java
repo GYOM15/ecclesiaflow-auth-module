@@ -22,7 +22,7 @@ import java.util.List;
  * en réponses JSON structurées utilisant le format ApiErrorResponse, garantissant la cohérence
  * avec le reste de l'API EcclesiaFlow.
  * </p>
- * 
+ *
  * @author EcclesiaFlow Team
  * @since 1.0.0
  */
@@ -73,6 +73,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
             response.getWriter().flush();
         } catch (Exception e) {
             response.getWriter().write("{\"error\":\"Authentication failed\"}");
+            response.getWriter().flush();
         }
     }
 
