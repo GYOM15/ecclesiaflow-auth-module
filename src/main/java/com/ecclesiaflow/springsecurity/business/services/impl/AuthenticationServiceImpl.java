@@ -66,7 +66,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     @Transactional(readOnly = true)
     public Member getMemberByEmail(String email) throws MemberNotFoundException {
-        return memberRepository.findByEmail(email)
+        return memberRepository.getByEmail(email)
                 .orElseThrow(() -> new MemberNotFoundException("Membre introuvable pour l'email: " + email));
     }
 

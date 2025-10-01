@@ -49,7 +49,7 @@ public interface MemberRepository{
      * 
      * @implNote Génère automatiquement la requête SQL : SELECT * FROM members WHERE email = ?
      */
-    Optional<Member> findByEmail(String email);
+    Optional<Member> getByEmail(String email);
 
     /**
      * Recherche un membre par son rôle.
@@ -64,7 +64,7 @@ public interface MemberRepository{
      * 
      * @implNote Génère automatiquement la requête SQL : SELECT * FROM members WHERE role = ? LIMIT 1
      */
-    Member findByRole(Role role);
+    Member getByRole(Role role);
 
     /**
      * Sauvegarde un membre (création ou mise à jour).

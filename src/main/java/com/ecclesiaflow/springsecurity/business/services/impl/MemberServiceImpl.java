@@ -55,7 +55,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional(readOnly = true)
     public UserDetailsService userDetailsService() {
         return username -> {
-            Member member = memberRepository.findByEmail(username)
+            Member member = memberRepository.getByEmail(username)
                     .orElseThrow(() -> new UsernameNotFoundException(
                             "Membre introuvable avec l'email : " + username));
             return new MemberUserDetailsAdapter(member);

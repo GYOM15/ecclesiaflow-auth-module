@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +27,7 @@ public class PasswordServiceImpl implements PasswordService {
         if (membersClient.isEmailNotConfirmed(email)) {
             throw new InvalidRequestException("Le compte doit être confirmé avant de définir un mot de passe");
         }
-        Member member = memberRepository.findByEmail(email)
+        Member member = memberRepository.getByEmail(email)
                 .map(existing -> {
                     if (existing.isEnabled()) {
                         throw new InvalidRequestException("Le mot de passe a déjà été défini pour ce compte");
@@ -56,7 +55,7 @@ public class PasswordServiceImpl implements PasswordService {
         }
 
         // Récupérer le membre
-        Member member = memberRepository.findByEmail(email)
+        Member member = memberRepository.getByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'email: " + email));
 
         if (member.getPassword() == null || member.getPassword().isEmpty()) {

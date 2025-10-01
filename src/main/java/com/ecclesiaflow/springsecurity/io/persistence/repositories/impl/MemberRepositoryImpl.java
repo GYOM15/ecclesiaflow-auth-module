@@ -51,7 +51,7 @@ public class MemberRepositoryImpl implements MemberRepository {
      * {@inheritDoc}
      */
     @Override
-    public Optional<Member> findByEmail(String email) {
+    public Optional<Member> getByEmail(String email) {
         return springDataRepository.findByEmail(email)
                 .map(mapper::toDomain);
     }
@@ -60,7 +60,7 @@ public class MemberRepositoryImpl implements MemberRepository {
      * {@inheritDoc}
      */
     @Override
-    public Member findByRole(Role role) {
+    public Member getByRole(Role role) {
         MemberEntity entity = springDataRepository.findByRole(role);
         return mapper.toDomain(entity);
     }
