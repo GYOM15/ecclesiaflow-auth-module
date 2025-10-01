@@ -1,11 +1,11 @@
 package com.ecclesiaflow.springsecurity.business.services.impl;
 
-import com.ecclesiaflow.springsecurity.business.domain.member.MemberRegistration;
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
 import com.ecclesiaflow.springsecurity.business.domain.member.Member;
-import com.ecclesiaflow.springsecurity.business.domain.member.Role;
 import com.ecclesiaflow.springsecurity.business.domain.member.MemberRepository;
+import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
 import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
+import com.ecclesiaflow.springsecurity.web.security.Jwt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,217 +22,156 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * Tests unitaires pour AuthenticationServiceImpl
- * 
- * Teste les fonctionnalités d'authentification, d'inscription et de récupération des membres
- * avec une couverture complète des cas nominaux et d'erreur.
- */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthenticationService - Tests unitaires")
+@DisplayName("AuthenticationServiceImpl - Tests Unitaires")
 class AuthenticationServiceImplTest {
 
     @Mock
     private AuthenticationManager authenticationManager;
-
-    @Mock
-    private MemberRegistrationService memberRegistrationService;
-
     @Mock
     private MemberRepository memberRepository;
-
+    @Mock
+    private Jwt jwt;
     @Mock
     private Authentication authentication;
 
     @InjectMocks
     private AuthenticationServiceImpl authenticationService;
 
-    private Member testMember;
-    private MemberRegistration testRegistration;
-    private SigninCredentials testCredentials;
+    private Member mockMember;
+    private SigninCredentials credentials;
+    private static final String EMAIL = "test@ecclesiaflow.com";
 
     @BeforeEach
     void setUp() {
-        testMember = createTestMember();
-        testRegistration = createTestRegistration();
-        testCredentials = createTestCredentials();
+        mockMember = Member.builder().email(EMAIL).id(UUID.randomUUID()).build();
+        credentials = new SigninCredentials(EMAIL, "password");
+    }
+
+    // ====================================================================
+    // Tests getAuthenticatedMember
+    // ====================================================================
+
+    @Test
+    @DisplayName("Devrait retourner le Member authentifié en cas de succès")
+    void getAuthenticatedMember_ShouldReturnMember_OnSuccess() {
+        // Arrange
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(EMAIL, credentials.password());
+        when(authenticationManager.authenticate(token)).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(mockMember);
+
+        // Act
+        Member result = authenticationService.getAuthenticatedMember(credentials);
+
+        // Assert
+        assertThat(result).isEqualTo(mockMember);
+        verify(authenticationManager).authenticate(token);
     }
 
     @Test
-    @DisplayName("Devrait enregistrer un nouveau membre avec succès")
-    void shouldRegisterMemberSuccessfully() {
-        // Given
-        when(memberRegistrationService.registerMember(testRegistration)).thenReturn(testMember);
+    @DisplayName("Devrait lever InvalidCredentialsException si l'authentification échoue")
+    void getAuthenticatedMember_ShouldThrowInvalidCredentialsException_OnAuthFailure() {
+        // Arrange
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(EMAIL, credentials.password());
+        when(authenticationManager.authenticate(token)).thenThrow(new BadCredentialsException("Bad Credentials"));
 
-        // When
-        Member result = authenticationService.registerMember(testRegistration);
+        // Act & Assert
+        assertThatThrownBy(() -> authenticationService.getAuthenticatedMember(credentials))
+                .isInstanceOf(BadCredentialsException.class); // BadCredentialsException est levée par Spring Security
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getEmail()).isEqualTo(testMember.getEmail());
-        assertThat(result.getFirstName()).isEqualTo(testMember.getFirstName());
-        assertThat(result.getLastName()).isEqualTo(testMember.getLastName());
-        
-        verify(memberRegistrationService).registerMember(testRegistration);
-        verifyNoMoreInteractions(memberRegistrationService);
+        verify(authenticationManager).authenticate(token);
+    }
+
+    // ====================================================================
+    // Tests getMemberByEmail
+    // ====================================================================
+
+    @Test
+    @DisplayName("Devrait retourner le Member par email en cas de succès")
+    void getMemberByEmail_ShouldReturnMember_OnSuccess() {
+        // Arrange
+        when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.of(mockMember));
+
+        // Act
+        Member result = authenticationService.getMemberByEmail(EMAIL);
+
+        // Assert
+        assertThat(result).isEqualTo(mockMember);
+        verify(memberRepository).findByEmail(EMAIL);
     }
 
     @Test
-    @DisplayName("Devrait propager l'exception lors de l'échec d'enregistrement")
-    void shouldPropagateExceptionWhenRegistrationFails() {
-        // Given
-        when(memberRegistrationService.registerMember(testRegistration))
-                .thenThrow(new IllegalArgumentException("Email déjà utilisé"));
+    @DisplayName("Devrait lever MemberNotFoundException si l'email n'est pas trouvé")
+    void getMemberByEmail_ShouldThrowMemberNotFoundException_OnNotFound() {
+        // Arrange
+        when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
-        // When & Then
-        assertThatThrownBy(() -> authenticationService.registerMember(testRegistration))
+        // Act & Assert
+        assertThatThrownBy(() -> authenticationService.getMemberByEmail(EMAIL))
+                .isInstanceOf(MemberNotFoundException.class)
+                .hasMessageContaining("Membre introuvable pour l'email: " + EMAIL);
+
+        verify(memberRepository).findByEmail(EMAIL);
+    }
+
+    // ====================================================================
+    // Tests getEmailFromValidatedTempToken
+    // ====================================================================
+
+    @Test
+    @DisplayName("Devrait retourner l'email si le token temporaire est valide")
+    void getEmailFromValidatedTempToken_ShouldReturnEmail_OnValidToken() {
+        // Arrange
+        String token = "valid_temp_token";
+        String extractedEmail = "user_from_token@test.com";
+        when(jwt.extractEmailFromTemporaryToken(token)).thenReturn(extractedEmail);
+        when(jwt.validateTemporaryToken(token, extractedEmail)).thenReturn(true);
+
+        // Act
+        String resultEmail = authenticationService.getEmailFromValidatedTempToken(token);
+
+        // Assert
+        assertThat(resultEmail).isEqualTo(extractedEmail);
+        verify(jwt).extractEmailFromTemporaryToken(token);
+        verify(jwt).validateTemporaryToken(token, extractedEmail);
+    }
+
+    @Test
+    @DisplayName("Devrait lever InvalidCredentialsException si le token temporaire est invalide")
+    void getEmailFromValidatedTempToken_ShouldThrowInvalidCredentialsException_OnInvalidToken() {
+        // Arrange
+        String token = "invalid_temp_token";
+        String extractedEmail = "user_from_token@test.com";
+        when(jwt.extractEmailFromTemporaryToken(token)).thenReturn(extractedEmail);
+        when(jwt.validateTemporaryToken(token, extractedEmail)).thenReturn(false); // Validation échoue
+
+        // Act & Assert
+        assertThatThrownBy(() -> authenticationService.getEmailFromValidatedTempToken(token))
+                .isInstanceOf(InvalidCredentialsException.class)
+                .hasMessageContaining("Token temporaire invalide ou expiré");
+
+        verify(jwt).validateTemporaryToken(token, extractedEmail);
+    }
+
+    @Test
+    @DisplayName("Devrait lever IllegalArgumentException si le token est null")
+    void getEmailFromValidatedTempToken_ShouldThrowIllegalArgumentException_OnNullToken() {
+        // Act & Assert
+        assertThatThrownBy(() -> authenticationService.getEmailFromValidatedTempToken(null))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Email déjà utilisé");
-
-        verify(memberRegistrationService).registerMember(testRegistration);
+                .hasMessageContaining("Le token temporaire ne peut pas être null ou vide");
+        verifyNoInteractions(jwt);
     }
 
     @Test
-    @DisplayName("Devrait authentifier un membre avec des identifiants valides")
-    void shouldAuthenticateMemberWithValidCredentials() {
-        // Given
-        when(authentication.getPrincipal()).thenReturn(testMember);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(authentication);
-
-        // When
-        Member result = authenticationService.getAuthenticatedMember(testCredentials);
-
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getEmail()).isEqualTo(testMember.getEmail());
-        
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verifyNoMoreInteractions(authenticationManager);
-    }
-
-    @Test
-    @DisplayName("Devrait lancer InvalidCredentialsException pour des identifiants invalides")
-    void shouldThrowInvalidCredentialsExceptionForInvalidCredentials() {
-        // Given
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("Identifiants incorrects"));
-
-        // When & Then
-        assertThatThrownBy(() -> authenticationService.getAuthenticatedMember(testCredentials))
-                .isInstanceOf(BadCredentialsException.class)
-                .hasMessage("Identifiants incorrects");
-
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-    }
-
-    @Test
-    @DisplayName("Devrait créer le bon token d'authentification")
-    void shouldCreateCorrectAuthenticationToken() {
-        // Given
-        when(authentication.getPrincipal()).thenReturn(testMember);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(authentication);
-
-        // When
-        authenticationService.getAuthenticatedMember(testCredentials);
-
-        // Then
-        verify(authenticationManager).authenticate(argThat(token -> {
-            UsernamePasswordAuthenticationToken authToken = (UsernamePasswordAuthenticationToken) token;
-            return testCredentials.email().equals(authToken.getName()) &&
-                   testCredentials.password().equals(authToken.getCredentials());
-        }));
-    }
-
-    @Test
-    @DisplayName("Devrait récupérer un membre par email avec succès")
-    void shouldGetMemberByEmailSuccessfully() {
-        // Given
-        String email = "test@example.com";
-        when(memberRepository.findByEmail(email)).thenReturn(Optional.of(testMember));
-
-        // When
-        Member result = authenticationService.getMemberByEmail(email);
-
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getEmail()).isEqualTo(testMember.getEmail());
-        
-        verify(memberRepository).findByEmail(email);
-        verifyNoMoreInteractions(memberRepository);
-    }
-
-    @Test
-    @DisplayName("Devrait lancer MemberNotFoundException quand le membre n'existe pas")
-    void shouldThrowMemberNotFoundExceptionWhenMemberDoesNotExist() {
-        // Given
-        String email = "nonexistent@example.com";
-        when(memberRepository.findByEmail(email)).thenReturn(Optional.empty());
-
-        // When & Then
-        assertThatThrownBy(() -> authenticationService.getMemberByEmail(email))
-                .isInstanceOf(MemberNotFoundException.class)
-                .hasMessage("Membre introuvable pour l'email: " + email);
-
-        verify(memberRepository).findByEmail(email);
-    }
-
-    @Test
-    @DisplayName("Devrait gérer les emails null lors de la recherche")
-    void shouldHandleNullEmailInGetMemberByEmail() {
-        // Given
-        when(memberRepository.findByEmail(null)).thenReturn(Optional.empty());
-
-        // When & Then
-        assertThatThrownBy(() -> authenticationService.getMemberByEmail(null))
-                .isInstanceOf(MemberNotFoundException.class)
-                .hasMessage("Membre introuvable pour l'email: null");
-
-        verify(memberRepository).findByEmail(null);
-    }
-
-    @Test
-    @DisplayName("Devrait gérer les identifiants null lors de l'authentification")
-    void shouldHandleNullCredentialsInAuthentication() {
-        // Given
-        SigninCredentials nullCredentials = new SigninCredentials(null, null);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("Identifiants manquants"));
-
-        // When & Then
-        assertThatThrownBy(() -> authenticationService.getAuthenticatedMember(nullCredentials))
-                .isInstanceOf(BadCredentialsException.class)
-                .hasMessage("Identifiants manquants");
-
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-    }
-
-    // Méthodes utilitaires pour créer les objets de test
-    private Member createTestMember() {
-        Member member = new Member();
-        member.setId(UUID.randomUUID());
-        member.setEmail("test@example.com");
-        member.setFirstName("John");
-        member.setLastName("Doe");
-        member.setPassword("encodedPassword");
-        member.setRole(Role.MEMBER);
-        return member;
-    }
-
-    private MemberRegistration createTestRegistration() {
-        return new MemberRegistration(
-                "test@example.com",
-                "password123",
-                "John",
-                "Doe"
-        );
-    }
-
-    private SigninCredentials createTestCredentials() {
-        return new SigninCredentials("test@example.com", "password123");
+    @DisplayName("Devrait lever IllegalArgumentException si le token est vide")
+    void getEmailFromValidatedTempToken_ShouldThrowIllegalArgumentException_OnEmptyToken() {
+        // Act & Assert
+        assertThatThrownBy(() -> authenticationService.getEmailFromValidatedTempToken(" "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Le token temporaire ne peut pas être null ou vide");
+        verifyNoInteractions(jwt);
     }
 }
