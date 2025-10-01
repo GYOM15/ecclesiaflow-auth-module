@@ -1,6 +1,5 @@
 package com.ecclesiaflow.springsecurity.application.config;
 
-import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
 import com.ecclesiaflow.springsecurity.business.domain.member.Role;
 import com.ecclesiaflow.springsecurity.business.services.MemberService;
 import com.ecclesiaflow.springsecurity.web.security.CustomAuthenticationEntryPoint;
@@ -29,8 +28,6 @@ public class SecurityConfiguration {
 
     private final MemberService memberService;
 
-    private final PasswordEncoderUtil passwordEncoder;
-    
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
