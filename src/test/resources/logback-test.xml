@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Appender pour les tests sans stack trace -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!-- Format compact sans stack trace complète pour les tests -->
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%nopex</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Réduire le niveau de verbosité pour certains loggers pendant les tests -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+    
+    <!-- Logger pour les tests d'aspect avec stack trace simplifiée -->
+    <logger name="com.ecclesiaflow.springsecurity.application.logging.aspect.AuthenticationErrorLoggingAspect" level="ERROR">
+        <!-- Les messages d'erreur seront affichés mais pas les stack traces complètes -->
+    </logger>
+
+    <!-- Configuration par défaut -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
