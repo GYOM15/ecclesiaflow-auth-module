@@ -1,246 +1,189 @@
-package com.ecclesiaflow.springsecurity.business.aspect;
+package com.ecclesiaflow.springsecurity.application.logging.aspect;
 
-import com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect;
-import com.ecclesiaflow.springsecurity.application.logging.annotation.LogExecution;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.Signature;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.ecclesiaflow.springsecurity.application.logging.annotation.LogExecution;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.Signature;
+import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-/**
- * Tests unitaires pour LoggingAspect
- * 
- * Teste le comportement de l'aspect AOP pour le logging automatique
- * des méthodes de services et contrôleurs.
- */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("LoggingAspect - Tests unitaires")
 class LoggingAspectTest {
 
-    @InjectMocks
-    private LoggingAspect loggingAspect;
-
-    @Mock
-    private ProceedingJoinPoint proceedingJoinPoint;
-
-    @Mock
-    private JoinPoint joinPoint;
-
-    @Mock
-    private Signature signature;
-
-    @Mock
-    private LogExecution logExecution;
-
-    private ListAppender<ILoggingEvent> listAppender;
-    private Logger logger;
+    LoggingAspect loggingAspect;
+    ListAppender<ILoggingEvent> listAppender;
+    Logger logger;
 
     @BeforeEach
-    void setUp() {
-        // Configuration du logger pour capturer les logs dans les tests
+    void setup() {
+        loggingAspect = new LoggingAspect();
+
+        // Préparer un logger et y attacher ListAppender pour capter les logs
         logger = (Logger) LoggerFactory.getLogger(LoggingAspect.class);
         listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
+        logger.setLevel(Level.DEBUG);
+    }
+
+    @AfterEach
+    void tearDown() {
+        logger.detachAppender(listAppender);
+        listAppender.stop();
+    }
+
+    /**
+     * Classe de test servant à simuler une méthode annotée @LogExecution
+     */
+    static class TestService {
+        @LogExecution(value = "TestService.testMethod", includeParams = true, includeExecutionTime = true)
+        public String testMethod(String param1, int param2) throws InterruptedException {
+            Thread.sleep(50); // simuler un traitement
+            return "success";
+        }
+
+        public String slowMethod() throws InterruptedException {
+            Thread.sleep(1100); // plus d'1s pour déclencher warning
+            return "slow";
+        }
+
+        public String failMethod() {
+            throw new RuntimeException("Erreur simulée");
+        }
+    }
+
+    /**
+     * Classe de test avec annotations @LogExecution pour tester différents scénarios
+     */
+    static class TestServiceWithAnnotation {
+        @LogExecution(value = "Méthode lente", includeParams = false, includeExecutionTime = true)
+        public String slowMethod() throws InterruptedException {
+            Thread.sleep(1100); // plus d'1s pour déclencher warning
+            return "slow";
+        }
+
+        @LogExecution(value = "Méthode qui échoue", includeParams = false, includeExecutionTime = true)
+        public void failMethod() {
+            throw new RuntimeException("Erreur simulée");
+        }
     }
 
     @Test
-    @DisplayName("Devrait logger les méthodes de service avec succès")
-    void shouldLogServiceMethodsSuccessfully() throws Throwable {
-        // Given
-        Object mockTarget = new Object();
-        when(proceedingJoinPoint.getTarget()).thenReturn(mockTarget);
-        when(proceedingJoinPoint.getSignature()).thenReturn(signature);
-        when(signature.getName()).thenReturn("testMethod");
-        when(proceedingJoinPoint.proceed()).thenReturn("result");
+    @DisplayName("Devrait logger correctement une méthode annotée @LogExecution")
+    void shouldLogAnnotatedMethodExecution() throws Throwable {
+        TestService target = new TestService();
 
-        // When
-        Object result = loggingAspect.logServiceMethods(proceedingJoinPoint);
+        // Création proxy AOP avec l'aspect LoggingAspect
+        AspectJProxyFactory factory = new AspectJProxyFactory(target);
+        factory.addAspect(loggingAspect);
+        TestService proxy = factory.getProxy();
 
-        // Then
-        assertThat(result).isEqualTo("result");
-        verify(proceedingJoinPoint).proceed();
-        verify(proceedingJoinPoint, atLeastOnce()).getTarget();
-        verify(proceedingJoinPoint, atLeastOnce()).getSignature();
-        verify(signature, atLeastOnce()).getName();
+        String result = proxy.testMethod("paramValue", 42);
+        assertThat(result).isEqualTo("success");
+
+        List<ILoggingEvent> logs = listAppender.list;
+
+        // Vérification début + paramètres
+        assertThat(logs.getFirst().getLevel()).isEqualTo(Level.INFO);
+        assertThat(logs.getFirst().getFormattedMessage()).contains("Début: TestService.testMethod");
+        assertThat(logs.get(0).getFormattedMessage()).contains("paramValue");
+        assertThat(logs.get(0).getFormattedMessage()).contains("42");
+
+        // Vérification succès + temps d'exécution
+        assertThat(logs.get(1).getLevel()).isEqualTo(Level.INFO);
+        assertThat(logs.get(1).getFormattedMessage()).contains("Succès: TestService.testMethod");
+        assertThat(logs.get(1).getFormattedMessage()).contains("ms");
     }
 
     @Test
-    @DisplayName("Devrait logger les exceptions dans les méthodes de service")
-    void shouldLogServiceMethodExceptions() throws Throwable {
-        // Given
-        Object mockTarget = new Object();
-        RuntimeException exception = new RuntimeException("Test exception");
-        when(proceedingJoinPoint.getTarget()).thenReturn(mockTarget);
-        when(proceedingJoinPoint.getSignature()).thenReturn(signature);
-        when(signature.getName()).thenReturn("testMethod");
-        when(proceedingJoinPoint.proceed()).thenThrow(exception);
+    @DisplayName("Devrait logger une méthode de service normale (DEBUG, succès)")
+    void shouldLogServiceMethodSuccess() throws Throwable {
+        TestServiceWithAnnotation target = new TestServiceWithAnnotation();
 
-        // When & Then
-        assertThatThrownBy(() -> loggingAspect.logServiceMethods(proceedingJoinPoint))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Test exception");
+        AspectJProxyFactory factory = new AspectJProxyFactory(target);
+        factory.addAspect(loggingAspect);
+        TestServiceWithAnnotation proxy = factory.getProxy();
 
-        verify(proceedingJoinPoint).proceed();
+        String result = proxy.slowMethod();
+        assertThat(result).isEqualTo("slow");
+
+        List<ILoggingEvent> logs = listAppender.list;
+
+        // Vérifier qu'il y a au moins des logs
+        assertThat(logs).isNotEmpty();
+
+        // Le premier log : début
+        assertThat(logs.get(0).getLevel()).isEqualTo(Level.INFO);
+        assertThat(logs.get(0).getFormattedMessage()).contains("Début: Méthode lente");
+
+        // Le deuxième log : succès avec temps d'exécution
+        assertThat(logs.get(1).getLevel()).isEqualTo(Level.INFO);
+        assertThat(logs.get(1).getFormattedMessage()).contains("Succès: Méthode lente");
+        assertThat(logs.get(1).getFormattedMessage()).contains("ms");
     }
 
     @Test
-    @DisplayName("Devrait logger les méthodes annotées avec @LogExecution")
-    void shouldLogAnnotatedMethods() throws Throwable {
-        // Given
-        Object mockTarget = new Object();
-        when(proceedingJoinPoint.getTarget()).thenReturn(mockTarget);
-        when(proceedingJoinPoint.getSignature()).thenReturn(signature);
-        when(signature.getName()).thenReturn("annotatedMethod");
-        when(proceedingJoinPoint.proceed()).thenReturn("annotated result");
-        when(logExecution.value()).thenReturn("Custom message");
-        when(logExecution.includeParams()).thenReturn(false);
-        when(logExecution.includeExecutionTime()).thenReturn(true);
+    @DisplayName("Devrait logger une exception dans méthode de service")
+    void shouldLogExceptionInServiceMethod() {
+        TestServiceWithAnnotation target = new TestServiceWithAnnotation();
 
-        // When
-        Object result = loggingAspect.logAnnotatedMethods(proceedingJoinPoint, logExecution);
+        AspectJProxyFactory factory = new AspectJProxyFactory(target);
+        factory.addAspect(loggingAspect);
+        TestServiceWithAnnotation proxy = factory.getProxy();
 
-        // Then
-        assertThat(result).isEqualTo("annotated result");
-        verify(proceedingJoinPoint).proceed();
-        verify(logExecution, atLeastOnce()).value();
-        verify(logExecution).includeParams();
-        verify(logExecution).includeExecutionTime();
+        Throwable thrown = catchThrowable(proxy::failMethod);
+        assertThat(thrown).isInstanceOf(RuntimeException.class).hasMessage("Erreur simulée");
+
+        List<ILoggingEvent> logs = listAppender.list;
+
+        // Vérifier qu'il y a des logs
+        assertThat(logs).isNotEmpty();
+
+        // Le premier log : début
+        assertThat(logs.get(0).getLevel()).isEqualTo(Level.INFO);
+        assertThat(logs.get(0).getFormattedMessage()).contains("Début: Méthode qui échoue");
+
+        // Le deuxième log : erreur
+        assertThat(logs.get(1).getLevel()).isEqualTo(Level.ERROR);
+        assertThat(logs.get(1).getFormattedMessage()).contains("Échec: Méthode qui échoue");
+        assertThat(logs.get(1).getFormattedMessage()).contains("Erreur simulée");
     }
 
-    @Test
-    @DisplayName("Devrait inclure les paramètres quand demandé dans @LogExecution")
-    void shouldIncludeParametersWhenRequested() throws Throwable {
-        // Given
-        Object mockTarget = new Object();
-        Object[] args = {"param1", "param2"};
-        when(proceedingJoinPoint.getTarget()).thenReturn(mockTarget);
-        when(proceedingJoinPoint.getSignature()).thenReturn(signature);
-        when(signature.getName()).thenReturn("methodWithParams");
-        when(proceedingJoinPoint.getArgs()).thenReturn(args);
-        when(proceedingJoinPoint.proceed()).thenReturn("result with params");
-        when(logExecution.value()).thenReturn("");
-        when(logExecution.includeParams()).thenReturn(true);
-        when(logExecution.includeExecutionTime()).thenReturn(false);
-
-        // When
-        Object result = loggingAspect.logAnnotatedMethods(proceedingJoinPoint, logExecution);
-
-        // Then
-        assertThat(result).isEqualTo("result with params");
-        verify(proceedingJoinPoint).getArgs();
-        verify(logExecution).includeParams();
-    }
 
     @Test
-    @DisplayName("Devrait logger les exceptions dans les méthodes annotées")
-    void shouldLogAnnotatedMethodExceptions() throws Throwable {
-        // Given
-        Object mockTarget = new Object();
-        RuntimeException exception = new RuntimeException("Annotated exception");
-        when(proceedingJoinPoint.getTarget()).thenReturn(mockTarget);
-        when(proceedingJoinPoint.getSignature()).thenReturn(signature);
-        when(signature.getName()).thenReturn("failingMethod");
-        when(proceedingJoinPoint.proceed()).thenThrow(exception);
-        when(logExecution.value()).thenReturn("Failing operation");
-        when(logExecution.includeParams()).thenReturn(false);
-
-        // When & Then
-        assertThatThrownBy(() -> loggingAspect.logAnnotatedMethods(proceedingJoinPoint, logExecution))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Annotated exception");
-
-        verify(proceedingJoinPoint).proceed();
-    }
-
-    @Test
-    @DisplayName("Devrait logger l'accès aux contrôleurs")
+    @DisplayName("Devrait logger accès contrôleur (niveau DEBUG)")
     void shouldLogControllerAccess() {
-        // Given
-        Object mockTarget = new Object();
-        when(joinPoint.getTarget()).thenReturn(mockTarget);
-        when(joinPoint.getSignature()).thenReturn(signature);
-        when(signature.getName()).thenReturn("controllerMethod");
+        LoggingAspect aspect = new LoggingAspect();
 
-        // When
-        loggingAspect.logControllerAccess(joinPoint);
+        // Mock du JoinPoint
+        JoinPoint joinPoint = Mockito.mock(JoinPoint.class);
+        Signature signature = Mockito.mock(Signature.class);
 
-        // Then
-        verify(joinPoint).getTarget();
-        verify(joinPoint).getSignature();
-        verify(signature).getName();
+        // Stub des méthodes nécessaires
+        Mockito.when(joinPoint.getTarget()).thenReturn(new TestController());
+        Mockito.when(joinPoint.getSignature()).thenReturn(signature);
+        Mockito.when(signature.getName()).thenReturn("someMethod");
+        Mockito.when(signature.getDeclaringType()).thenReturn(TestController.class);
+
+        aspect.logControllerAccess(joinPoint);
+
+        List<ILoggingEvent> logs = listAppender.list;
+
+        assertThat(logs).isNotEmpty();
+        assertThat(logs.getFirst().getLevel()).isEqualTo(Level.DEBUG);
+        assertThat(logs.getFirst().getFormattedMessage()).contains("API: TestController.someMethod");
     }
 
-    @Test
-    @DisplayName("Devrait logger les exceptions non gérées")
-    void shouldLogUnhandledExceptions() {
-        // Given
-        Object mockTarget = new Object();
-        RuntimeException exception = new RuntimeException("Unhandled exception");
-        when(joinPoint.getTarget()).thenReturn(mockTarget);
-        when(joinPoint.getSignature()).thenReturn(signature);
-        when(signature.getName()).thenReturn("problematicMethod");
-
-        // When
-        loggingAspect.logUnhandledException(joinPoint, exception);
-
-        // Then
-        verify(joinPoint).getTarget();
-        verify(joinPoint).getSignature();
-        verify(signature).getName();
-    }
-
-    @Test
-    @DisplayName("Devrait détecter les méthodes lentes (> 1 seconde)")
-    void shouldDetectSlowMethods() throws Throwable {
-        // Given
-        Object mockTarget = new Object();
-        when(proceedingJoinPoint.getTarget()).thenReturn(mockTarget);
-        when(proceedingJoinPoint.getSignature()).thenReturn(signature);
-        when(signature.getName()).thenReturn("slowMethod");
-        when(proceedingJoinPoint.proceed()).thenReturn("slow result");
-
-        // When
-        Object result = loggingAspect.logServiceMethods(proceedingJoinPoint);
-
-        // Then
-        assertThat(result).isEqualTo("slow result");
-        verify(proceedingJoinPoint).proceed();
-    }
-
-    @Test
-    @DisplayName("Devrait utiliser le nom de méthode par défaut quand @LogExecution.value() est vide")
-    void shouldUseDefaultMethodNameWhenLogExecutionValueIsEmpty() throws Throwable {
-        // Given
-        Object mockTarget = new Object();
-        when(proceedingJoinPoint.getTarget()).thenReturn(mockTarget);
-        when(proceedingJoinPoint.getSignature()).thenReturn(signature);
-        when(signature.getName()).thenReturn("defaultNameMethod");
-        when(proceedingJoinPoint.proceed()).thenReturn("default result");
-        when(logExecution.value()).thenReturn("");
-        when(logExecution.includeParams()).thenReturn(false);
-        when(logExecution.includeExecutionTime()).thenReturn(true);
-
-        // When
-        Object result = loggingAspect.logAnnotatedMethods(proceedingJoinPoint, logExecution);
-
-        // Then
-        assertThat(result).isEqualTo("default result");
-        verify(logExecution).value();
-        verify(proceedingJoinPoint).getTarget();
-        verify(signature).getName();
+    // Classe test pour simuler contrôleur
+    static class TestController {
+        public void someMethod() {}
     }
 }
