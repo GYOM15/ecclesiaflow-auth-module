@@ -47,13 +47,15 @@ public interface SpringDataMemberRepository extends JpaRepository<MemberEntity, 
     /**
      * Recherche un membre par son rôle.
      * <p>
-     * Cette méthode retourne le premier membre trouvé avec le rôle spécifié.
-     * Utilisée pour les opérations d'administration et de gestion des permissions.
+     * Cette méthode retourne un membre avec le rôle spécifié.
+     * <strong>Note:</strong> Cette méthode est principalement utilisée pour les tests.
+     * Elle s'attend à ce qu'il y ait un seul membre par rôle dans le contexte de test.
      * </p>
-     * 
+     *
      * @param role le rôle du membre à rechercher, non null
      * @return le membre ayant ce rôle, null si aucun membre trouvé
      * @throws IllegalArgumentException si role est null
+     * @throws org.springframework.dao.IncorrectResultSizeDataAccessException si plusieurs membres ont le même rôle
      */
     MemberEntity findByRole(Role role);
 }
