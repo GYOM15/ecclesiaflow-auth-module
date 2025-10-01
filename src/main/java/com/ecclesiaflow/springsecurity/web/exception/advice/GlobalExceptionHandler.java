@@ -17,6 +17,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.reactive.resource.NoResourceFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -179,6 +181,35 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleAll(Exception ex, HttpServletRequest request) {
         return buildSimpleErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Une erreur interne est survenue", request.getRequestURI());
     }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNotFoundExceptions(
+            NoResourceFoundException ex, WebRequest request) {
+
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        ValidationError error = new ValidationError(
+                "La ressource demandée est introuvable",
+                "resource",
+                "routing",
+                "NOT_FOUND",
+                ex.getMessage(),
+                "NOT_FOUND",
+                null,
+                null
+        );
+
+        ApiErrorResponse response = ApiErrorResponse.builder()
+                .status(status.value())
+                .error(status.getReasonPhrase())
+                .message("Ressource non trouvée")
+                .path(request.getDescription(false).replace("uri=", ""))
+                .errors(List.of(error))
+                .build();
+
+        return ResponseEntity.status(status).body(response);
+    }
+
 
     /**
      * Construit une réponse d'erreur 400 Bad Request avec des erreurs de validation.
