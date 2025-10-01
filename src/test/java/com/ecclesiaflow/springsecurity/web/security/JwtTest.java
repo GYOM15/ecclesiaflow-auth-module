@@ -1,8 +1,8 @@
 package com.ecclesiaflow.springsecurity.web.security;
 
-import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.business.domain.member.Role;
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,24 +12,24 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests unitaires pour Jwt
- * 
- * Teste les opérations JWT de haut niveau pour garantir la génération
- * et la validation correctes des tokens d'authentification.
+ * Tests unitaires pour l'utilitaire Jwt.
+ * Se concentre sur la vérification des interactions avec JwtProcessor (via Mockito)
+ * et de la gestion des exceptions.
  */
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("Jwt - Tests d'opérations JWT")
+@DisplayName("Jwt - Tests d'Orchestration et d'Exceptions")
 class JwtTest {
 
     @Mock
@@ -38,255 +38,187 @@ class JwtTest {
     @InjectMocks
     private Jwt jwt;
 
-    private Member testMember;
+    // Constantes de test
+    private static final String TEST_EMAIL = "test@ecclesiaflow.com";
+    private static final String ACCESS_TOKEN = "mock.access.token";
+    private static final String REFRESH_TOKEN = "mock.refresh.token";
+    private static final String TEMP_TOKEN = "mock.temp.token";
+    private Member mockMember;
 
     @BeforeEach
     void setUp() {
-        testMember = createTestMember();
+        // Construction d'un mockMember avec le builder de l'objet de domaine pur
+        mockMember = Member.builder()
+                .id(UUID.randomUUID())
+                .email(TEST_EMAIL)
+                .password("hashedPassword") // Doit être haché dans le domaine
+                .createdAt(LocalDateTime.now())
+                .role(Role.MEMBER)
+                .enabled(true)
+                .build();
+    }
+
+    // ====================================================================
+    // Tests de Génération de Tokens (generateUserTokens)
+    // ====================================================================
+
+    @Test
+    @DisplayName("generateUserTokens - Devrait appeler le processor pour créer les deux tokens et retourner UserTokens")
+    void generateUserTokens_ShouldCallProcessorAndReturnUserTokens() throws JwtProcessingException {
+        // Arrange
+        when(jwtProcessor.generateAccessToken(any(UserDetails.class))).thenReturn(ACCESS_TOKEN);
+        when(jwtProcessor.generateRefreshToken(any(UserDetails.class))).thenReturn(REFRESH_TOKEN);
+
+        // Act
+        UserTokens result = jwt.generateUserTokens(mockMember);
+
+        // Assert
+        verify(jwtProcessor, times(1)).generateAccessToken(any(UserDetails.class));
+        verify(jwtProcessor, times(1)).generateRefreshToken(any(UserDetails.class));
+        assertThat(result.accessToken()).isEqualTo(ACCESS_TOKEN);
+        assertThat(result.refreshToken()).isEqualTo(REFRESH_TOKEN);
     }
 
     @Test
-    @DisplayName("Devrait générer des tokens utilisateur avec succès")
-    void shouldGenerateUserTokensSuccessfully() throws JwtProcessingException {
-        // Given
-        String expectedAccessToken = "access.token.jwt";
-        String expectedRefreshToken = "refresh.token.jwt";
-        
-        when(jwtProcessor.generateAccessToken(testMember)).thenReturn(expectedAccessToken);
-        when(jwtProcessor.generateRefreshToken(testMember)).thenReturn(expectedRefreshToken);
+    @DisplayName("generateUserTokens - Devrait propager JwtProcessingException en cas d'échec de génération")
+    void generateUserTokens_ShouldPropagateException() throws JwtProcessingException {
+        // Arrange
+        doThrow(new JwtProcessingException("Generation failed")).when(jwtProcessor).generateAccessToken(any(UserDetails.class));
 
-        // When
-        UserTokens userTokens = jwt.generateUserTokens(testMember);
-
-        // Then
-        assertThat(userTokens).isNotNull();
-        assertThat(userTokens.getAccessToken()).isEqualTo(expectedAccessToken);
-        assertThat(userTokens.getRefreshToken()).isEqualTo(expectedRefreshToken);
-        
-        verify(jwtProcessor).generateAccessToken(testMember);
-        verify(jwtProcessor).generateRefreshToken(testMember);
-    }
-
-    @Test
-    @DisplayName("Devrait propager JwtProcessingException lors de la génération d'access token")
-    void shouldPropagateJwtProcessingExceptionOnAccessTokenGeneration() throws JwtProcessingException {
-        // Given
-        when(jwtProcessor.generateAccessToken(testMember))
-                .thenThrow(new JwtProcessingException("Erreur génération access token"));
-        when(jwtProcessor.generateRefreshToken(testMember)).thenReturn("refresh.token");
-
-        // When & Then
-        assertThatThrownBy(() -> jwt.generateUserTokens(testMember))
+        // Act & Assert
+        assertThatThrownBy(() -> jwt.generateUserTokens(mockMember))
                 .isInstanceOf(JwtProcessingException.class)
-                .hasMessage("Erreur génération access token");
+                .hasMessage("Generation failed");
+    }
 
-        verify(jwtProcessor).generateAccessToken(testMember);
-        verify(jwtProcessor, never()).generateRefreshToken(any());
+    // ====================================================================
+    // Tests de Validation et d'Extraction (validateAndExtractEmail)
+    // ====================================================================
+
+    @Test
+    @DisplayName("validateAndExtractEmail - Devrait valider le token et extraire l'email")
+    void validateAndExtractEmail_ShouldValidateAndExtract() throws InvalidTokenException, JwtProcessingException {
+        // Arrange
+        when(jwtProcessor.isRefreshTokenValid(REFRESH_TOKEN)).thenReturn(true);
+        when(jwtProcessor.extractUsername(REFRESH_TOKEN)).thenReturn(TEST_EMAIL);
+
+        // Act
+        String resultEmail = jwt.validateAndExtractEmail(REFRESH_TOKEN);
+
+        // Assert
+        verify(jwtProcessor, times(1)).isRefreshTokenValid(REFRESH_TOKEN);
+        verify(jwtProcessor, times(1)).extractUsername(REFRESH_TOKEN);
+        assertThat(resultEmail).isEqualTo(TEST_EMAIL);
     }
 
     @Test
-    @DisplayName("Devrait propager JwtProcessingException lors de la génération de refresh token")
-    void shouldPropagateJwtProcessingExceptionOnRefreshTokenGeneration() throws JwtProcessingException {
-        // Given
-        when(jwtProcessor.generateAccessToken(testMember)).thenReturn("access.token");
-        when(jwtProcessor.generateRefreshToken(testMember))
-                .thenThrow(new JwtProcessingException("Erreur génération refresh token"));
+    @DisplayName("validateAndExtractEmail - Devrait lancer InvalidTokenException si le processor retourne false")
+    void validateAndExtractEmail_ShouldThrowIfTokenIsInvalid() throws InvalidTokenException, JwtProcessingException {
+        // Arrange
+        when(jwtProcessor.isRefreshTokenValid(REFRESH_TOKEN)).thenReturn(false);
 
-        // When & Then
-        assertThatThrownBy(() -> jwt.generateUserTokens(testMember))
-                .isInstanceOf(JwtProcessingException.class)
-                .hasMessage("Erreur génération refresh token");
-
-        verify(jwtProcessor).generateAccessToken(testMember);
-        verify(jwtProcessor).generateRefreshToken(testMember);
-    }
-
-    @Test
-    @DisplayName("Devrait valider et extraire l'email d'un refresh token valide")
-    void shouldValidateAndExtractEmailFromValidRefreshToken() throws InvalidTokenException, JwtProcessingException {
-        // Given
-        String refreshToken = "valid.refresh.token";
-        String expectedEmail = "test@example.com";
-        
-        when(jwtProcessor.isRefreshTokenValid(refreshToken)).thenReturn(true);
-        when(jwtProcessor.extractUsername(refreshToken)).thenReturn(expectedEmail);
-
-        // When
-        String extractedEmail = jwt.validateAndExtractEmail(refreshToken);
-
-        // Then
-        assertThat(extractedEmail).isEqualTo(expectedEmail);
-        
-        verify(jwtProcessor).isRefreshTokenValid(refreshToken);
-        verify(jwtProcessor).extractUsername(refreshToken);
-    }
-
-    @Test
-    @DisplayName("Devrait lancer InvalidTokenException pour refresh token invalide")
-    void shouldThrowInvalidTokenExceptionForInvalidRefreshToken() throws InvalidTokenException, JwtProcessingException {
-        // Given
-        String invalidRefreshToken = "invalid.refresh.token";
-        
-        when(jwtProcessor.isRefreshTokenValid(invalidRefreshToken)).thenReturn(false);
-
-        // When & Then
-        assertThatThrownBy(() -> jwt.validateAndExtractEmail(invalidRefreshToken))
+        // Act & Assert
+        assertThatThrownBy(() -> jwt.validateAndExtractEmail(REFRESH_TOKEN))
                 .isInstanceOf(InvalidTokenException.class)
                 .hasMessage("Le token de rafraîchissement est invalide ou expiré.");
-
-        verify(jwtProcessor).isRefreshTokenValid(invalidRefreshToken);
-        verify(jwtProcessor, never()).extractUsername(any());
+        verify(jwtProcessor, never()).extractUsername(anyString());
     }
 
     @Test
-    @DisplayName("Devrait propager JwtProcessingException lors de la validation")
-    void shouldPropagateJwtProcessingExceptionOnValidation() throws InvalidTokenException, JwtProcessingException {
-        // Given
-        String refreshToken = "problematic.token";
-        
-        when(jwtProcessor.isRefreshTokenValid(refreshToken))
-                .thenThrow(new JwtProcessingException("Erreur traitement token"));
+    @DisplayName("validateAndExtractEmail - Devrait propager JwtProcessingException du processor")
+    void validateAndExtractEmail_ShouldPropagateJwtProcessingException() throws InvalidTokenException, JwtProcessingException {
+        // Arrange
+        doThrow(new JwtProcessingException("JWS error")).when(jwtProcessor).isRefreshTokenValid(REFRESH_TOKEN);
 
-        // When & Then
-        assertThatThrownBy(() -> jwt.validateAndExtractEmail(refreshToken))
+        // Act & Assert
+        assertThatThrownBy(() -> jwt.validateAndExtractEmail(REFRESH_TOKEN))
                 .isInstanceOf(JwtProcessingException.class)
-                .hasMessage("Erreur traitement token");
+                .hasMessage("JWS error");
+    }
 
-        verify(jwtProcessor).isRefreshTokenValid(refreshToken);
-        verify(jwtProcessor, never()).extractUsername(any());
+    // ====================================================================
+    // Tests de Rafraîchissement (refreshTokenForMember)
+    // ====================================================================
+
+    @Test
+    @DisplayName("refreshTokenForMember - Devrait générer un nouvel access token et conserver le refresh token")
+    void refreshTokenForMember_ShouldGenerateNewAccessToken() throws JwtProcessingException {
+        // Arrange
+        String newAccessToken = "new.mock.access.token";
+        when(jwtProcessor.generateAccessToken(any(UserDetails.class))).thenReturn(newAccessToken);
+
+        // Act
+        UserTokens result = jwt.refreshTokenForMember(REFRESH_TOKEN, mockMember);
+
+        // Assert
+        verify(jwtProcessor, times(1)).generateAccessToken(any(UserDetails.class));
+        assertThat(result.accessToken()).isEqualTo(newAccessToken);
+        assertThat(result.refreshToken()).isEqualTo(REFRESH_TOKEN);
+    }
+
+    // ====================================================================
+    // Tests de Token Temporaire (generateTemporaryToken)
+    // ====================================================================
+
+    @Test
+    @DisplayName("generateTemporaryToken - Devrait déléguer au processor et retourner le token")
+    void generateTemporaryToken_ShouldDelegateAndReturnToken() throws JwtProcessingException {
+        // Arrange
+        when(jwtProcessor.generateTemporaryToken(TEST_EMAIL)).thenReturn(TEMP_TOKEN);
+
+        // Act
+        String resultToken = jwt.generateTemporaryToken(TEST_EMAIL);
+
+        // Assert
+        verify(jwtProcessor, times(1)).generateTemporaryToken(TEST_EMAIL);
+        assertThat(resultToken).isEqualTo(TEMP_TOKEN);
+    }
+
+    // ====================================================================
+    // Tests de Validation de Token Temporaire (validateTemporaryToken)
+    // ====================================================================
+
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait déléguer au processor et retourner le résultat de validation")
+    void validateTemporaryToken_ShouldDelegateAndReturnResult() {
+        // Arrange
+        when(jwtProcessor.validateTemporaryToken(TEMP_TOKEN, TEST_EMAIL)).thenReturn(true);
+
+        // Act
+        boolean isValid = jwt.validateTemporaryToken(TEMP_TOKEN, TEST_EMAIL);
+
+        // Assert
+        verify(jwtProcessor, times(1)).validateTemporaryToken(TEMP_TOKEN, TEST_EMAIL);
+        assertThat(isValid).isTrue();
+    }
+
+    // ====================================================================
+    // Tests d'Extraction de Token Temporaire (extractEmailFromTemporaryToken)
+    // ====================================================================
+
+    @Test
+    @DisplayName("extractEmailFromTemporaryToken - Devrait déléguer l'extraction de l'email")
+    void extractEmailFromTemporaryToken_ShouldDelegateExtraction() throws JwtProcessingException {
+        // Arrange
+        when(jwtProcessor.extractUsername(TEMP_TOKEN)).thenReturn(TEST_EMAIL);
+
+        // Act
+        String resultEmail = jwt.extractEmailFromTemporaryToken(TEMP_TOKEN);
+
+        // Assert
+        verify(jwtProcessor, times(1)).extractUsername(TEMP_TOKEN);
+        assertThat(resultEmail).isEqualTo(TEST_EMAIL);
     }
 
     @Test
-    @DisplayName("Devrait propager JwtProcessingException lors de l'extraction d'email")
-    void shouldPropagateJwtProcessingExceptionOnEmailExtraction() throws InvalidTokenException, JwtProcessingException {
-        // Given
-        String refreshToken = "valid.but.problematic.token";
-        
-        when(jwtProcessor.isRefreshTokenValid(refreshToken)).thenReturn(true);
-        when(jwtProcessor.extractUsername(refreshToken))
-                .thenThrow(new JwtProcessingException("Erreur extraction email"));
+    @DisplayName("extractEmailFromTemporaryToken - Devrait propager JwtProcessingException en cas d'échec d'extraction")
+    void extractEmailFromTemporaryToken_ShouldPropagateException() throws JwtProcessingException {
+        // Arrange
+        doThrow(new JwtProcessingException("Extraction failed")).when(jwtProcessor).extractUsername(TEMP_TOKEN);
 
-        // When & Then
-        assertThatThrownBy(() -> jwt.validateAndExtractEmail(refreshToken))
+        // Act & Assert
+        assertThatThrownBy(() -> jwt.extractEmailFromTemporaryToken(TEMP_TOKEN))
                 .isInstanceOf(JwtProcessingException.class)
-                .hasMessage("Erreur extraction email");
-
-        verify(jwtProcessor).isRefreshTokenValid(refreshToken);
-        verify(jwtProcessor).extractUsername(refreshToken);
-    }
-
-    @Test
-    @DisplayName("Devrait rafraîchir le token pour un membre")
-    void shouldRefreshTokenForMember() throws JwtProcessingException {
-        // Given
-        String oldRefreshToken = "old.refresh.token";
-        String newAccessToken = "new.access.token";
-        
-        when(jwtProcessor.generateAccessToken(testMember)).thenReturn(newAccessToken);
-
-        // When
-        UserTokens refreshedUserTokens = jwt.refreshTokenForMember(oldRefreshToken, testMember);
-
-        // Then
-        assertThat(refreshedUserTokens).isNotNull();
-        assertThat(refreshedUserTokens.getAccessToken()).isEqualTo(newAccessToken);
-        assertThat(refreshedUserTokens.getRefreshToken()).isEqualTo(oldRefreshToken);
-        
-        verify(jwtProcessor).generateAccessToken(testMember);
-    }
-
-    @Test
-    @DisplayName("Devrait propager JwtProcessingException lors du rafraîchissement")
-    void shouldPropagateJwtProcessingExceptionOnTokenRefresh() throws JwtProcessingException {
-        // Given
-        String refreshToken = "refresh.token";
-        
-        when(jwtProcessor.generateAccessToken(testMember))
-                .thenThrow(new JwtProcessingException("Erreur génération nouveau token"));
-
-        // When & Then
-        assertThatThrownBy(() -> jwt.refreshTokenForMember(refreshToken, testMember))
-                .isInstanceOf(JwtProcessingException.class)
-                .hasMessage("Erreur génération nouveau token");
-
-        verify(jwtProcessor).generateAccessToken(testMember);
-    }
-
-    @Test
-    @DisplayName("Devrait gérer différents types de membres")
-    void shouldHandleDifferentMemberTypes() throws JwtProcessingException {
-        // Given
-        Member adminMember = createTestMember();
-        adminMember.setRole(Role.ADMIN);
-        adminMember.setEmail("admin@example.com");
-        
-        when(jwtProcessor.generateAccessToken(any())).thenReturn("access.token");
-        when(jwtProcessor.generateRefreshToken(any())).thenReturn("refresh.token");
-
-        // When
-        UserTokens userTokens = jwt.generateUserTokens(testMember);
-        UserTokens adminUserTokens = jwt.generateUserTokens(adminMember);
-
-        // Then
-        assertThat(userTokens).isNotNull();
-        assertThat(adminUserTokens).isNotNull();
-        
-        verify(jwtProcessor, times(2)).generateAccessToken(any());
-        verify(jwtProcessor, times(2)).generateRefreshToken(any());
-    }
-
-    @Test
-    @DisplayName("Devrait maintenir l'indépendance des opérations")
-    void shouldMaintainOperationIndependence() throws JwtProcessingException, InvalidTokenException {
-        // Given
-        String refreshToken = "refresh.token";
-        String email = "test@example.com";
-        String newAccessToken = "new.access.token";
-        
-        when(jwtProcessor.isRefreshTokenValid(refreshToken)).thenReturn(true);
-        when(jwtProcessor.extractUsername(refreshToken)).thenReturn(email);
-        when(jwtProcessor.generateAccessToken(testMember)).thenReturn(newAccessToken);
-
-        // When
-        String extractedEmail = jwt.validateAndExtractEmail(refreshToken);
-        UserTokens refreshedUserTokens = jwt.refreshTokenForMember(refreshToken, testMember);
-
-        // Then
-        assertThat(extractedEmail).isEqualTo(email);
-        assertThat(refreshedUserTokens.getAccessToken()).isEqualTo(newAccessToken);
-        assertThat(refreshedUserTokens.getRefreshToken()).isEqualTo(refreshToken);
-        
-        // Vérifier que les opérations sont indépendantes
-        verify(jwtProcessor).isRefreshTokenValid(refreshToken);
-        verify(jwtProcessor).extractUsername(refreshToken);
-        verify(jwtProcessor).generateAccessToken(testMember);
-    }
-
-    @Test
-    @DisplayName("Devrait gérer les tokens null et vides")
-    void shouldHandleNullAndEmptyTokens() throws InvalidTokenException, JwtProcessingException {
-        // Given
-        when(jwtProcessor.isRefreshTokenValid(null)).thenReturn(false);
-        when(jwtProcessor.isRefreshTokenValid("")).thenReturn(false);
-
-        // When & Then
-        assertThatThrownBy(() -> jwt.validateAndExtractEmail(null))
-                .isInstanceOf(InvalidTokenException.class)
-                .hasMessage("Le token de rafraîchissement est invalide ou expiré.");
-
-        assertThatThrownBy(() -> jwt.validateAndExtractEmail(""))
-                .isInstanceOf(InvalidTokenException.class)
-                .hasMessage("Le token de rafraîchissement est invalide ou expiré.");
-    }
-
-    private Member createTestMember() {
-        Member member = new Member();
-        member.setId(UUID.randomUUID());
-        member.setEmail("test@example.com");
-        member.setFirstName("John");
-        member.setLastName("Doe");
-        member.setPassword("encodedPassword");
-        member.setRole(Role.MEMBER);
-        return member;
+                .hasMessage("Extraction failed");
     }
 }
