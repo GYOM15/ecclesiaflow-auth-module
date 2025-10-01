@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.business.aspect;
+package com.ecclesiaflow.springsecurity.application.logging;
 
 import com.ecclesiaflow.springsecurity.application.logging.aspect.BusinessOperationLoggingAspect;
 import org.aspectj.lang.JoinPoint;

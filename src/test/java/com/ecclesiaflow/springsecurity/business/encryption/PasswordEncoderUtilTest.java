@@ -126,14 +126,14 @@ class PasswordEncoderUtilTest {
     @DisplayName("Devrait gérer les mots de passe très longs")
     void shouldHandleLongPasswords() {
         // Given
-        String longPassword = "a".repeat(100); // 100 caractères
+        // Un mot de passe de 100 caractères ASCII, ce qui est > 72 octets.
+        String overlyLongPassword = "a".repeat(100);
 
-        // When
-        String encodedPassword = passwordEncoderUtil.encode(longPassword);
-
-        // Then
-        assertThat(encodedPassword).isNotNull();
-        assertThat(passwordEncoderUtil.matches(longPassword, encodedPassword)).isTrue();
+        // When & Then
+        assertThatThrownBy(() -> passwordEncoderUtil.encode(overlyLongPassword))
+                .isInstanceOf(IllegalArgumentException.class)
+                // Vérifie que notre message d'erreur clair est utilisé
+                .hasMessageContaining("Le mot de passe dépasse la longueur maximale de BCrypt. Il doit être inférieur à 72 octets.");
     }
 
     @Test
@@ -240,5 +240,20 @@ class PasswordEncoderUtilTest {
                 .as("Wrong password should not match encoded version of '%s'", password)
                 .isFalse();
         }
+    }
+
+
+    @Test
+    @DisplayName("Devrait gérer les mots de passe longs, mais acceptables (max 72 octets)")
+    void shouldHandleAcceptableLongPasswords() {
+        // Given
+        String longPassword = "a".repeat(72); // 72 caractères = 72 octets
+
+        // When
+        String encodedPassword = passwordEncoderUtil.encode(longPassword);
+
+        // Then
+        assertThat(encodedPassword).isNotNull();
+        assertThat(passwordEncoderUtil.matches(longPassword, encodedPassword)).isTrue();
     }
 }
