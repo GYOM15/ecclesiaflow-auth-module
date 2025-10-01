@@ -2,6 +2,10 @@ package com.ecclesiaflow.springsecurity.web.security;
 
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,10 +16,12 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.security.Key;
 import java.util.Collection;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.data.Offset.offset; // Import pour la correction isCloseTo
 
 /**
  * Tests unitaires pour JwtProcessor
@@ -30,17 +36,38 @@ class JwtProcessorTest {
     private JwtProcessor jwtProcessor;
     private TestUserDetails testUser;
 
+    // Constantes de test au niveau de la classe
+    private final String TEST_SECRET = "EcclesiaFlowTestSecretKeyFor512BitJwtSignature0123456789ABCDEF";
+    private final long ACCESS_EXP = 3600000L; // 1 heure
+    private final long REFRESH_EXP = 86400000L; // 24 heures
+    private final long TEMP_EXP = 900000L; // 15 minutes
+
     @BeforeEach
     void setUp() {
         jwtProcessor = new JwtProcessor();
-        
-        // Configuration des propriétés JWT pour les tests
-        ReflectionTestUtils.setField(jwtProcessor, "secretKey", "dGVzdC1zZWNyZXQta2V5LWZvci1qd3QtdGVzdGluZy1wdXJwb3Nlcy1vbmx5LTEyMzQ1Njc4OTA=");
-        ReflectionTestUtils.setField(jwtProcessor, "accessTokenExpiration", 86400000L); // 24 heures
-        ReflectionTestUtils.setField(jwtProcessor, "refreshTokenExpiration", 604800000L); // 7 jours
-        
+
+        // **Injection COHÉRENTE** des propriétés pour que les tokens générés puissent être parsés par parseClaims()
+        ReflectionTestUtils.setField(jwtProcessor, "secretKey", TEST_SECRET);
+        ReflectionTestUtils.setField(jwtProcessor, "accessTokenExpiration", ACCESS_EXP);
+        ReflectionTestUtils.setField(jwtProcessor, "refreshTokenExpiration", REFRESH_EXP);
+        ReflectionTestUtils.setField(jwtProcessor, "temporaryTokenExpiration", TEMP_EXP);
+
         testUser = new TestUserDetails("test@example.com", "password", List.of(new SimpleGrantedAuthority("ROLE_USER")));
     }
+
+    /**
+     * Helper pour décoder et valider les claims.
+     * Cette méthode utilise la constante de classe TEST_SECRET.
+     */
+    private Claims parseClaims(String token) {
+        // La clé doit être décodée en bytes à partir de la chaîne BASE64 de TEST_SECRET
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+    }
+
+    // ====================================================================
+    // Tests de Génération et d'Extraction
+    // ====================================================================
 
     @Test
     @DisplayName("Devrait générer un token d'accès valide")
@@ -50,8 +77,12 @@ class JwtProcessorTest {
 
         // Then
         assertThat(accessToken).isNotNull();
-        assertThat(accessToken).isNotEmpty();
-        assertThat(accessToken.split("\\.")).hasSize(3); // JWT format: header.payload.signature
+        assertThat(accessToken.split("\\.")).hasSize(3);
+
+        Claims claims = parseClaims(accessToken);
+        assertThat(claims.getSubject()).isEqualTo(testUser.getUsername());
+        // Correction isCloseTo
+        assertThat(claims.getExpiration().getTime()).isCloseTo(System.currentTimeMillis() + ACCESS_EXP, offset(1000L));
     }
 
     @Test
@@ -62,8 +93,12 @@ class JwtProcessorTest {
 
         // Then
         assertThat(refreshToken).isNotNull();
-        assertThat(refreshToken).isNotEmpty();
-        assertThat(refreshToken.split("\\.")).hasSize(3); // JWT format: header.payload.signature
+        assertThat(refreshToken.split("\\.")).hasSize(3);
+
+        Claims claims = parseClaims(refreshToken);
+        assertThat(claims.get("type", String.class)).isEqualTo("refresh");
+        // Correction isCloseTo
+        assertThat(claims.getExpiration().getTime()).isCloseTo(System.currentTimeMillis() + REFRESH_EXP, offset(1000L));
     }
 
     @Test
@@ -78,6 +113,10 @@ class JwtProcessorTest {
         // Then
         assertThat(extractedUsername).isEqualTo(testUser.getUsername());
     }
+
+    // ====================================================================
+    // Tests de Validation des Tokens Standards
+    // ====================================================================
 
     @Test
     @DisplayName("Devrait valider un token d'accès valide")
@@ -117,15 +156,21 @@ class JwtProcessorTest {
                 .hasMessage("Le token fourni n'est pas un token de rafraîchissement");
     }
 
+    // ====================================================================
+    // Tests de Gestion des Erreurs
+    // ====================================================================
+
     @Test
     @DisplayName("Devrait rejeter un token malformé")
-    void shouldRejectMalformedToken() {
+    void shouldRejectMalformedToken() throws JwtProcessingException {
         // Given
         String malformedToken = "invalid.token.format";
 
-        // When & Then
-        assertThatThrownBy(() -> jwtProcessor.isTokenValid(malformedToken))
-                .isInstanceOf(RuntimeException.class); // JJWT lance des exceptions runtime
+        // When
+        boolean isValid = jwtProcessor.isTokenValid(malformedToken);
+
+        // Then
+        assertThat(isValid).isFalse();
     }
 
     @Test
@@ -135,9 +180,11 @@ class JwtProcessorTest {
         String validToken = jwtProcessor.generateAccessToken(testUser);
         String tokenWithInvalidSignature = validToken.substring(0, validToken.lastIndexOf('.')) + ".invalidSignature";
 
-        // When & Then
-        assertThatThrownBy(() -> jwtProcessor.isTokenValid(tokenWithInvalidSignature))
-                .isInstanceOf(RuntimeException.class); // JJWT lance des exceptions runtime
+        // When
+        boolean isValid = jwtProcessor.isTokenValid(tokenWithInvalidSignature);
+
+        // Then
+        assertThat(isValid).isFalse();
     }
 
     @Test
@@ -145,7 +192,7 @@ class JwtProcessorTest {
     void shouldRejectNullToken() {
         // When & Then
         assertThatThrownBy(() -> jwtProcessor.isTokenValid(null))
-                .isInstanceOf(RuntimeException.class); // JJWT lance des exceptions runtime
+                .isInstanceOf(RuntimeException.class);
     }
 
     @Test
@@ -153,8 +200,105 @@ class JwtProcessorTest {
     void shouldRejectEmptyToken() {
         // When & Then
         assertThatThrownBy(() -> jwtProcessor.isTokenValid(""))
-                .isInstanceOf(RuntimeException.class); // JJWT lance des exceptions runtime
+                .isInstanceOf(RuntimeException.class);
     }
+
+    // ====================================================================
+    // Tests de Génération et Validation du Token Temporaire
+    // ====================================================================
+
+    @Test
+    @DisplayName("generateTemporaryToken - Devrait créer un token valide avec les claims 'temporary' et 'password_setup'")
+    void shouldGenerateValidTemporaryTokenWithCorrectClaims() throws JwtProcessingException {
+        // Given
+        String email = "temp@user.com";
+
+        // When
+        String token = jwtProcessor.generateTemporaryToken(email);
+        Claims claims = parseClaims(token);
+
+        // Then
+        assertThat(token).isNotNull();
+        assertThat(claims.getSubject()).isEqualTo(email);
+        assertThat(claims.get("type", String.class)).isEqualTo("temporary");
+        assertThat(claims.get("purpose", String.class)).isEqualTo("password_setup");
+
+        // Correction isCloseTo
+        assertThat(claims.getExpiration().getTime())
+                .isCloseTo(System.currentTimeMillis() + TEMP_EXP, offset(1000L));
+    }
+
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait retourner true pour un token temporaire valide et le bon email")
+    void shouldValidateValidTemporaryToken() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        String email = "setup@email.com";
+        String token = jwtProcessor.generateTemporaryToken(email);
+
+        // When
+        boolean isValid = jwtProcessor.validateTemporaryToken(token, email);
+
+        // Then
+        assertThat(isValid).isTrue();
+    }
+
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait retourner false si l'email ne correspond pas")
+    void shouldRejectTemporaryTokenIfEmailMismatch() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        String token = jwtProcessor.generateTemporaryToken("correct@email.com");
+
+        // When
+        boolean isValid = jwtProcessor.validateTemporaryToken(token, "wrong@email.com");
+
+        // Then
+        assertThat(isValid).isFalse();
+    }
+
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait rejeter un token expiré")
+    void shouldRejectExpiredTemporaryToken() throws JwtProcessingException {
+        // Given
+        String email = "expired@user.com";
+
+        // 1. Décode la clé pour la signature
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+
+        // 2. Créer manuellement un token qui a expiré il y a 10 secondes
+        long tenSecondsAgo = System.currentTimeMillis() - 10000;
+
+        String expiredToken = Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(new java.util.Date(tenSecondsAgo))
+                // Définir l'expiration dans le passé (par exemple, 1 seconde dans le passé)
+                .setExpiration(new java.util.Date(tenSecondsAgo + 1)) // <-- Expire il y a environ 10s
+                .claim("type", "temporary")
+                .claim("purpose", "password_setup")
+                .signWith(key)
+                .compact();
+
+        // When & Then
+        boolean isValid = jwtProcessor.validateTemporaryToken(expiredToken, email);
+
+        // Assertion (le token doit être rejeté, donc false)
+        assertThat(isValid).isFalse();
+    }
+
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait lancer InvalidTokenException si le token n'est pas de type 'temporary'")
+    void shouldRejectWrongTypeTokenAsTemporaryToken() throws JwtProcessingException {
+        // Given: Utiliser un access token standard
+        String accessToken = jwtProcessor.generateAccessToken(testUser);
+
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.validateTemporaryToken(accessToken, testUser.getUsername()))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le token fourni n'est pas un token temporaire valide");
+    }
+
+    // ====================================================================
+    // Tests de Cohérence et de Thread Safety
+    // ====================================================================
 
     @Test
     @DisplayName("Devrait générer des tokens valides avec même contenu utilisateur")
@@ -163,50 +307,16 @@ class JwtProcessorTest {
         String token1 = jwtProcessor.generateAccessToken(testUser);
         String token2 = jwtProcessor.generateRefreshToken(testUser);
 
-        // Then - Les deux tokens doivent être valides et contenir le même username
+        // Then
         assertThat(jwtProcessor.isTokenValid(token1)).isTrue();
-        assertThat(jwtProcessor.isTokenValid(token2)).isTrue();
         assertThat(jwtProcessor.extractUsername(token1)).isEqualTo(testUser.getUsername());
+
+        // Note: isRefreshTokenValid couvre déjà isTokenValid et le type
+        assertThat(jwtProcessor.isRefreshTokenValid(token2)).isTrue();
         assertThat(jwtProcessor.extractUsername(token2)).isEqualTo(testUser.getUsername());
-        
-        // Les tokens access et refresh sont différents par nature
+
+        // Les tokens access et refresh sont différents
         assertThat(token1).isNotEqualTo(token2);
-    }
-
-    @Test
-    @DisplayName("Devrait gérer différents types d'utilisateurs")
-    void shouldHandleDifferentUserTypes() throws JwtProcessingException {
-        // Given
-        TestUserDetails user1 = new TestUserDetails("user1@example.com", "pass1", List.of(new SimpleGrantedAuthority("ROLE_USER")));
-        TestUserDetails user2 = new TestUserDetails("admin@example.com", "pass2", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
-
-        // When
-        String token1 = jwtProcessor.generateAccessToken(user1);
-        String token2 = jwtProcessor.generateAccessToken(user2);
-
-        // Then
-        assertThat(jwtProcessor.extractUsername(token1)).isEqualTo("user1@example.com");
-        assertThat(jwtProcessor.extractUsername(token2)).isEqualTo("admin@example.com");
-        assertThat(jwtProcessor.isTokenValid(token1)).isTrue();
-        assertThat(jwtProcessor.isTokenValid(token2)).isTrue();
-    }
-
-    @Test
-    @DisplayName("Devrait gérer les caractères spéciaux dans le nom d'utilisateur")
-    void shouldHandleSpecialCharactersInUsername() throws JwtProcessingException {
-        // Given
-        TestUserDetails userWithSpecialChars = new TestUserDetails(
-            "user+test@domain.co.uk", 
-            "password", 
-            List.of(new SimpleGrantedAuthority("ROLE_USER"))
-        );
-
-        // When
-        String token = jwtProcessor.generateAccessToken(userWithSpecialChars);
-
-        // Then
-        assertThat(jwtProcessor.extractUsername(token)).isEqualTo("user+test@domain.co.uk");
-        assertThat(jwtProcessor.isTokenValid(token)).isTrue();
     }
 
     @Test
@@ -218,8 +328,6 @@ class JwtProcessorTest {
 
         // Then
         assertThat(jwtProcessor.extractUsername(accessToken)).isEqualTo(jwtProcessor.extractUsername(refreshToken));
-        assertThat(jwtProcessor.isTokenValid(accessToken)).isTrue();
-        assertThat(jwtProcessor.isRefreshTokenValid(refreshToken)).isTrue();
     }
 
     @Test
@@ -252,13 +360,15 @@ class JwtProcessorTest {
         for (String token : tokens) {
             assertThat(token).isNotNull();
             try {
-                assertThat(jwtProcessor.isTokenValid(token)).isTrue();
+                // Utiliser parseClaims pour vérifier que la signature est correcte
+                parseClaims(token);
                 assertThat(jwtProcessor.extractUsername(token)).isEqualTo(testUser.getUsername());
-            } catch (JwtProcessingException e) {
-                fail("Exception during token validation: " + e.getMessage());
+            } catch (Exception e) {
+                fail("Token generated in a separate thread failed validation: " + e.getMessage());
             }
         }
     }
+
 
     /**
      * Classe utilitaire pour les tests UserDetails

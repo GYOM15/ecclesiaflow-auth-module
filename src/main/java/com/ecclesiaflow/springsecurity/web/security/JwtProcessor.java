@@ -56,7 +56,7 @@ public class JwtProcessor {
     @Value("${jwt.refresh-token.expiration}")
     private long refreshTokenExpiration;
 
-    @Value("${jwt.temporary-token.expiration:900000}") // 1 heure par défaut
+    @Value("${jwt.temporary-token.expiration:900000}")
     private long temporaryTokenExpiration;
 
     // ========== PUBLIC API ==========
@@ -75,20 +75,29 @@ public class JwtProcessor {
     }
 
     public boolean isTokenValid(String token) throws JwtProcessingException {
-        Claims claims = parseAndValidateClaims(token);
-        return !isExpired(claims);
+        boolean isValid;
+        try {
+            parseAndValidateClaims(token);
+            isValid = true;
+        } catch (ExpiredJwtException e) {
+            isValid = false;
+        }
+        return isValid;
     }
 
     public boolean isRefreshTokenValid(String token) throws JwtProcessingException, InvalidTokenException {
-        // Parse and validate claims once
-        Claims claims = parseAndValidateClaims(token);
-        if (isExpired(claims)) return false;
-        // Check if it's a refresh token
-        String tokenType = claims.get("type", String.class);
-        if (!"refresh".equals(tokenType)) {
-            throw new InvalidTokenException("Le token fourni n'est pas un token de rafraîchissement");
+        boolean isValid;
+        try {
+            Claims claims = parseAndValidateClaims(token);
+            String tokenType = claims.get("type", String.class);
+            if (!"refresh".equals(tokenType)) {
+                throw new InvalidTokenException("Le token fourni n'est pas un token de rafraîchissement");
+            }
+            isValid = true;
+        } catch (ExpiredJwtException e) {
+            isValid = false;
         }
-        return true;
+        return isValid;
     }
 
     /**
@@ -131,18 +140,24 @@ public class JwtProcessor {
      * @return true si le token est valide et correspond à l'email
      * @throws JwtProcessingException si une erreur se produit lors du traitement
      */
-    public boolean validateTemporaryToken(String token, String email) throws JwtProcessingException, InvalidTokenException {
-        Claims claims = parseAndValidateClaims(token);
-        if (isExpired(claims)) return false;
+    public boolean validateTemporaryToken(String token, String email) throws InvalidTokenException {
+        boolean isValid;
+        try {
+            Claims claims = parseAndValidateClaims(token);
+            String type = claims.get("type", String.class);
+            String purpose = claims.get("purpose", String.class);
 
-        String type = claims.get("type", String.class);
-        String purpose = claims.get("purpose", String.class);
+            if (!"temporary".equals(type) || !"password_setup".equals(purpose)) {
+                throw new InvalidTokenException("Le token fourni n'est pas un token temporaire valide");
+            }
 
-        if (!"temporary".equals(type) || !"password_setup".equals(purpose)) {
-            throw new InvalidTokenException("Le token fourni n'est pas un token temporaire valide");
+            isValid = email.equals(claims.getSubject());
+        } catch (ExpiredJwtException e) {
+            isValid = false;
+        } catch (JwtException e) {
+            throw new InvalidTokenException("Token invalide: " + e.getMessage());
         }
-
-        return email.equals(claims.getSubject());
+        return isValid;
     }
 
     // ========== PRIVATE HELPERS ==========
@@ -165,10 +180,6 @@ public class JwtProcessor {
 
     private Claims parseAndValidateClaims(String token) throws JwtProcessingException {
         return Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token).getBody();
-    }
-
-    private boolean isExpired(Claims claims) {
-        return claims.getExpiration().before(new Date());
     }
 
     // ========== SECURITY CHECKS ==========
