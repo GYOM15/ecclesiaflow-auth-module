@@ -20,6 +20,9 @@ import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -31,9 +34,6 @@ class AuthenticationControllerTest {
 
     @Mock
     private Jwt jwt;
-
-    @Mock
-    private JwtProcessor jwtProcessor;
 
     @InjectMocks
     private AuthenticationController authenticationController;
@@ -51,7 +51,15 @@ class AuthenticationControllerTest {
         request.setPassword("password123");
 
         SigninCredentials credentials = new SigninCredentials("user@example.com", "password123");
-        Member member = new Member();
+        Member member = Member.builder()
+                .id(UUID.randomUUID())
+                .email("user@example.com")
+                .password("password123")
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .enabled(true)
+                .build();
+
         UserTokens userTokens = new UserTokens("access-token-123", "refresh-token-456");
         JwtAuthenticationResponse expectedResponse = new JwtAuthenticationResponse();
         expectedResponse.setToken("access-token-123");
@@ -60,11 +68,9 @@ class AuthenticationControllerTest {
         try (MockedStatic<AuthenticationMapper> mockedMapper = mockStatic(AuthenticationMapper.class);
              MockedStatic<MemberMapper> mockedMemberMapper = mockStatic(MemberMapper.class)) {
 
-            // ✅ Mock statique MemberMapper
             mockedMemberMapper.when(() -> MemberMapper.fromSigninRequest(request))
                     .thenReturn(credentials);
 
-            // ✅ Mock statique AuthenticationMapper
             mockedMapper.when(() -> AuthenticationMapper.toDto(userTokens))
                     .thenReturn(expectedResponse);
 
@@ -76,7 +82,7 @@ class AuthenticationControllerTest {
 
             // Then
             assertNotNull(response);
-            assertEquals(200, response.getStatusCodeValue());
+            assertEquals(200, response.getStatusCode().value());
             assertEquals(expectedResponse, response.getBody());
 
             verify(authenticationService).getAuthenticatedMember(any(SigninCredentials.class));
@@ -92,14 +98,21 @@ class AuthenticationControllerTest {
         request.setRefreshToken("refresh-token-456");
 
         TokenCredentials tokenCredentials = new TokenCredentials("refresh-token-456");
-        Member member = new Member();
+        Member member = Member.builder()
+                .id(UUID.randomUUID())
+                .email("user@example.com")
+                .password("password123")
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .enabled(true)
+                .build();
+
         UserTokens userTokens = new UserTokens("new-access-token-123", "new-refresh-token-456");
         JwtAuthenticationResponse expectedResponse = new JwtAuthenticationResponse();
         expectedResponse.setToken("new-access-token-123");
         expectedResponse.setRefreshToken("new-refresh-token-456");
 
         try (MockedStatic<AuthenticationMapper> mockedMapper = mockStatic(AuthenticationMapper.class)) {
-            // ✅ mock statiques correctement
             mockedMapper.when(() -> AuthenticationMapper.fromRefreshTokenRequest(request))
                     .thenReturn(tokenCredentials);
             mockedMapper.when(() -> AuthenticationMapper.toDto(userTokens))
@@ -114,7 +127,7 @@ class AuthenticationControllerTest {
 
             // Then
             assertNotNull(response);
-            assertEquals(200, response.getStatusCodeValue());
+            assertEquals(200, response.getStatusCode().value());
             assertEquals(expectedResponse, response.getBody());
 
             verify(jwt).validateAndExtractEmail("refresh-token-456");
