@@ -1,10 +1,9 @@
-package com.ecclesiaflow.springsecurity.business.mappers;
+package com.ecclesiaflow.springsecurity.web.mappers;
 
 import com.ecclesiaflow.springsecurity.business.domain.token.TokenCredentials;
 import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
 import com.ecclesiaflow.springsecurity.web.payloads.RefreshTokenRequest;
-import com.ecclesiaflow.springsecurity.web.mappers.AuthenticationMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
