@@ -43,7 +43,6 @@ class AuthenticationErrorLoggingAspectTest {
         mocks = MockitoAnnotations.openMocks(this);
         aspect = new AuthenticationErrorLoggingAspect();
 
-        // Initialize LogCaptor for defensive programming tests
         logCaptor = LogCaptor.forClass(AuthenticationErrorLoggingAspect.class);
 
         logger = (Logger) LoggerFactory.getLogger(AuthenticationErrorLoggingAspect.class);
@@ -60,11 +59,6 @@ class AuthenticationErrorLoggingAspectTest {
         mocks.close();
         logCaptor.close();
     }
-
-
-    // ===========================================
-    // TESTS PRINCIPAUX
-    // ===========================================
 
     @Nested
     class AuthenticationErrorLoggingTests {
@@ -127,6 +121,34 @@ class AuthenticationErrorLoggingAspectTest {
             String logMsg = listAppender.list.get(0).getFormattedMessage();
             assertThat(logMsg).contains("User-Agent: " + longUserAgent.substring(0, 100));
         }
+
+        @Test
+        void shouldHandleNullUserAgent() {
+            setupBasicMockRequest("/api/login", "10.0.0.1", null, null);
+            when(mockAuthException.getMessage()).thenReturn("Access denied");
+
+            JoinPoint joinPoint = createMockJoinPoint(mockRequest, mockResponse, mockAuthException);
+            aspect.logAuthenticationError(joinPoint);
+
+            String logMsg = listAppender.list.get(0).getFormattedMessage();
+            assertThat(logMsg).contains("User-Agent: N/A");
+        }
+
+        @Test
+        void shouldHandleExceptionDuringLogging() {
+            // Simuler une exception lors de l'accès aux propriétés de la requête
+            HttpServletRequest faultyRequest = mock(HttpServletRequest.class);
+            when(faultyRequest.getRequestURI()).thenThrow(new RuntimeException("Request error"));
+
+            JoinPoint joinPoint = createMockJoinPoint(faultyRequest, mockResponse, mockAuthException);
+
+            // Ne devrait pas lever d'exception
+            assertThatCode(() -> aspect.logAuthenticationError(joinPoint))
+                    .doesNotThrowAnyException();
+
+            List<String> debugLogs = logCaptor.getDebugLogs();
+            assertThat(debugLogs).anyMatch(log -> log.contains("Erreur lors du logging d'authentification"));
+        }
     }
 
     @Nested
@@ -149,6 +171,16 @@ class AuthenticationErrorLoggingAspectTest {
         }
 
         @Test
+        void shouldExtractIpFromXRealIP() {
+            when(mockRequest.getHeader("X-Forwarded-For")).thenReturn(null);
+            when(mockRequest.getHeader("X-Real-IP")).thenReturn("198.51.100.1");
+            when(mockRequest.getRemoteAddr()).thenReturn("192.168.1.5");
+
+            String clientIp = aspect.getClientIpAddress(mockRequest);
+            assertThat(clientIp).isEqualTo("198.51.100.1");
+        }
+
+        @Test
         void shouldFallbackToRemoteAddrIfNoHeaders() {
             when(mockRequest.getHeader("X-Forwarded-For")).thenReturn(null);
             when(mockRequest.getHeader("X-Real-IP")).thenReturn(null);
@@ -163,6 +195,46 @@ class AuthenticationErrorLoggingAspectTest {
             String logMsg = listAppender.list.get(0).getFormattedMessage();
             assertThat(logMsg).contains("IP: 10.0.0.42");
         }
+
+        @Test
+        void shouldHandleEmptyXForwardedFor() {
+            when(mockRequest.getHeader("X-Forwarded-For")).thenReturn("");
+            when(mockRequest.getHeader("X-Real-IP")).thenReturn(null);
+            when(mockRequest.getRemoteAddr()).thenReturn("10.0.0.50");
+
+            String clientIp = aspect.getClientIpAddress(mockRequest);
+            assertThat(clientIp).isEqualTo("10.0.0.50");
+        }
+
+        @Test
+        void shouldHandleUnknownXForwardedFor() {
+            when(mockRequest.getHeader("X-Forwarded-For")).thenReturn("unknown");
+            when(mockRequest.getHeader("X-Real-IP")).thenReturn(null);
+            when(mockRequest.getRemoteAddr()).thenReturn("10.0.0.60");
+
+            String clientIp = aspect.getClientIpAddress(mockRequest);
+            assertThat(clientIp).isEqualTo("10.0.0.60");
+        }
+
+        @Test
+        void shouldHandleEmptyXRealIP() {
+            when(mockRequest.getHeader("X-Forwarded-For")).thenReturn(null);
+            when(mockRequest.getHeader("X-Real-IP")).thenReturn("");
+            when(mockRequest.getRemoteAddr()).thenReturn("10.0.0.70");
+
+            String clientIp = aspect.getClientIpAddress(mockRequest);
+            assertThat(clientIp).isEqualTo("10.0.0.70");
+        }
+
+        @Test
+        void shouldHandleUnknownXRealIP() {
+            when(mockRequest.getHeader("X-Forwarded-For")).thenReturn(null);
+            when(mockRequest.getHeader("X-Real-IP")).thenReturn("unknown");
+            when(mockRequest.getRemoteAddr()).thenReturn("10.0.0.80");
+
+            String clientIp = aspect.getClientIpAddress(mockRequest);
+            assertThat(clientIp).isEqualTo("10.0.0.80");
+        }
     }
 
     @Nested
@@ -174,10 +246,8 @@ class AuthenticationErrorLoggingAspectTest {
             when(mockJoinPoint.getSignature()).thenReturn(mockSignature);
             when(mockSignature.getName()).thenReturn("commence");
 
-            // Tester la méthode qui retourne un booléen au lieu de lever une exception
             boolean result = aspect.performCriticalErrorLogging(mockJoinPoint, ex);
 
-            // Vérifier que l'opération a réussi
             assertThat(result).isTrue();
 
             ILoggingEvent log = listAppender.list.get(0);
@@ -186,6 +256,20 @@ class AuthenticationErrorLoggingAspectTest {
             assertThat(log.getThrowableProxy()).isNotNull();
             assertThat(log.getThrowableProxy().getMessage()).contains("Critical failure");
         }
+
+        @Test
+        void shouldHandleExceptionDuringCriticalErrorLogging() {
+            Exception ex = new RuntimeException("Critical failure");
+            JoinPoint faultyJoinPoint = mock(JoinPoint.class);
+            Signature faultySignature = mock(Signature.class);
+
+            when(faultyJoinPoint.getSignature()).thenReturn(faultySignature);
+            when(faultySignature.getName()).thenThrow(new RuntimeException("Signature error"));
+
+            // La méthode devrait retourner false en cas d'erreur
+            boolean result = aspect.performCriticalErrorLogging(faultyJoinPoint, ex);
+            assertThat(result).isFalse();
+        }
     }
 
     @Nested
@@ -193,20 +277,17 @@ class AuthenticationErrorLoggingAspectTest {
 
         @Test
         void shouldHandleTooFewArguments() {
-            // Simule un JoinPoint avec trop peu d'arguments
             JoinPoint joinPoint = mock(JoinPoint.class);
             when(joinPoint.getArgs()).thenReturn(new Object[]{"onlyOneArg"});
 
             aspect.logAuthenticationError(joinPoint);
 
-            // Vérifie que le message d'ignoré est loggé en DEBUG
             List<String> debugLogs = logCaptor.getDebugLogs();
             assertThat(debugLogs).anyMatch(log -> log.contains("logAuthenticationError ignoré en raison d'arguments invalides"));
         }
 
         @Test
         void shouldHandleIncorrectArgumentTypes() {
-            // Simule un JoinPoint avec des types d'arguments incorrects
             JoinPoint joinPoint = mock(JoinPoint.class);
             when(joinPoint.getArgs()).thenReturn(new Object[]{new Object(), new Object(), new Object()});
 
@@ -218,9 +299,19 @@ class AuthenticationErrorLoggingAspectTest {
 
         @Test
         void shouldHandleNullArguments() {
-            // Simule un JoinPoint avec des arguments null
             JoinPoint joinPoint = mock(JoinPoint.class);
             when(joinPoint.getArgs()).thenReturn(new Object[]{null, null, null});
+
+            aspect.logAuthenticationError(joinPoint);
+
+            List<String> debugLogs = logCaptor.getDebugLogs();
+            assertThat(debugLogs).anyMatch(log -> log.contains("logAuthenticationError ignoré en raison d'arguments invalides"));
+        }
+
+        @Test
+        void shouldHandleEmptyArguments() {
+            JoinPoint joinPoint = mock(JoinPoint.class);
+            when(joinPoint.getArgs()).thenReturn(new Object[]{});
 
             aspect.logAuthenticationError(joinPoint);
 
@@ -258,7 +349,6 @@ class AuthenticationErrorLoggingAspectTest {
             startLatch.countDown();
             assertThat(finishLatch.await(5, TimeUnit.SECONDS)).isTrue();
 
-            // Expecting 2 logs per thread (WARN + INFO)
             List<ILoggingEvent> logs = listAppender.list;
             assertThat(logs).hasSize(threadCount * 2);
 
@@ -289,5 +379,3 @@ class AuthenticationErrorLoggingAspectTest {
         return joinPoint;
     }
 }
-
-

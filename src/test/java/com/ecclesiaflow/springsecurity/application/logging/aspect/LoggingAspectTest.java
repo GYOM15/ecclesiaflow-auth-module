@@ -6,6 +6,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.ecclesiaflow.springsecurity.application.logging.annotation.LogExecution;
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
 import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
@@ -15,6 +16,7 @@ import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class LoggingAspectTest {
 
@@ -26,7 +28,6 @@ class LoggingAspectTest {
     void setup() {
         loggingAspect = new LoggingAspect();
 
-        // Préparer un logger et y attacher ListAppender pour capter les logs
         logger = (Logger) LoggerFactory.getLogger(LoggingAspect.class);
         listAppender = new ListAppender<>();
         listAppender.start();
@@ -40,19 +41,34 @@ class LoggingAspectTest {
         listAppender.stop();
     }
 
-    /**
-     * Classe de test servant à simuler une méthode annotée @LogExecution
-     */
+    // ====================================================================
+    // Classes de test
+    // ====================================================================
+
     static class TestService {
         @LogExecution(value = "TestService.testMethod", includeParams = true, includeExecutionTime = true)
         public String testMethod(String param1, int param2) throws InterruptedException {
-            Thread.sleep(50); // simuler un traitement
+            Thread.sleep(50);
             return "success";
         }
 
+        @LogExecution(value = "", includeParams = false, includeExecutionTime = false)
+        public String methodWithEmptyValue() {
+            return "empty-value-result";
+        }
+
+        @LogExecution(value = "Méthode sans temps", includeParams = false, includeExecutionTime = false)
+        public String methodWithoutExecutionTime() {
+            return "no-time-result";
+        }
+
         public String slowMethod() throws InterruptedException {
-            Thread.sleep(1100); // plus d'1s pour déclencher warning
+            Thread.sleep(1100); // > 1s pour warning
             return "slow";
+        }
+
+        public String fastMethod() {
+            return "fast";
         }
 
         public String failMethod() {
@@ -60,13 +76,10 @@ class LoggingAspectTest {
         }
     }
 
-    /**
-     * Classe de test avec annotations @LogExecution pour tester différents scénarios
-     */
     static class TestServiceWithAnnotation {
         @LogExecution(value = "Méthode lente", includeParams = false, includeExecutionTime = true)
         public String slowMethod() throws InterruptedException {
-            Thread.sleep(1100); // plus d'1s pour déclencher warning
+            Thread.sleep(1100);
             return "slow";
         }
 
@@ -76,12 +89,18 @@ class LoggingAspectTest {
         }
     }
 
+    static class TestController {
+        public void someMethod() {}
+    }
+
+    // ====================================================================
+    // Tests @LogExecution
+    // ====================================================================
+
     @Test
-    @DisplayName("Devrait logger correctement une méthode annotée @LogExecution")
+    @DisplayName("Devrait logger correctement une méthode annotée @LogExecution avec paramètres")
     void shouldLogAnnotatedMethodExecution() throws Throwable {
         TestService target = new TestService();
-
-        // Création proxy AOP avec l'aspect LoggingAspect
         AspectJProxyFactory factory = new AspectJProxyFactory(target);
         factory.addAspect(loggingAspect);
         TestService proxy = factory.getProxy();
@@ -91,50 +110,58 @@ class LoggingAspectTest {
 
         List<ILoggingEvent> logs = listAppender.list;
 
-        // Vérification début + paramètres
         assertThat(logs.getFirst().getLevel()).isEqualTo(Level.INFO);
         assertThat(logs.getFirst().getFormattedMessage()).contains("Début: TestService.testMethod");
         assertThat(logs.get(0).getFormattedMessage()).contains("paramValue");
         assertThat(logs.get(0).getFormattedMessage()).contains("42");
 
-        // Vérification succès + temps d'exécution
         assertThat(logs.get(1).getLevel()).isEqualTo(Level.INFO);
         assertThat(logs.get(1).getFormattedMessage()).contains("Succès: TestService.testMethod");
         assertThat(logs.get(1).getFormattedMessage()).contains("ms");
     }
 
     @Test
-    @DisplayName("Devrait logger une méthode de service normale (DEBUG, succès)")
-    void shouldLogServiceMethodSuccess() throws Throwable {
-        TestServiceWithAnnotation target = new TestServiceWithAnnotation();
-
+    @DisplayName("Devrait utiliser className.methodName quand value est vide")
+    void shouldUseDefaultNameWhenValueIsEmpty() {
+        TestService target = new TestService();
         AspectJProxyFactory factory = new AspectJProxyFactory(target);
         factory.addAspect(loggingAspect);
-        TestServiceWithAnnotation proxy = factory.getProxy();
+        TestService proxy = factory.getProxy();
 
-        String result = proxy.slowMethod();
-        assertThat(result).isEqualTo("slow");
+        String result = proxy.methodWithEmptyValue();
+        assertThat(result).isEqualTo("empty-value-result");
 
         List<ILoggingEvent> logs = listAppender.list;
 
-        // Vérifier qu'il y a au moins des logs
-        assertThat(logs).isNotEmpty();
-
-        // Le premier log : début
-        assertThat(logs.get(0).getLevel()).isEqualTo(Level.INFO);
-        assertThat(logs.get(0).getFormattedMessage()).contains("Début: Méthode lente");
-
-        // Le deuxième log : succès avec temps d'exécution
-        assertThat(logs.get(1).getLevel()).isEqualTo(Level.INFO);
-        assertThat(logs.get(1).getFormattedMessage()).contains("Succès: Méthode lente");
-        assertThat(logs.get(1).getFormattedMessage()).contains("ms");
+        // Devrait contenir TestService.methodWithEmptyValue
+        assertThat(logs.getFirst().getFormattedMessage())
+                .contains("TestService")
+                .contains("methodWithEmptyValue");
     }
 
     @Test
-    @DisplayName("Devrait logger une exception dans méthode de service")
-    void shouldLogExceptionInServiceMethod() {
-        TestServiceWithAnnotation target = new TestServiceWithAnnotation();
+    @DisplayName("Devrait ne pas afficher le temps d'exécution quand includeExecutionTime=false")
+    void shouldNotLogExecutionTimeWhenDisabled() {
+        TestService target = new TestService();
+        AspectJProxyFactory factory = new AspectJProxyFactory(target);
+        factory.addAspect(loggingAspect);
+        TestService proxy = factory.getProxy();
 
+        String result = proxy.methodWithoutExecutionTime();
+        assertThat(result).isEqualTo("no-time-result");
+
+        List<ILoggingEvent> logs = listAppender.list;
+
+        // Log de succès sans temps
+        ILoggingEvent successLog = logs.get(1);
+        assertThat(successLog.getFormattedMessage()).contains("Succès: Méthode sans temps");
+        assertThat(successLog.getFormattedMessage()).doesNotContain("ms");
+    }
+
+    @Test
+    @DisplayName("Devrait logger une exception dans méthode annotée")
+    void shouldLogExceptionInAnnotatedMethod() {
+        TestServiceWithAnnotation target = new TestServiceWithAnnotation();
         AspectJProxyFactory factory = new AspectJProxyFactory(target);
         factory.addAspect(loggingAspect);
         TestServiceWithAnnotation proxy = factory.getProxy();
@@ -144,36 +171,118 @@ class LoggingAspectTest {
 
         List<ILoggingEvent> logs = listAppender.list;
 
-        // Vérifier qu'il y a des logs
-        assertThat(logs).isNotEmpty();
-
-        // Le premier log : début
         assertThat(logs.get(0).getLevel()).isEqualTo(Level.INFO);
         assertThat(logs.get(0).getFormattedMessage()).contains("Début: Méthode qui échoue");
 
-        // Le deuxième log : erreur
         assertThat(logs.get(1).getLevel()).isEqualTo(Level.ERROR);
         assertThat(logs.get(1).getFormattedMessage()).contains("Échec: Méthode qui échoue");
         assertThat(logs.get(1).getFormattedMessage()).contains("Erreur simulée");
     }
 
+    // ====================================================================
+    // Tests logServiceMethods (via logMethodExecution)
+    // ====================================================================
+
+    @Test
+    @DisplayName("Devrait logger une méthode de service rapide (< 1s)")
+    void shouldLogFastServiceMethod() throws Throwable {
+        ProceedingJoinPoint pjp = mock(ProceedingJoinPoint.class);
+        Signature signature = mock(Signature.class);
+        when(signature.getName()).thenReturn("fastMethod");
+
+        when(pjp.getTarget()).thenReturn(new TestService());
+        when(pjp.getSignature()).thenReturn(signature);
+        when(pjp.proceed()).thenReturn("fast");
+
+        Object result = loggingAspect.logServiceMethods(pjp);
+
+        assertThat(result).isEqualTo("fast");
+
+        List<ILoggingEvent> logs = listAppender.list;
+
+        // Debug début
+        assertThat(logs.get(0).getLevel()).isEqualTo(Level.DEBUG);
+        assertThat(logs.get(0).getFormattedMessage()).contains("SERVICE: Début TestService.fastMethod");
+
+        // Debug succès (pas de warning car < 1s)
+        assertThat(logs.get(1).getLevel()).isEqualTo(Level.DEBUG);
+        assertThat(logs.get(1).getFormattedMessage()).contains("SERVICE: TestService.fastMethod - Succès");
+    }
+
+    @Test
+    @DisplayName("Devrait logger un warning pour méthode de service lente (> 1s)")
+    void shouldLogWarningForSlowServiceMethod() throws Throwable {
+        ProceedingJoinPoint pjp = mock(ProceedingJoinPoint.class);
+        Signature signature = mock(Signature.class);
+        when(signature.getName()).thenReturn("slowMethod");
+
+        when(pjp.getTarget()).thenReturn(new TestService());
+        when(pjp.getSignature()).thenReturn(signature);
+        when(pjp.proceed()).thenAnswer(invocation -> {
+            Thread.sleep(1100); // Forcer > 1s
+            return "slow";
+        });
+
+        Object result = loggingAspect.logServiceMethods(pjp);
+
+        assertThat(result).isEqualTo("slow");
+
+        List<ILoggingEvent> logs = listAppender.list;
+
+        // Warning pour exécution lente
+        ILoggingEvent warnLog = logs.stream()
+                .filter(log -> log.getLevel() == Level.WARN)
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(warnLog.getFormattedMessage())
+                .contains("SERVICE: TestService.slowMethod - Exécution lente");
+    }
+
+    @Test
+    @DisplayName("Devrait logger une exception dans méthode de service")
+    void shouldLogExceptionInServiceMethod() throws Throwable {
+        ProceedingJoinPoint pjp = mock(ProceedingJoinPoint.class);
+        Signature signature = mock(Signature.class);
+        when(signature.getName()).thenReturn("failMethod");
+
+        when(pjp.getTarget()).thenReturn(new TestService());
+        when(pjp.getSignature()).thenReturn(signature);
+        when(pjp.proceed()).thenThrow(new RuntimeException("Service error"));
+
+        assertThatThrownBy(() -> loggingAspect.logServiceMethods(pjp))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Service error");
+
+        List<ILoggingEvent> logs = listAppender.list;
+
+        // Error log
+        ILoggingEvent errorLog = logs.stream()
+                .filter(log -> log.getLevel() == Level.ERROR)
+                .filter(log -> log.getFormattedMessage().contains("SERVICE:"))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(errorLog.getFormattedMessage())
+                .contains("SERVICE: TestService.failMethod - Échec")
+                .contains("Service error");
+    }
+
+    // ====================================================================
+    // Tests logControllerAccess
+    // ====================================================================
 
     @Test
     @DisplayName("Devrait logger accès contrôleur (niveau DEBUG)")
     void shouldLogControllerAccess() {
-        LoggingAspect aspect = new LoggingAspect();
-
-        // Mock du JoinPoint
         JoinPoint joinPoint = Mockito.mock(JoinPoint.class);
         Signature signature = Mockito.mock(Signature.class);
 
-        // Stub des méthodes nécessaires
         Mockito.when(joinPoint.getTarget()).thenReturn(new TestController());
         Mockito.when(joinPoint.getSignature()).thenReturn(signature);
         Mockito.when(signature.getName()).thenReturn("someMethod");
-        Mockito.when(signature.getDeclaringType()).thenReturn(TestController.class);
 
-        aspect.logControllerAccess(joinPoint);
+        loggingAspect.logControllerAccess(joinPoint);
 
         List<ILoggingEvent> logs = listAppender.list;
 
@@ -182,8 +291,53 @@ class LoggingAspectTest {
         assertThat(logs.getFirst().getFormattedMessage()).contains("API: TestController.someMethod");
     }
 
-    // Classe test pour simuler contrôleur
-    static class TestController {
-        public void someMethod() {}
+    // ====================================================================
+    // Tests logUnhandledException
+    // ====================================================================
+
+    @Test
+    @DisplayName("Devrait logger une exception non gérée")
+    void shouldLogUnhandledException() {
+        JoinPoint joinPoint = mock(JoinPoint.class);
+        Signature signature = mock(Signature.class);
+        when(signature.getName()).thenReturn("problematicMethod");
+
+        when(joinPoint.getTarget()).thenReturn(new TestService());
+        when(joinPoint.getSignature()).thenReturn(signature);
+
+        RuntimeException exception = new RuntimeException("Unhandled error");
+
+        loggingAspect.logUnhandledException(joinPoint, exception);
+
+        List<ILoggingEvent> logs = listAppender.list;
+
+        ILoggingEvent errorLog = logs.getFirst();
+        assertThat(errorLog.getLevel()).isEqualTo(Level.ERROR);
+        assertThat(errorLog.getFormattedMessage())
+                .contains("Exception non gérée dans TestService.problematicMethod")
+                .contains("RuntimeException")
+                .contains("Unhandled error");
+    }
+
+    @Test
+    @DisplayName("Devrait logger différents types d'exceptions")
+    void shouldLogDifferentExceptionTypes() {
+        JoinPoint joinPoint = mock(JoinPoint.class);
+        Signature signature = mock(Signature.class);
+        when(signature.getName()).thenReturn("methodWithNPE");
+
+        when(joinPoint.getTarget()).thenReturn(new TestService());
+        when(joinPoint.getSignature()).thenReturn(signature);
+
+        NullPointerException npe = new NullPointerException("Null value");
+
+        loggingAspect.logUnhandledException(joinPoint, npe);
+
+        List<ILoggingEvent> logs = listAppender.list;
+
+        ILoggingEvent errorLog = logs.getFirst();
+        assertThat(errorLog.getFormattedMessage())
+                .contains("NullPointerException")
+                .contains("Null value");
     }
 }

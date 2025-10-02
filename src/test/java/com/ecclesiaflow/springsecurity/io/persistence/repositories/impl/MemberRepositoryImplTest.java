@@ -71,12 +71,12 @@ class MemberRepositoryImplTest {
 
     @Test
     @DisplayName("findByEmail - Devrait retourner Optional.of(Member) si trouvé")
-    void findByEmail_ShouldReturnMember_WhenFound() {
+    void getByEmail_ShouldReturnMember_WhenFound() {
         // Arrange
         when(springDataRepository.findByEmail(EMAIL)).thenReturn(Optional.of(mockEntity));
 
         // Act
-        Optional<Member> result = memberRepository.findByEmail(EMAIL);
+        Optional<Member> result = memberRepository.getByEmail(EMAIL);
 
         // Assert
         assertThat(result).isPresent();
@@ -87,12 +87,12 @@ class MemberRepositoryImplTest {
 
     @Test
     @DisplayName("findByEmail - Devrait retourner Optional.empty() si non trouvé")
-    void findByEmail_ShouldReturnEmpty_WhenNotFound() {
+    void getByEmail_ShouldReturnEmpty_WhenNotFound() {
         // Arrange
         when(springDataRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
         // Act
-        Optional<Member> result = memberRepository.findByEmail(EMAIL);
+        Optional<Member> result = memberRepository.getByEmail(EMAIL);
 
         // Assert
         assertThat(result).isEmpty();
@@ -106,7 +106,7 @@ class MemberRepositoryImplTest {
 
     @Test
     @DisplayName("findByRole - Devrait retourner Member si une entité est trouvée")
-    void findByRole_ShouldReturnMember_WhenEntityFound() {
+    void getByRole_ShouldReturnMember_WhenEntityFound() {
         // Arrange
         Role role = Role.ADMIN;
         UUID adminId = UUID.randomUUID();
@@ -136,7 +136,7 @@ class MemberRepositoryImplTest {
         when(mapper.toDomain(adminEntity)).thenReturn(adminDomain);
 
         // Act
-        Member result = memberRepository.findByRole(role);
+        Member result = memberRepository.getByRole(role);
 
         // Assert
         assertThat(result).isEqualTo(adminDomain);
@@ -146,7 +146,7 @@ class MemberRepositoryImplTest {
 
     @Test
     @DisplayName("findByRole - Devrait retourner null si aucune entité n'est trouvée")
-    void findByRole_ShouldReturnNull_WhenEntityNotFound() {
+    void getByRole_ShouldReturnNull_WhenEntityNotFound() {
         // Arrange
         Role role = Role.ADMIN;
         when(springDataRepository.findByRole(role)).thenReturn(null);
@@ -154,7 +154,7 @@ class MemberRepositoryImplTest {
         when(mapper.toDomain(null)).thenReturn(null);
 
         // Act
-        Member result = memberRepository.findByRole(role);
+        Member result = memberRepository.getByRole(role);
 
         // Assert
         assertThat(result).isNull();

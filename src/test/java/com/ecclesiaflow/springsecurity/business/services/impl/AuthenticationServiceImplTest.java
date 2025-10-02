@@ -92,28 +92,28 @@ class AuthenticationServiceImplTest {
     @DisplayName("Devrait retourner le Member par email en cas de succès")
     void getMemberByEmail_ShouldReturnMember_OnSuccess() {
         // Arrange
-        when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.of(mockMember));
+        when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.of(mockMember));
 
         // Act
         Member result = authenticationService.getMemberByEmail(EMAIL);
 
         // Assert
         assertThat(result).isEqualTo(mockMember);
-        verify(memberRepository).findByEmail(EMAIL);
+        verify(memberRepository).getByEmail(EMAIL);
     }
 
     @Test
     @DisplayName("Devrait lever MemberNotFoundException si l'email n'est pas trouvé")
     void getMemberByEmail_ShouldThrowMemberNotFoundException_OnNotFound() {
         // Arrange
-        when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
+        when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThatThrownBy(() -> authenticationService.getMemberByEmail(EMAIL))
                 .isInstanceOf(MemberNotFoundException.class)
                 .hasMessageContaining("Membre introuvable pour l'email: " + EMAIL);
 
-        verify(memberRepository).findByEmail(EMAIL);
+        verify(memberRepository).getByEmail(EMAIL);
     }
 
     // ====================================================================

@@ -60,7 +60,7 @@ class PasswordServiceImplTest {
         @DisplayName("Devrait créer et sauvegarder un nouveau Member si non existant")
         void shouldCreateAndSaveNewMember_IfNotFound() {
             // Arrange
-            when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
+            when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.empty());
 
             // Act
             passwordService.setInitialPassword(EMAIL, NEW_PASSWORD);
@@ -81,7 +81,7 @@ class PasswordServiceImplTest {
         void shouldUpdateExistingMember_IfNotEnabled() {
             // Arrange
             Member existingMember = Member.builder().email(EMAIL).enabled(false).password(null).role(Role.MEMBER).build();
-            when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.of(existingMember));
+            when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.of(existingMember));
 
             // Act
             passwordService.setInitialPassword(EMAIL, NEW_PASSWORD);
@@ -114,7 +114,7 @@ class PasswordServiceImplTest {
         void shouldThrowInvalidRequestException_IfAlreadyEnabled() {
             // Arrange
             Member existingMember = Member.builder().email(EMAIL).enabled(true).password("old_encoded").role(Role.MEMBER).build();
-            when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.of(existingMember));
+            when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.of(existingMember));
 
             // Act & Assert
             assertThatThrownBy(() -> passwordService.setInitialPassword(EMAIL, NEW_PASSWORD))
@@ -146,7 +146,7 @@ class PasswordServiceImplTest {
 
             // CORRECTION : Utiliser lenient() pour éviter UnnecessaryStubbingException,
             // car ce stub est surchargé dans shouldThrowRuntimeException_IfMemberNotFound
-            lenient().when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.of(enabledMember));
+            lenient().when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.of(enabledMember));
         }
 
         @Test
@@ -174,10 +174,6 @@ class PasswordServiceImplTest {
             // Arrange
             when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(true);
 
-            // Le stub memberRepository.findByEmail(EMAIL) du setup() n'est pas utilisé ici
-            // car la méthode lève l'exception avant de l'atteindre.
-            // C'est pourquoi le lenient() est crucial dans le setup().
-
             // Act & Assert
             assertThatThrownBy(() -> passwordService.changePassword(EMAIL, CURRENT_PASSWORD, NEW_PASSWORD))
                     .isInstanceOf(InvalidRequestException.class)
@@ -190,7 +186,7 @@ class PasswordServiceImplTest {
         void shouldThrowRuntimeException_IfMemberNotFound() {
             // Arrange
             // Surcharge du stub par défaut du setup pour simuler l'absence du membre
-            when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
+            when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThatThrownBy(() -> passwordService.changePassword(EMAIL, CURRENT_PASSWORD, NEW_PASSWORD))
@@ -205,7 +201,7 @@ class PasswordServiceImplTest {
         void shouldThrowRuntimeException_IfPasswordIsNull() {
             // Arrange
             Member memberWithoutPassword = enabledMember.toBuilder().password(null).build();
-            when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.of(memberWithoutPassword));
+            when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.of(memberWithoutPassword));
 
             // Act & Assert
             assertThatThrownBy(() -> passwordService.changePassword(EMAIL, CURRENT_PASSWORD, NEW_PASSWORD))

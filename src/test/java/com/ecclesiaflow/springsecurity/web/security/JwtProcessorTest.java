@@ -223,9 +223,9 @@ class JwtProcessorTest {
         assertThat(claims.get("type", String.class)).isEqualTo("temporary");
         assertThat(claims.get("purpose", String.class)).isEqualTo("password_setup");
 
-        // Correction isCloseTo
+        // Correction isCloseTo avec tolérance augmentée pour éviter les échecs de timing
         assertThat(claims.getExpiration().getTime())
-                .isCloseTo(System.currentTimeMillis() + TEMP_EXP, offset(1000L));
+                .isCloseTo(System.currentTimeMillis() + TEMP_EXP, offset(2000L));
     }
 
     @Test

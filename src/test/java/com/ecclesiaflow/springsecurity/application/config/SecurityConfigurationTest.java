@@ -5,10 +5,12 @@ import com.ecclesiaflow.springsecurity.business.services.MemberService;
 import com.ecclesiaflow.springsecurity.web.security.CustomAuthenticationEntryPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -17,14 +19,16 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests unitaires pour SecurityConfiguration
+ * Tests pour SecurityConfiguration.
+ * Note: securityFilterChain() nécessite des tests d'intégration Spring Security
+ * car il configure HttpSecurity qui dépend du contexte Spring.
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("SecurityConfiguration Tests")
+@DisplayName("SecurityConfiguration - Tests Unitaires")
 class SecurityConfigurationTest {
 
     @Mock
@@ -56,183 +60,231 @@ class SecurityConfigurationTest {
         );
     }
 
-    @Test
-    @DisplayName("Devrait créer un bean PasswordEncoder de type BCrypt")
-    void shouldCreateBCryptPasswordEncoder() {
-        // When
-        PasswordEncoder passwordEncoder = securityConfiguration.passwordEncoder();
+    // ====================================================================
+    // Tests passwordEncoder()
+    // ====================================================================
 
-        // Then
-        assertThat(passwordEncoder).isNotNull();
-        assertThat(passwordEncoder).isInstanceOf(BCryptPasswordEncoder.class);
-    }
+    @Nested
+    @DisplayName("Tests passwordEncoder()")
+    class PasswordEncoderTests {
 
-    @Test
-    @DisplayName("Devrait créer un AuthenticationProvider avec UserDetailsService et PasswordEncoder")
-    void shouldCreateAuthenticationProviderWithCorrectConfiguration() {
-        // Given
-        when(memberService.userDetailsService()).thenReturn(userDetailsService);
+        @Test
+        @DisplayName("Devrait créer un BCryptPasswordEncoder")
+        void shouldCreateBCryptPasswordEncoder() {
+            // When
+            PasswordEncoder encoder = securityConfiguration.passwordEncoder();
 
-        // When
-        AuthenticationProvider authProvider = securityConfiguration.authenticationProvider();
+            // Then
+            assertThat(encoder).isNotNull();
+            assertThat(encoder).isInstanceOf(BCryptPasswordEncoder.class);
+        }
 
-        // Then
-        assertThat(authProvider).isNotNull();
-        assertThat(authProvider).isInstanceOf(DaoAuthenticationProvider.class);
+        @Test
+        @DisplayName("Devrait créer une nouvelle instance à chaque appel")
+        void shouldCreateNewInstanceEachTime() {
+            // When
+            PasswordEncoder encoder1 = securityConfiguration.passwordEncoder();
+            PasswordEncoder encoder2 = securityConfiguration.passwordEncoder();
 
-        DaoAuthenticationProvider daoAuthProvider = (DaoAuthenticationProvider) authProvider;
-        assertThat(daoAuthProvider).isNotNull();
-    }
+            // Then
+            assertThat(encoder1).isNotSameAs(encoder2);
+        }
 
-    @Test
-    @DisplayName("Devrait créer un AuthenticationManager depuis AuthenticationConfiguration")
-    void shouldCreateAuthenticationManager() throws Exception {
-        // Given
-        when(authenticationConfiguration.getAuthenticationManager()).thenReturn(authenticationManager);
+        @Test
+        @DisplayName("Devrait encoder correctement un mot de passe")
+        void shouldEncodePassword() {
+            // Given
+            PasswordEncoder encoder = securityConfiguration.passwordEncoder();
+            String rawPassword = "myPassword123";
 
-        // When
-        AuthenticationManager manager = securityConfiguration.authenticationManager(authenticationConfiguration);
+            // When
+            String encoded = encoder.encode(rawPassword);
 
-        // Then
-        assertThat(manager).isNotNull();
-        assertThat(manager).isEqualTo(authenticationManager);
-    }
-
-    @Test
-    @DisplayName("Devrait vérifier que SecurityConfiguration est bien configurée")
-    void shouldVerifySecurityConfigurationIsWellConfigured() {
-        // Given
-        when(memberService.userDetailsService()).thenReturn(userDetailsService);
-
-        // When & Then - Vérifier que tous les beans peuvent être créés sans erreur
-        assertThat(securityConfiguration.passwordEncoder()).isNotNull();
-        assertThat(securityConfiguration.authenticationProvider()).isNotNull();
-
-    }
-
-    @Test
-    @DisplayName("Devrait vérifier que les beans sont correctement injectés")
-    void shouldVerifyBeansAreCorrectlyInjected() {
-        // Then - Vérifier que la configuration a été créée avec les bonnes dépendances
-        assertThat(securityConfiguration).isNotNull();
-
-        // Vérifier que les beans peuvent être créés
-        PasswordEncoder passwordEncoder = securityConfiguration.passwordEncoder();
-        assertThat(passwordEncoder).isNotNull();
-
-        when(memberService.userDetailsService()).thenReturn(userDetailsService);
-        AuthenticationProvider authProvider = securityConfiguration.authenticationProvider();
-        assertThat(authProvider).isNotNull();
-    }
-
-    @Test
-    @DisplayName("Devrait créer des beans indépendants (pas de singleton partagé)")
-    void shouldCreateIndependentBeans() {
-        // When
-        PasswordEncoder encoder1 = securityConfiguration.passwordEncoder();
-        PasswordEncoder encoder2 = securityConfiguration.passwordEncoder();
-
-        // Then - Chaque appel devrait créer une nouvelle instance
-        assertThat(encoder1).isNotNull();
-        assertThat(encoder2).isNotNull();
-        assertThat(encoder1).isNotSameAs(encoder2); // Différentes instances
-        assertThat(encoder1.getClass()).isEqualTo(encoder2.getClass()); // Même type
-    }
-
-    @Test
-    @DisplayName("Devrait configurer AuthenticationProvider avec les bonnes dépendances")
-    void shouldConfigureAuthenticationProviderWithCorrectDependencies() {
-        // Given
-        when(memberService.userDetailsService()).thenReturn(userDetailsService);
-
-        // When
-        AuthenticationProvider provider1 = securityConfiguration.authenticationProvider();
-        AuthenticationProvider provider2 = securityConfiguration.authenticationProvider();
-
-        // Then
-        assertThat(provider1).isNotNull();
-        assertThat(provider2).isNotNull();
-        assertThat(provider1).isInstanceOf(DaoAuthenticationProvider.class);
-        assertThat(provider2).isInstanceOf(DaoAuthenticationProvider.class);
-
-        // Chaque appel devrait créer une nouvelle instance
-        assertThat(provider1).isNotSameAs(provider2);
-    }
-
-    @Test
-    @DisplayName("Devrait vérifier que SecurityFilterChain nécessite un test d'intégration")
-    void shouldVerifySecurityFilterChainRequiresIntegrationTest() {
-        // Vérifier que la configuration existe et peut être instanciée
-        assertThat(securityConfiguration).isNotNull();
-    }
-
-    @Test
-    @DisplayName("Devrait vérifier que tous les rôles sont correctement référencés")
-    void shouldVerifyAllRolesAreCorrectlyReferenced() {
-        // Then - Vérifier que les rôles utilisés dans la configuration existent
-        assertThat(Role.ADMIN).isNotNull();
-        assertThat(Role.MEMBER).isNotNull();
-        
-        // Vérifier que les noms des rôles sont cohérents
-        assertThat(Role.ADMIN.name()).isEqualTo("ADMIN");
-        assertThat(Role.MEMBER.name()).isEqualTo("MEMBER");
-    }
-
-    @Test
-    @DisplayName("Devrait vérifier l'intégration entre AuthenticationProvider et PasswordEncoder")
-    void shouldVerifyAuthenticationProviderPasswordEncoderIntegration() {
-        // Given
-        when(memberService.userDetailsService()).thenReturn(userDetailsService);
-
-        // When
-        AuthenticationProvider provider = securityConfiguration.authenticationProvider();
-        PasswordEncoder encoder = securityConfiguration.passwordEncoder();
-
-        // Then
-        assertThat(provider).isInstanceOf(DaoAuthenticationProvider.class);
-        assertThat(encoder).isInstanceOf(BCryptPasswordEncoder.class);
-        
-        // Vérifier que le provider est correctement configuré
-        DaoAuthenticationProvider daoProvider = (DaoAuthenticationProvider) provider;
-        assertThat(daoProvider).isNotNull();
-    }
-
-    @Test
-    @DisplayName("Devrait vérifier que la configuration peut gérer les exceptions")
-    void shouldVerifyConfigurationCanHandleExceptions() throws Exception {
-        // Given
-        when(authenticationConfiguration.getAuthenticationManager())
-                .thenThrow(new RuntimeException("Configuration error"));
-
-        // When & Then
-        try {
-            securityConfiguration.authenticationManager(authenticationConfiguration);
-        } catch (RuntimeException e) {
-            assertThat(e.getMessage()).isEqualTo("Configuration error");
+            // Then
+            assertThat(encoded).isNotNull();
+            assertThat(encoded).isNotEqualTo(rawPassword);
+            assertThat(encoder.matches(rawPassword, encoded)).isTrue();
         }
     }
 
-    @Test
-    @DisplayName("Devrait vérifier la cohérence de la configuration de sécurité")
-    void shouldVerifySecurityConfigurationConsistency() {
-        // Given
-        when(memberService.userDetailsService()).thenReturn(userDetailsService);
+    // ====================================================================
+    // Tests authenticationProvider()
+    // ====================================================================
 
-        // When - Créer tous les beans de sécurité
-        PasswordEncoder encoder = securityConfiguration.passwordEncoder();
-        AuthenticationProvider provider = securityConfiguration.authenticationProvider();
+    @Nested
+    @DisplayName("Tests authenticationProvider()")
+    class AuthenticationProviderTests {
 
-        // Then - Vérifier la cohérence
-        assertThat(encoder).isNotNull();
-        assertThat(provider).isNotNull();
-        
-        // Vérifier que les types sont corrects
-        assertThat(encoder).isInstanceOf(BCryptPasswordEncoder.class);
-        assertThat(provider).isInstanceOf(DaoAuthenticationProvider.class);
-        
-        // Vérifier que la configuration est réutilisable
-        PasswordEncoder encoder2 = securityConfiguration.passwordEncoder();
-        assertThat(encoder2).isNotNull();
-        assertThat(encoder2.getClass()).isEqualTo(encoder.getClass());
+        @Test
+        @DisplayName("Devrait créer un DaoAuthenticationProvider")
+        void shouldCreateDaoAuthenticationProvider() {
+            // Given
+            when(memberService.userDetailsService()).thenReturn(userDetailsService);
+
+            // When
+            AuthenticationProvider provider = securityConfiguration.authenticationProvider();
+
+            // Then
+            assertThat(provider).isNotNull();
+            assertThat(provider).isInstanceOf(DaoAuthenticationProvider.class);
+            verify(memberService).userDetailsService();
+        }
+
+        @Test
+        @DisplayName("Devrait configurer le provider avec UserDetailsService")
+        void shouldConfigureProviderWithUserDetailsService() {
+            // Given
+            when(memberService.userDetailsService()).thenReturn(userDetailsService);
+
+            // When
+            AuthenticationProvider provider = securityConfiguration.authenticationProvider();
+
+            // Then
+            assertThat(provider).isInstanceOf(DaoAuthenticationProvider.class);
+            verify(memberService).userDetailsService();
+        }
+
+        @Test
+        @DisplayName("Devrait créer une nouvelle instance à chaque appel")
+        void shouldCreateNewInstanceEachTime() {
+            // Given
+            when(memberService.userDetailsService()).thenReturn(userDetailsService);
+
+            // When
+            AuthenticationProvider provider1 = securityConfiguration.authenticationProvider();
+            AuthenticationProvider provider2 = securityConfiguration.authenticationProvider();
+
+            // Then
+            assertThat(provider1).isNotSameAs(provider2);
+            verify(memberService, times(2)).userDetailsService();
+        }
+    }
+
+    // ====================================================================
+    // Tests authenticationManager()
+    // ====================================================================
+
+    @Nested
+    @DisplayName("Tests authenticationManager()")
+    class AuthenticationManagerTests {
+
+        @Test
+        @DisplayName("Devrait retourner l'AuthenticationManager de la configuration")
+        void shouldReturnAuthenticationManagerFromConfig() throws Exception {
+            // Given
+            when(authenticationConfiguration.getAuthenticationManager()).thenReturn(authenticationManager);
+
+            // When
+            AuthenticationManager result = securityConfiguration.authenticationManager(authenticationConfiguration);
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result).isEqualTo(authenticationManager);
+            verify(authenticationConfiguration).getAuthenticationManager();
+        }
+
+        @Test
+        @DisplayName("Devrait propager les exceptions de configuration")
+        void shouldPropagateConfigurationExceptions() throws Exception {
+            // Given
+            when(authenticationConfiguration.getAuthenticationManager())
+                    .thenThrow(new RuntimeException("Config error"));
+
+            // When & Then
+            assertThatThrownBy(() -> securityConfiguration.authenticationManager(authenticationConfiguration))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Config error");
+        }
+    }
+
+    // ====================================================================
+    // Tests d'intégration des composants
+    // ====================================================================
+
+    @Nested
+    @DisplayName("Tests d'intégration des beans")
+    class BeanIntegrationTests {
+
+        @Test
+        @DisplayName("Devrait vérifier que tous les beans sont compatibles")
+        void shouldVerifyAllBeansAreCompatible() {
+            // Given
+            when(memberService.userDetailsService()).thenReturn(userDetailsService);
+
+            // When
+            PasswordEncoder encoder = securityConfiguration.passwordEncoder();
+            AuthenticationProvider provider = securityConfiguration.authenticationProvider();
+
+            // Then - Vérifier les types
+            assertThat(encoder).isInstanceOf(BCryptPasswordEncoder.class);
+            assertThat(provider).isInstanceOf(DaoAuthenticationProvider.class);
+
+            // Vérifier que le provider utilise un BCrypt (via réflexion ou test fonctionnel)
+            DaoAuthenticationProvider daoProvider = (DaoAuthenticationProvider) provider;
+            assertThat(daoProvider).isNotNull();
+        }
+
+        @Test
+        @DisplayName("Devrait vérifier la cohérence BCrypt entre plusieurs instances")
+        void shouldVerifyBCryptConsistency() {
+            // When
+            PasswordEncoder encoder1 = securityConfiguration.passwordEncoder();
+            PasswordEncoder encoder2 = securityConfiguration.passwordEncoder();
+
+            String password = "testPassword";
+            String encoded1 = encoder1.encode(password);
+            String encoded2 = encoder2.encode(password);
+
+            // Then - Différents hash mais même algorithme
+            assertThat(encoded1).isNotEqualTo(encoded2); // BCrypt génère un salt différent
+            assertThat(encoder1.matches(password, encoded1)).isTrue();
+            assertThat(encoder2.matches(password, encoded2)).isTrue();
+            assertThat(encoder1.matches(password, encoded2)).isTrue(); // Cross-validation
+        }
+    }
+
+    // ====================================================================
+    // Tests de vérification de configuration
+    // ====================================================================
+
+    @Nested
+    @DisplayName("Tests de validation de configuration")
+    class ConfigurationValidationTests {
+
+        @Test
+        @DisplayName("Devrait vérifier que les rôles sont correctement référencés")
+        void shouldVerifyRolesAreCorrectlyReferenced() {
+            // Then
+            assertThat(Role.ADMIN).isNotNull();
+            assertThat(Role.MEMBER).isNotNull();
+            assertThat(Role.ADMIN.name()).isEqualTo("ADMIN");
+            assertThat(Role.MEMBER.name()).isEqualTo("MEMBER");
+        }
+
+        @Test
+        @DisplayName("Devrait vérifier que la configuration est bien construite")
+        void shouldVerifyConfigurationIsWellConstructed() {
+            // Then
+            assertThat(securityConfiguration).isNotNull();
+
+            // Vérifier que tous les beans peuvent être créés
+            assertThat(securityConfiguration.passwordEncoder()).isNotNull();
+
+            when(memberService.userDetailsService()).thenReturn(userDetailsService);
+            assertThat(securityConfiguration.authenticationProvider()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("Devrait gérer les appels multiples sans erreur")
+        void shouldHandleMultipleCallsWithoutError() {
+            // Given
+            when(memberService.userDetailsService()).thenReturn(userDetailsService);
+
+            // When & Then - Appels multiples ne doivent pas échouer
+            for (int i = 0; i < 5; i++) {
+                assertThat(securityConfiguration.passwordEncoder()).isNotNull();
+                assertThat(securityConfiguration.authenticationProvider()).isNotNull();
+            }
+        }
     }
 }

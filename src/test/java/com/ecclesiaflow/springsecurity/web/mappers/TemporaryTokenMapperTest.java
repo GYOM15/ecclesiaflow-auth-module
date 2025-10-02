@@ -1,6 +1,7 @@
 package com.ecclesiaflow.springsecurity.web.mappers;
 
 import com.ecclesiaflow.springsecurity.web.payloads.TemporaryTokenRequest;
+import com.ecclesiaflow.springsecurity.web.dto.TemporaryTokenResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -19,6 +20,7 @@ class TemporaryTokenMapperTest {
 
     private static Validator validator;
     private TemporaryTokenRequest request;
+    private TemporaryTokenMapper mapper;
 
     @BeforeAll
     static void setUpValidator() {
@@ -33,6 +35,30 @@ class TemporaryTokenMapperTest {
         // Objet valide de base
         request = new TemporaryTokenRequest();
         request.setEmail("valid.user@example.com");
+        mapper = new TemporaryTokenMapper();
+    }
+
+    // ====================================================================
+    // Tests du mapper TemporaryTokenMapper
+    // ====================================================================
+
+    @Test
+    @DisplayName("extractEmail() doit renvoyer l'email de la requête")
+    void extractEmail_ShouldReturnEmail() {
+        String email = mapper.extractEmail(request);
+        assertThat(email).isEqualTo("valid.user@example.com");
+    }
+
+    @Test
+    @DisplayName("toResponse() doit mapper correctement le token et métadonnées")
+    void toResponse_ShouldMapTokenAndMetadata() {
+        String token = "temp-token-123";
+        TemporaryTokenResponse response = mapper.toResponse(token);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getTemporaryToken()).isEqualTo(token);
+        assertThat(response.getExpiresIn()).isEqualTo(900);
+        assertThat(response.getMessage()).contains("généré avec succès");
     }
 
     // ====================================================================
