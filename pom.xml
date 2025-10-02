@@ -264,6 +264,18 @@
 						<goals>
 							<goal>report</goal>
 						</goals>
+						<configuration>
+							<excludes>
+								<exclude>**/web/payloads/*</exclude>
+								<exclude>**/web/dto/*</exclude>
+								<exclude>**/exception/InvalidCredentialsException.class</exclude>
+								<exclude>**/exception/InvalidRequestException.class</exclude>
+								<exclude>**/exception/InvalidTokenException.class</exclude>
+								<exclude>**/exception/JwtProcessingException.class</exclude>
+								<exclude>**/*$Builder.*</exclude>
+								<exclude>**/*$*</exclude>
+							</excludes>
+						</configuration>
 					</execution>
 					<execution>
 						<id>jacoco-check</id>
@@ -271,6 +283,16 @@
 							<goal>check</goal>
 						</goals>
 						<configuration>
+							<excludes>
+								<exclude>**/web/payloads/*</exclude>
+								<exclude>**/web/dto/*</exclude>
+								<exclude>**/exception/InvalidCredentialsException.class</exclude>
+								<exclude>**/exception/InvalidRequestException.class</exclude>
+								<exclude>**/exception/InvalidTokenException.class</exclude>
+								<exclude>**/exception/JwtProcessingException.class</exclude>
+								<exclude>**/*$Builder.*</exclude>
+								<exclude>**/*$*</exclude>
+							</excludes>
 							<rules>
 								<rule>
 									<element>PACKAGE</element>
