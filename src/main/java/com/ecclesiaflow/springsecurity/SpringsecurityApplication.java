@@ -33,7 +33,7 @@ public class SpringsecurityApplication implements CommandLineRunner {
 	}
 
 	@Override
-	@Transactional
+	//@Transactional
 	public void run(String... args) {
 //		Member adminAccount = memberRepository.findByRole(Role.ADMIN);
 //		if (adminAccount == null) {
