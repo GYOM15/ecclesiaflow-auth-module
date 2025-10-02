@@ -17,8 +17,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.reactive.resource.NoResourceFoundException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -182,9 +181,9 @@ public class GlobalExceptionHandler {
         return buildSimpleErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Une erreur interne est survenue", request.getRequestURI());
     }
 
-    @ExceptionHandler(NoResourceFoundException.class)
+    @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNotFoundExceptions(
-            NoResourceFoundException ex, WebRequest request) {
+            NoHandlerFoundException ex, HttpServletRequest request) {
 
         HttpStatus status = HttpStatus.NOT_FOUND;
 
@@ -203,7 +202,7 @@ public class GlobalExceptionHandler {
                 .status(status.value())
                 .error(status.getReasonPhrase())
                 .message("Ressource non trouvée")
-                .path(request.getDescription(false).replace("uri=", ""))
+                .path(request.getRequestURI())
                 .errors(List.of(error))
                 .build();
 
