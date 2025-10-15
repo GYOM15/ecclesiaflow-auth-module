@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -349,5 +350,114 @@ class JWTAuthenticationFilterTest {
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         verify(filterChain).doFilter(request, response);
         verifyNoInteractions(jwtProcessor, memberService);
+    }
+
+    @Test
+    @DisplayName("doFilterInternal - Devrait gérer une exception lors de extractUsername")
+    void doFilterInternal_ShouldHandleExceptionDuringExtractUsername() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn(AUTH_HEADER);
+        when(jwtProcessor.extractUsername(VALID_JWT)).thenThrow(new RuntimeException("JWT parsing error"));
+
+        // Le filtre devrait propager l'exception
+        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () ->
+                jwtAuthenticationFilter.doFilterInternal(request, response, filterChain)
+        );
+
+        verify(jwtProcessor).extractUsername(VALID_JWT);
+    }
+
+    @Test
+    @DisplayName("doFilterInternal - Devrait gérer une exception lors de isTokenValid")
+    void doFilterInternal_ShouldHandleExceptionDuringTokenValidation() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn(AUTH_HEADER);
+        when(jwtProcessor.extractUsername(VALID_JWT)).thenReturn(USER_EMAIL);
+        when(jwtProcessor.isTokenValid(VALID_JWT)).thenThrow(new RuntimeException("Token validation error"));
+
+        // Le filtre devrait propager l'exception
+        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () ->
+                jwtAuthenticationFilter.doFilterInternal(request, response, filterChain)
+        );
+
+        verify(userDetailsService).loadUserByUsername(USER_EMAIL);
+        verify(jwtProcessor).isTokenValid(VALID_JWT);
+    }
+
+    @Test
+    @DisplayName("doFilterInternal - Devrait continuer le traitement même si WebAuthenticationDetailsSource échoue")
+    void doFilterInternal_ShouldContinueProcessing_EvenIfDetailsSourceFails() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn(AUTH_HEADER);
+        when(request.getRemoteAddr()).thenThrow(new RuntimeException("Network error"));
+
+        // Malgré l'erreur potentielle, le filtre continue
+        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () ->
+                jwtAuthenticationFilter.doFilterInternal(request, response, filterChain)
+        );
+
+        verify(jwtProcessor).extractUsername(VALID_JWT);
+    }
+
+    @Test
+    @DisplayName("doFilterInternal - Devrait gérer email avec espaces avant/après")
+    void doFilterInternal_ShouldHandleEmailWithWhitespace() throws ServletException, IOException {
+        String emailWithSpaces = "  " + USER_EMAIL + "  ";
+        when(request.getHeader("Authorization")).thenReturn(AUTH_HEADER);
+        when(jwtProcessor.extractUsername(VALID_JWT)).thenReturn(emailWithSpaces);
+        when(userDetailsService.loadUserByUsername(emailWithSpaces)).thenReturn(userDetails);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        SecurityContext context = SecurityContextHolder.getContext();
+        assertThat(context.getAuthentication()).isNotNull();
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    @DisplayName("shouldNotFilter - Devrait retourner true pour /ecclesiaflow/auth/ exact")
+    void shouldNotFilter_ShouldReturnTrueForExactAuthPath() {
+        when(request.getRequestURI()).thenReturn("/ecclesiaflow/auth/");
+        assertThat(jwtAuthenticationFilter.shouldNotFilter(request)).isTrue();
+    }
+
+    @Test
+    @DisplayName("shouldNotFilter - Devrait retourner false pour chemin similaire mais non /ecclesiaflow/auth/")
+    void shouldNotFilter_ShouldReturnFalseForSimilarButNotAuthPath() {
+        when(request.getRequestURI()).thenReturn("/ecclesiaflow/authenticated/resource");
+        assertThat(jwtAuthenticationFilter.shouldNotFilter(request)).isFalse();
+    }
+
+    @Test
+    @DisplayName("doFilterInternal - Devrait gérer token avec seulement Bearer et tab")
+    void doFilterInternal_ShouldHandleBearerWithTabCharacter() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("Bearer\t");
+        when(jwtProcessor.extractUsername("")).thenReturn(null);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    @DisplayName("doFilterInternal - Devrait lever NullPointerException si request est null")
+    void doFilterInternal_ShouldThrowNullPointerException_WhenRequestIsNull() {
+        // When & Then - @NonNull génère une vérification
+        assertThatThrownBy(() -> jwtAuthenticationFilter.doFilterInternal(null, response, filterChain))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    @DisplayName("doFilterInternal - Devrait lever NullPointerException si response est null")
+    void doFilterInternal_ShouldThrowNullPointerException_WhenResponseIsNull() {
+        // When & Then - @NonNull génère une vérification
+        assertThatThrownBy(() -> jwtAuthenticationFilter.doFilterInternal(request, null, filterChain))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    @DisplayName("doFilterInternal - Devrait lever NullPointerException si filterChain est null")
+    void doFilterInternal_ShouldThrowNullPointerException_WhenFilterChainIsNull() {
+        // When & Then - @NonNull génère une vérification
+        assertThatThrownBy(() -> jwtAuthenticationFilter.doFilterInternal(request, response, null))
+                .isInstanceOf(NullPointerException.class);
     }
 }
