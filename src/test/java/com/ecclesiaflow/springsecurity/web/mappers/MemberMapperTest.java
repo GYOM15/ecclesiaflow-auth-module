@@ -1,8 +1,7 @@
 package com.ecclesiaflow.springsecurity.web.mappers;
 
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
-import com.ecclesiaflow.springsecurity.web.payloads.SigninRequest;
-import com.ecclesiaflow.springsecurity.web.mappers.MemberMapper;
+import com.ecclesiaflow.springsecurity.web.model.SigninRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +10,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests unitaires pour MemberMapper
  * 
- * Teste les conversions entre DTOs web et objets métier pour garantir
+ * Teste les conversions entre modèles OpenAPI et objets métier pour garantir
  * l'isolation correcte entre la couche web et la couche métier.
  */
 @DisplayName("MemberMapper - Tests de conversion")

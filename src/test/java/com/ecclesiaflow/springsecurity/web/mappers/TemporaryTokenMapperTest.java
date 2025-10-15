@@ -1,7 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.mappers;
 
-import com.ecclesiaflow.springsecurity.web.payloads.TemporaryTokenRequest;
-import com.ecclesiaflow.springsecurity.web.dto.TemporaryTokenResponse;
+import com.ecclesiaflow.springsecurity.web.model.TemporaryTokenRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -15,7 +14,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("TemporaryTokenRequest - Tests de Validation")
+@DisplayName("TemporaryTokenMapper - Tests de Validation")
 class TemporaryTokenMapperTest {
 
     private static Validator validator;
@@ -49,18 +48,6 @@ class TemporaryTokenMapperTest {
         assertThat(email).isEqualTo("valid.user@example.com");
     }
 
-    @Test
-    @DisplayName("toResponse() doit mapper correctement le token et métadonnées")
-    void toResponse_ShouldMapTokenAndMetadata() {
-        String token = "temp-token-123";
-        TemporaryTokenResponse response = mapper.toResponse(token);
-
-        assertThat(response).isNotNull();
-        assertThat(response.getTemporaryToken()).isEqualTo(token);
-        assertThat(response.getExpiresIn()).isEqualTo(900);
-        assertThat(response.getMessage()).contains("généré avec succès");
-    }
-
     // ====================================================================
     // Tests de Validation Réussis
     // ====================================================================
@@ -80,7 +67,7 @@ class TemporaryTokenMapperTest {
     // ====================================================================
 
     @Test
-    @DisplayName("Devrait échouer si l'email est null (NotBlank)")
+    @DisplayName("Devrait échouer si l'email est null (NotNull)")
     void shouldFailValidation_WhenEmailIsNull() {
         // Arrange
         request.setEmail(null);
@@ -92,11 +79,11 @@ class TemporaryTokenMapperTest {
         assertThat(violations).hasSize(1);
         ConstraintViolation<TemporaryTokenRequest> violation = violations.iterator().next();
         assertThat(violation.getPropertyPath().toString()).isEqualTo("email");
-        assertThat(violation.getMessage()).isEqualTo("L'email est requis");
+        assertThat(violation.getMessage()).isEqualTo("ne doit pas être nul");
     }
 
     @Test
-    @DisplayName("Devrait échouer si l'email est vide (NotBlank)")
+    @DisplayName("Devrait échouer si l'email est vide (@Email)")
     void shouldFailValidation_WhenEmailIsBlank() {
         // Arrange
         request.setEmail("  "); // Une chaîne contenant uniquement des espaces
@@ -105,8 +92,10 @@ class TemporaryTokenMapperTest {
         Set<ConstraintViolation<TemporaryTokenRequest>> violations = validator.validate(request);
 
         // Assert
-        // On s'attend à 2 violations : @NotBlank (chaîne vide) et @Email (format invalide)
-        assertThat(violations).hasSize(2);
+        // Les modèles OpenAPI générés utilisent @Email qui ne valide que le format
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage())
+            .isEqualTo("doit être une adresse électronique syntaxiquement correcte");
     }
 
     // ====================================================================
@@ -126,7 +115,7 @@ class TemporaryTokenMapperTest {
         assertThat(violations).hasSize(1);
         ConstraintViolation<TemporaryTokenRequest> violation = violations.iterator().next();
         assertThat(violation.getPropertyPath().toString()).isEqualTo("email");
-        assertThat(violation.getMessage()).isEqualTo("L'email doit être valide");
+        assertThat(violation.getMessage()).isEqualTo("doit être une adresse électronique syntaxiquement correcte");
     }
 
     @Test
@@ -140,6 +129,7 @@ class TemporaryTokenMapperTest {
 
         // Assert
         assertThat(violations).hasSize(1);
-        assertThat(violations.iterator().next().getMessage()).isEqualTo("L'email doit être valide");
+        assertThat(violations.iterator().next().getMessage())
+            .isEqualTo("doit être une adresse électronique syntaxiquement correcte");
     }
 }

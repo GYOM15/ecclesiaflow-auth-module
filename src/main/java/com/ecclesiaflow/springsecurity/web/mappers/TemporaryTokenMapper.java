@@ -1,13 +1,12 @@
 package com.ecclesiaflow.springsecurity.web.mappers;
 
-import com.ecclesiaflow.springsecurity.web.payloads.TemporaryTokenRequest;
-import com.ecclesiaflow.springsecurity.web.dto.TemporaryTokenResponse;
+import com.ecclesiaflow.springsecurity.web.model.TemporaryTokenRequest;
 import org.springframework.stereotype.Component;
 
 /**
- * Mapper pour les opérations de token temporaire.
+ * Mapper pour les opérations de token temporaire avec modèles OpenAPI.
  * <p>
- * Cette classe gère la transformation entre les DTOs web et les données métier
+ * Cette classe gère la transformation entre les modèles OpenAPI et les données métier
  * pour les opérations de génération de token temporaire.
  * </p>
  * 
@@ -18,26 +17,12 @@ import org.springframework.stereotype.Component;
 public class TemporaryTokenMapper {
 
     /**
-     * Extrait l'email depuis la requête DTO.
+     * Extrait l'email depuis la requête OpenAPI.
      * 
-     * @param request la requête de token temporaire
+     * @param request la requête de token temporaire (modèle OpenAPI)
      * @return l'email extrait
      */
     public String extractEmail(TemporaryTokenRequest request) {
         return request.getEmail();
-    }
-    
-    /**
-     * Crée une réponse DTO à partir du token généré.
-     * 
-     * @param temporaryToken le token temporaire généré
-     * @return la réponse DTO
-     */
-    public TemporaryTokenResponse toResponse(String temporaryToken) {
-        return TemporaryTokenResponse.builder()
-                .temporaryToken(temporaryToken)
-                .expiresIn(900) // 15 min
-                .message("Token temporaire JWT généré avec succès")
-                .build();
     }
 }
