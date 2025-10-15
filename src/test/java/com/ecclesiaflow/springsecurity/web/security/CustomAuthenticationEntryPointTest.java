@@ -159,4 +159,107 @@ class CustomAuthenticationEntryPointTest {
         verify(printWriter).write("{\"error\":\"Authentication failed\"}");
         verify(printWriter).flush();
     }
+
+    @Test
+    @DisplayName("Erreur: Header vide - Devrait retourner le message d'absence de header")
+    void commence_ShouldReturnMissingHeaderMessage_WhenHeaderIsEmpty() throws IOException {
+        // Arrange
+        when(request.getHeader("Authorization")).thenReturn("");
+        ArgumentCaptor<ApiErrorResponse> errorCaptor = ArgumentCaptor.forClass(ApiErrorResponse.class);
+
+        // Act
+        entryPoint.commence(request, response, authException);
+
+        // Assert
+        verify(objectMapper).writeValueAsString(errorCaptor.capture());
+        String message = errorCaptor.getValue().message();
+        assertThat(message).contains("Header Authorization manquant");
+    }
+
+    @Test
+    @DisplayName("Erreur: Header avec espaces - Devrait retourner le message d'absence de header")
+    void commence_ShouldReturnMissingHeaderMessage_WhenHeaderIsBlank() throws IOException {
+        // Arrange
+        when(request.getHeader("Authorization")).thenReturn("   ");
+        ArgumentCaptor<ApiErrorResponse> errorCaptor = ArgumentCaptor.forClass(ApiErrorResponse.class);
+
+        // Act
+        entryPoint.commence(request, response, authException);
+
+        // Assert
+        verify(objectMapper).writeValueAsString(errorCaptor.capture());
+        String message = errorCaptor.getValue().message();
+        assertThat(message).contains("Header Authorization manquant");
+    }
+
+    @Test
+    @DisplayName("Erreur: Header avec Bearer mais sans espace - Devrait retourner format invalide")
+    void commence_ShouldReturnInvalidFormatMessage_WhenBearerWithoutSpace() throws IOException {
+        // Arrange
+        when(request.getHeader("Authorization")).thenReturn("Bearertoken");
+        ArgumentCaptor<ApiErrorResponse> errorCaptor = ArgumentCaptor.forClass(ApiErrorResponse.class);
+
+        // Act
+        entryPoint.commence(request, response, authException);
+
+        // Assert
+        verify(objectMapper).writeValueAsString(errorCaptor.capture());
+        String message = errorCaptor.getValue().message();
+        assertThat(message).contains("Format du header Authorization invalide");
+    }
+
+    @Test
+    @DisplayName("Devrait inclure ValidationError avec les bons champs")
+    void commence_ShouldIncludeValidationErrorWithCorrectFields() throws IOException {
+        // Arrange
+        when(request.getHeader("Authorization")).thenReturn("Bearer token");
+        ArgumentCaptor<ApiErrorResponse> errorCaptor = ArgumentCaptor.forClass(ApiErrorResponse.class);
+
+        // Act
+        entryPoint.commence(request, response, authException);
+
+        // Assert
+        verify(objectMapper).writeValueAsString(errorCaptor.capture());
+        ApiErrorResponse capturedResponse = errorCaptor.getValue();
+        
+        assertThat(capturedResponse.errors()).hasSize(1);
+        var validationError = capturedResponse.errors().get(0);
+        assertThat(validationError.path()).isEqualTo("authentication");
+        assertThat(validationError.type()).isEqualTo("security");
+        assertThat(validationError.expected()).isEqualTo("AUTHENTICATION_ERROR");
+        assertThat(validationError.received()).isEqualTo("Full Spring Security Error Message");
+        assertThat(validationError.code()).isEqualTo("UNAUTHORIZED");
+    }
+
+    @Test
+    @DisplayName("Devrait utiliser message d'erreur fallback si serialization échoue")
+    void commence_ShouldWriteFallbackMessageWhenSerializationFails() throws Exception {
+        // Arrange
+        when(request.getHeader("Authorization")).thenReturn("Bearer token");
+        when(objectMapper.writeValueAsString(any(ApiErrorResponse.class))).thenThrow(new RuntimeException("JSON error"));
+
+        // Act
+        entryPoint.commence(request, response, authException);
+
+        // Assert - Vérifie que le message fallback est écrit
+        verify(printWriter).write("{\"error\":\"Authentication failed\"}");
+        verify(printWriter).flush();
+    }
+
+    @Test
+    @DisplayName("Devrait correctement utiliser le URI de la requête dans la réponse")
+    void commence_ShouldUseCorrectRequestURIInResponse() throws IOException {
+        // Arrange
+        String customUri = "/api/v1/custom/endpoint";
+        when(request.getRequestURI()).thenReturn(customUri);
+        when(request.getHeader("Authorization")).thenReturn("Bearer token");
+        ArgumentCaptor<ApiErrorResponse> errorCaptor = ArgumentCaptor.forClass(ApiErrorResponse.class);
+
+        // Act
+        entryPoint.commence(request, response, authException);
+
+        // Assert
+        verify(objectMapper).writeValueAsString(errorCaptor.capture());
+        assertThat(errorCaptor.getValue().path()).isEqualTo(customUri);
+    }
 }
