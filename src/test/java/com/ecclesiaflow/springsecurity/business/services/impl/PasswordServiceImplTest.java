@@ -122,6 +122,42 @@ class PasswordServiceImplTest {
                     .hasMessageContaining("Le mot de passe a déjà été défini pour ce compte");
             verify(memberRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("Devrait normaliser l'email (toLowerCase + trim) lors de la création")
+        void shouldNormalizeEmail_WhenCreatingNewMember() {
+            // Arrange
+            String emailWithSpaces = "  USER@TEST.COM  ";
+            when(memberRepository.getByEmail(emailWithSpaces)).thenReturn(Optional.empty());
+            when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
+            when(membersClient.isEmailNotConfirmed(emailWithSpaces)).thenReturn(false);
+
+            // Act
+            passwordService.setInitialPassword(emailWithSpaces, NEW_PASSWORD);
+
+            // Assert
+            ArgumentCaptor<Member> memberCaptor = ArgumentCaptor.forClass(Member.class);
+            verify(memberRepository).save(memberCaptor.capture());
+            Member savedMember = memberCaptor.getValue();
+
+            assertThat(savedMember.getEmail()).isEqualTo("user@test.com"); // normalisé
+        }
+
+        @Test
+        @DisplayName("Devrait créer membre avec email déjà en minuscule et sans espaces")
+        void shouldCreateMember_WithAlreadyNormalizedEmail() {
+            // Arrange
+            String normalizedEmail = "user@test.com";
+            when(memberRepository.getByEmail(normalizedEmail)).thenReturn(Optional.empty());
+
+            // Act
+            passwordService.setInitialPassword(normalizedEmail, NEW_PASSWORD);
+
+            // Assert
+            ArgumentCaptor<Member> memberCaptor = ArgumentCaptor.forClass(Member.class);
+            verify(memberRepository).save(memberCaptor.capture());
+            assertThat(memberCaptor.getValue().getEmail()).isEqualTo(normalizedEmail);
+        }
     }
 
     // ====================================================================
@@ -220,6 +256,40 @@ class PasswordServiceImplTest {
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("Mot de passe actuel incorrect");
             verify(memberRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Devrait lever RuntimeException si le mot de passe est une chaîne vide")
+        void shouldThrowRuntimeException_IfPasswordIsEmpty() {
+            // Arrange
+            Member memberWithEmptyPassword = enabledMember.toBuilder().password("").build();
+            when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.of(memberWithEmptyPassword));
+
+            // Act & Assert
+            assertThatThrownBy(() -> passwordService.changePassword(EMAIL, CURRENT_PASSWORD, NEW_PASSWORD))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Aucun mot de passe défini pour ce membre");
+        }
+
+        @Test
+        @DisplayName("Devrait mettre à jour updatedAt lors du changement de mot de passe")
+        void shouldUpdateUpdatedAt_WhenChangingPassword() {
+            // Arrange
+            LocalDateTime oldTimestamp = LocalDateTime.now().minusDays(1);
+            Member memberWithOldTimestamp = enabledMember.toBuilder().updatedAt(oldTimestamp).build();
+            when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.of(memberWithOldTimestamp));
+            when(passwordEncoder.matches(CURRENT_PASSWORD, ENCODED_CURRENT_PASSWORD)).thenReturn(true);
+
+            // Act
+            passwordService.changePassword(EMAIL, CURRENT_PASSWORD, NEW_PASSWORD);
+
+            // Assert
+            ArgumentCaptor<Member> memberCaptor = ArgumentCaptor.forClass(Member.class);
+            verify(memberRepository).save(memberCaptor.capture());
+            Member savedMember = memberCaptor.getValue();
+
+            assertThat(savedMember.getUpdatedAt()).isNotNull();
+            assertThat(savedMember.getUpdatedAt()).isAfter(oldTimestamp);
         }
     }
 }
