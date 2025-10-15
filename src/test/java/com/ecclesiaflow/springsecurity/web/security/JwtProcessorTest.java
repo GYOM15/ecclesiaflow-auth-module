@@ -296,6 +296,126 @@ class JwtProcessorTest {
                 .hasMessage("Le token fourni n'est pas un token temporaire valide");
     }
 
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait lancer InvalidTokenException pour token malformé")
+    void shouldThrowInvalidTokenExceptionForMalformedTemporaryToken() {
+        // Given
+        String malformedToken = "invalid.malformed.token";
+
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.validateTemporaryToken(malformedToken, "test@email.com"))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessageContaining("Token invalide");
+    }
+
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait lancer InvalidTokenException pour token avec signature invalide")
+    void shouldThrowInvalidTokenExceptionForInvalidSignature() throws JwtProcessingException {
+        // Given
+        String validToken = jwtProcessor.generateTemporaryToken("test@email.com");
+        String tokenWithInvalidSignature = validToken.substring(0, validToken.lastIndexOf('.')) + ".invalidSignature";
+
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.validateTemporaryToken(tokenWithInvalidSignature, "test@email.com"))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessageContaining("Token invalide");
+    }
+
+    @Test
+    @DisplayName("isRefreshTokenValid - Devrait retourner false pour refresh token expiré")
+    void shouldReturnFalseForExpiredRefreshToken() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        long tenSecondsAgo = System.currentTimeMillis() - 10000;
+
+        String expiredRefreshToken = Jwts.builder()
+                .setSubject("test@example.com")
+                .setIssuedAt(new java.util.Date(tenSecondsAgo))
+                .setExpiration(new java.util.Date(tenSecondsAgo + 1))
+                .claim("type", "refresh")
+                .signWith(key)
+                .compact();
+
+        // When
+        boolean isValid = jwtProcessor.isRefreshTokenValid(expiredRefreshToken);
+
+        // Then
+        assertThat(isValid).isFalse();
+    }
+
+    @Test
+    @DisplayName("isTokenValid - Devrait retourner false pour token expiré")
+    void shouldReturnFalseForExpiredAccessToken() throws JwtProcessingException {
+        // Given
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        long tenSecondsAgo = System.currentTimeMillis() - 10000;
+
+        String expiredToken = Jwts.builder()
+                .setSubject("test@example.com")
+                .setIssuedAt(new java.util.Date(tenSecondsAgo))
+                .setExpiration(new java.util.Date(tenSecondsAgo + 1))
+                .signWith(key)
+                .compact();
+
+        // When
+        boolean isValid = jwtProcessor.isTokenValid(expiredToken);
+
+        // Then
+        assertThat(isValid).isFalse();
+    }
+
+    @Test
+    @DisplayName("isRefreshTokenValid - Devrait gérer token null sans crash")
+    void shouldHandleNullTokenGracefully() {
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.isRefreshTokenValid(null))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait rejeter token avec claim 'type' manquant")
+    void shouldRejectTemporaryTokenWithMissingTypeClaim() throws JwtProcessingException {
+        // Given
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        String email = "test@email.com";
+
+        String tokenWithoutType = Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(new java.util.Date())
+                .setExpiration(new java.util.Date(System.currentTimeMillis() + TEMP_EXP))
+                .claim("purpose", "password_setup")
+                // Pas de claim "type"
+                .signWith(key)
+                .compact();
+
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.validateTemporaryToken(tokenWithoutType, email))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le token fourni n'est pas un token temporaire valide");
+    }
+
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait rejeter token avec claim 'purpose' manquant")
+    void shouldRejectTemporaryTokenWithMissingPurposeClaim() throws JwtProcessingException {
+        // Given
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        String email = "test@email.com";
+
+        String tokenWithoutPurpose = Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(new java.util.Date())
+                .setExpiration(new java.util.Date(System.currentTimeMillis() + TEMP_EXP))
+                .claim("type", "temporary")
+                // Pas de claim "purpose"
+                .signWith(key)
+                .compact();
+
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.validateTemporaryToken(tokenWithoutPurpose, email))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le token fourni n'est pas un token temporaire valide");
+    }
+
     // ====================================================================
     // Tests de Cohérence et de Thread Safety
     // ====================================================================
