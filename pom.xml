@@ -196,6 +196,17 @@
 			<artifactId>netty-codec-http2</artifactId>
 			<version>4.2.4.Final</version>
 		</dependency>
+		
+		<!-- OpenAPI Generator Dependencies -->
+		<dependency>
+			<groupId>org.openapitools</groupId>
+			<artifactId>jackson-databind-nullable</artifactId>
+			<version>0.2.6</version>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.validation</groupId>
+			<artifactId>jakarta.validation-api</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -245,11 +256,59 @@
 					</argLine>
 				</configuration>
 			</plugin>
+			
+			<!-- OpenAPI Generator Plugin -->
+			<plugin>
+				<groupId>org.openapitools</groupId>
+				<artifactId>openapi-generator-maven-plugin</artifactId>
+				<version>7.15.0</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<inputSpec>src/main/resources/api/openapi.yaml</inputSpec>
+							<generatorName>spring</generatorName>
+							<apiPackage>com.ecclesiaflow.springsecurity.web.api</apiPackage>
+							<modelPackage>com.ecclesiaflow.springsecurity.web.model</modelPackage>
+							<supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
+							<configOptions>
+								<delegatePattern>true</delegatePattern>
+								<useJakartaEe>true</useJakartaEe>
+								<useSpringBoot3>true</useSpringBoot3>
+								<interfaceOnly>true</interfaceOnly>
+								<skipDefaultInterface>true</skipDefaultInterface>
+								<useTags>true</useTags>
+							</configOptions>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			
 			<!-- JaCoCo Plugin pour la couverture de code -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.12</version>
+				<configuration>
+					<excludes>
+						<exclude>**/web/dto/*</exclude>
+						<!-- Exclure les configurations Spring Boot -->
+						<exclude>**/com/ecclesiaflow/SpringsecurityApplication.class</exclude>
+						<!-- Modèles et APIs générés par OpenAPI Generator -->
+						<exclude>**/web/model/*</exclude>
+						<exclude>**/web/api/*</exclude>
+						<!-- Exceptions métier simples -->
+						<exclude>**/exception/InvalidCredentialsException.class</exclude>
+						<exclude>**/exception/InvalidRequestException.class</exclude>
+						<exclude>**/exception/InvalidTokenException.class</exclude>
+						<exclude>**/exception/JwtProcessingException.class</exclude>
+						<!-- Classes internes générées (Builder, etc.) -->
+						<exclude>**/*$Builder.*</exclude>
+						<exclude>**/*$*</exclude>
+					</excludes>
+				</configuration>
 				<executions>
 					<execution>
 						<id>prepare-agent</id>
@@ -257,6 +316,10 @@
 						<goals>
 							<goal>prepare-agent</goal>
 						</goals>
+						<configuration>
+							<destFile>${project.build.directory}/jacoco.exec</destFile>
+							<append>true</append>
+						</configuration>
 					</execution>
 					<execution>
 						<id>report</id>
@@ -265,16 +328,8 @@
 							<goal>report</goal>
 						</goals>
 						<configuration>
-							<excludes>
-								<exclude>**/web/payloads/*</exclude>
-								<exclude>**/web/dto/*</exclude>
-								<exclude>**/exception/InvalidCredentialsException.class</exclude>
-								<exclude>**/exception/InvalidRequestException.class</exclude>
-								<exclude>**/exception/InvalidTokenException.class</exclude>
-								<exclude>**/exception/JwtProcessingException.class</exclude>
-								<exclude>**/*$Builder.*</exclude>
-								<exclude>**/*$*</exclude>
-							</excludes>
+							<dataFile>${project.build.directory}/jacoco.exec</dataFile>
+							<outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
 						</configuration>
 					</execution>
 					<execution>
@@ -283,24 +338,20 @@
 							<goal>check</goal>
 						</goals>
 						<configuration>
-							<excludes>
-								<exclude>**/web/payloads/*</exclude>
-								<exclude>**/web/dto/*</exclude>
-								<exclude>**/exception/InvalidCredentialsException.class</exclude>
-								<exclude>**/exception/InvalidRequestException.class</exclude>
-								<exclude>**/exception/InvalidTokenException.class</exclude>
-								<exclude>**/exception/JwtProcessingException.class</exclude>
-								<exclude>**/*$Builder.*</exclude>
-								<exclude>**/*$*</exclude>
-							</excludes>
+							<dataFile>${project.build.directory}/jacoco.exec</dataFile>
 							<rules>
 								<rule>
-									<element>PACKAGE</element>
+									<element>BUNDLE</element>
 									<limits>
 										<limit>
 											<counter>LINE</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.80</minimum>
+											<minimum>0.90</minimum>
+										</limit>
+										<limit>
+											<counter>BRANCH</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.90</minimum>
 										</limit>
 									</limits>
 								</rule>
