@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.1
 info:
   title: EcclesiaFlow Authentication API
   description: |
@@ -20,9 +20,11 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8081
     description: Serveur de développement
-  - url: https://api.ecclesiaflow.com
+  - url: https://staging-auth.ecclesiaflow.com
+    description: Serveur de staging
+  - url: https://auth.ecclesiaflow.com
     description: Serveur de production
 
 security:
@@ -54,17 +56,17 @@ paths:
                 summary: Connexion d'un membre
                 value:
                   email: "membre@eglise.com"
-                  password: "motdepasse123"
+                  password: "MotDePasse123!"
               pastor_login:
                 summary: Connexion d'un pasteur (admin tenant)
                 value:
                   email: "pasteur@eglise.com"
-                  password: "adminpass123"
+                  password: "AdminPass123!"
       responses:
         '200':
           description: Token généré avec succès
           content:
-            application/vnd.ecclesiaflow.auth.v1+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/JwtAuthenticationResponse'
               examples:
@@ -72,21 +74,25 @@ paths:
                   summary: Réponse de succès
                   value:
                     token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    refreshToken: "refresh_token_here"
-                    tokenType: "Bearer"
-                    expiresIn: 86400
+                    refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
         '400':
           description: Données d'authentification invalides
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
         '401':
           description: Identifiants incorrects
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
 
   /ecclesiaflow/auth/refresh:
     post:
@@ -116,7 +122,7 @@ paths:
         '200':
           description: Token rafraîchi avec succès
           content:
-            application/vnd.ecclesiaflow.auth.v1+json:
+            application/json:
               schema:
                 $ref: '#/components/schemas/JwtAuthenticationResponse'
         '400':
@@ -124,7 +130,179 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /ecclesiaflow/auth/temporary-token:
+    post:
+      tags:
+        - Authentication
+      summary: Génération de token temporaire
+      description: |
+        Génère un token temporaire pour la confirmation d'inscription d'un membre.
+        
+        **Utilisation:**
+        - Appelé après la confirmation du code de confirmation par email
+        - Le token temporaire permet de définir le mot de passe initial
+        - Durée de vie limitée (généralement 15 minutes)
+      operationId: generateTemporaryToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemporaryTokenRequest'
+            examples:
+              validEmail:
+                summary: Email valide
+                value:
+                  email: "nouveau.membre@ecclesiaflow.com"
+      responses:
+        '200':
+          description: Token temporaire généré avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemporaryTokenResponse'
+              examples:
+                success:
+                  summary: Token généré
+                  value:
+                    temporaryToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    expiresIn: 900
+                    message: "Token temporaire généré avec succès"
+        '400':
+          description: Email invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /ecclesiaflow/auth/password:
+    post:
+      tags:
+        - Password Management
+      summary: Définir le mot de passe initial
+      description: |
+        Définit le mot de passe initial d'un membre après confirmation et génère automatiquement 
+        ses tokens d'authentification (access token et refresh token) pour une connexion immédiate.
+        
+        **⚠️ IMPORTANT:** Le token temporaire doit être fourni dans le header Authorization 
+        au format 'Bearer {token}' pour des raisons de sécurité.
+        
+        **Processus:**
+        1. Extraction et validation du token temporaire depuis le header Authorization
+        2. Extraction de l'email depuis le token temporaire
+        3. Définition du mot de passe initial
+        4. Génération automatique des tokens d'authentification
+        5. Retour des tokens pour connexion immédiate
+      operationId: setPassword
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          description: Token temporaire au format 'Bearer {token}'
+          schema:
+            type: string
+            example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+            examples:
+              validPassword:
+                summary: Mot de passe valide
+                value:
+                  password: "MyNewPassword123!"
+      responses:
+        '200':
+          description: Mot de passe défini avec succès et tokens générés
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordManagementResponse'
+              examples:
+                success:
+                  summary: Succès avec tokens
+                  value:
+                    message: "Mot de passe défini avec succès. Vous êtes maintenant connecté."
+                    accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    expiresIn: 3600
+        '400':
+          description: Token invalide ou données incorrectes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          description: Header Authorization manquant ou format invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /ecclesiaflow/auth/new-password:
+    post:
+      tags:
+        - Password Management
+      summary: Changer le mot de passe
+      description: |
+        Change le mot de passe d'un membre authentifié.
+        
+        **Processus:**
+        1. Validation de l'email
+        2. Vérification du mot de passe actuel
+        3. Validation du nouveau mot de passe
+        4. Mise à jour du mot de passe
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+            examples:
+              validChange:
+                summary: Changement valide
+                value:
+                  email: "membre@ecclesiaflow.com"
+                  currentPassword: "OldPassword123!"
+                  newPassword: "NewPassword456!"
+      responses:
+        '200':
+          description: Mot de passe changé avec succès
+        '400':
+          description: Mot de passe actuel incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
 
 components:
   securitySchemes:
@@ -150,13 +328,22 @@ components:
           type: string
           format: email
           description: Adresse email de l'utilisateur
-          example: "utilisateur@eglise.com"
+          example: "membre@ecclesiaflow.com"
         password:
           type: string
           format: password
-          description: Mot de passe de l'utilisateur
-          example: "motdepasse123"
-          minLength: 6
+          description: |
+            Mot de passe de l'utilisateur.
+            
+            **Règles de sécurité:**
+            - Minimum 8 caractères
+            - Au moins 1 lettre minuscule
+            - Au moins 1 lettre majuscule
+            - Au moins 1 chiffre
+            - Au moins 1 caractère spécial (@#$%^&+=!?*.,;:_-)
+          example: "SecurePass123!"
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!?*.,;:_\-]).*$'
 
     RefreshTokenRequest:
       type: object
@@ -178,32 +365,175 @@ components:
         refreshToken:
           type: string
           description: Token de rafraîchissement
-          example: "refresh_token_here"
-        tokenType:
-          type: string
-          description: Type de token (toujours "Bearer")
-          example: "Bearer"
-        expiresIn:
-          type: integer
-          description: Durée de validité du token en secondes
-          example: 86400
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-    ErrorResponse:
+    ApiErrorResponse:
       type: object
       properties:
-        error:
-          type: string
-          description: Code d'erreur
-          example: "INVALID_CREDENTIALS"
-        message:
-          type: string
-          description: Message d'erreur lisible
-          example: "Email ou mot de passe incorrect"
         timestamp:
           type: string
           format: date-time
           description: Horodatage de l'erreur
-          example: "2024-01-15T10:30:00Z"
+          example: "2025-10-04T03:00:00"
+        status:
+          type: integer
+          description: Code de statut HTTP
+          example: 400
+        error:
+          type: string
+          description: Type d'erreur HTTP
+          example: "Bad Request"
+        message:
+          type: string
+          description: Message d'erreur principal
+          example: "Erreur de validation des données"
+        path:
+          type: string
+          description: Chemin de la requête
+          example: "/ecclesiaflow/auth/token"
+        errors:
+          type: array
+          description: Liste des erreurs de validation détaillées
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message d'erreur
+          example: "Le mot de passe est obligatoire"
+        path:
+          type: string
+          description: Chemin du champ en erreur
+          example: "password"
+        type:
+          type: string
+          description: Type d'erreur
+          example: "validation"
+        expected:
+          type: string
+          description: Valeur attendue
+          example: "string"
+        received:
+          type: string
+          description: Valeur reçue
+          example: "null"
+        code:
+          type: string
+          description: Code d'erreur
+          example: "NotBlank"
+        line:
+          type: integer
+          description: Numéro de ligne
+          example: 6
+        column:
+          type: integer
+          description: Numéro de colonne
+          example: 15
+    
+    TemporaryTokenRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email du membre pour lequel générer le token temporaire
+          example: "nouveau.membre@ecclesiaflow.com"
+    
+    TemporaryTokenResponse:
+      type: object
+      properties:
+        temporaryToken:
+          type: string
+          description: Token temporaire JWT généré
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        expiresIn:
+          type: integer
+          description: Durée d'expiration en secondes
+          example: 900
+        message:
+          type: string
+          description: Message de confirmation
+          example: "Token temporaire généré avec succès"
+    
+    SetPasswordRequest:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+          format: password
+          description: |
+            Nouveau mot de passe.
+            
+            **Règles de sécurité:**
+            - Minimum 8 caractères
+            - Au moins 1 lettre minuscule
+            - Au moins 1 lettre majuscule
+            - Au moins 1 chiffre
+            - Au moins 1 caractère spécial (@#$%^&+=!?*.,;:_-)
+          example: "NewPassword123!"
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!?*.,;:_\-]).*$'
+    
+    ChangePasswordRequest:
+      type: object
+      required:
+        - email
+        - currentPassword
+        - newPassword
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email du membre
+          example: "membre@ecclesiaflow.com"
+        currentPassword:
+          type: string
+          format: password
+          description: Mot de passe actuel
+          example: "OldPassword123!"
+        newPassword:
+          type: string
+          format: password
+          description: |
+            Nouveau mot de passe.
+            
+            **Règles de sécurité:**
+            - Minimum 8 caractères
+            - Au moins 1 lettre minuscule
+            - Au moins 1 lettre majuscule
+            - Au moins 1 chiffre
+            - Au moins 1 caractère spécial (@#$%^&+=!?*.,;:_-)
+          example: "NewPassword456!"
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!?*.,;:_\-]).*$'
+    
+    PasswordManagementResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message de confirmation
+          example: "Mot de passe défini avec succès. Vous êtes maintenant connecté."
+        accessToken:
+          type: string
+          description: Token d'accès JWT
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refreshToken:
+          type: string
+          description: Token de rafraîchissement JWT
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        expiresIn:
+          type: integer
+          format: int64
+          description: Durée de validité du token d'accès en secondes
+          example: 3600
 
 tags:
   - name: Authentication
@@ -214,6 +544,16 @@ tags:
       - Génération de tokens JWT
       - Rafraîchissement des tokens
       - Validation des identifiants
+      - Génération de tokens temporaires
       
       **Note:** La gestion des utilisateurs (création, modification, suppression)
       sera déplacée vers le module `ecclesiaflow-member-management-module`.
+  
+  - name: Password Management
+    description: |
+      Gestion des mots de passe des membres
+      
+      **Responsabilités:**
+      - Définition du mot de passe initial après confirmation
+      - Changement de mot de passe pour membres authentifiés
+      - Validation des règles de complexité des mots de passe
