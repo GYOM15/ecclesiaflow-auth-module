@@ -1,196 +1,117 @@
 package com.ecclesiaflow.springsecurity.web.controller;
 
-import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
-import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
-import com.ecclesiaflow.springsecurity.business.domain.token.TokenCredentials;
-import com.ecclesiaflow.springsecurity.business.domain.member.Member;
-import com.ecclesiaflow.springsecurity.web.dto.JwtAuthenticationResponse;
-import com.ecclesiaflow.springsecurity.web.payloads.RefreshTokenRequest;
-import com.ecclesiaflow.springsecurity.web.payloads.SigninRequest;
+import com.ecclesiaflow.springsecurity.web.api.AuthenticationApi;
+import com.ecclesiaflow.springsecurity.web.delegate.AuthenticationDelegate;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
-import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
-import com.ecclesiaflow.springsecurity.web.security.Jwt;
-import com.ecclesiaflow.springsecurity.web.mappers.AuthenticationMapper;
-import com.ecclesiaflow.springsecurity.web.mappers.MemberMapper;
-import com.ecclesiaflow.springsecurity.web.mappers.TemporaryTokenMapper;
-import com.ecclesiaflow.springsecurity.web.payloads.TemporaryTokenRequest;
-import com.ecclesiaflow.springsecurity.web.dto.TemporaryTokenResponse;
-import com.ecclesiaflow.springsecurity.web.exception.model.ApiErrorResponse;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import com.ecclesiaflow.springsecurity.web.model.JwtAuthenticationResponse;
+import com.ecclesiaflow.springsecurity.web.model.RefreshTokenRequest;
+import com.ecclesiaflow.springsecurity.web.model.SigninRequest;
+import com.ecclesiaflow.springsecurity.web.model.TemporaryTokenRequest;
+import com.ecclesiaflow.springsecurity.web.model.TemporaryTokenResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Contrôleur REST pour l'authentification des utilisateurs EcclesiaFlow.
+ * Contrôleur REST pour l'authentification - Pattern Delegate avec OpenAPI Generator.
  * <p>
- * Cette classe expose les endpoints HTTP pour l'authentification, la génération
- * de tokens JWT et le rafraîchissement des tokens. Fait partie de la couche web
- * et orchestre les appels aux services métier et utilitaires techniques.
+ * Ce contrôleur implémente l'interface générée par OpenAPI Generator et utilise le pattern Delegate
+ * pour séparer les responsabilités entre la gestion HTTP (contrôleur) et la logique métier (délégué).
+ * Respecte le principe d'inversion de dépendance (DIP) de SOLID.
  * </p>
  * 
- * <p><strong>Responsabilités principales :</strong></p>
- * <ul>
- *   <li>Exposition des endpoints d'authentification REST</li>
- *   <li>Validation des requêtes HTTP entrantes</li>
- *   <li>Orchestration entre services métier et utilitaires techniques</li>
- *   <li>Transformation des réponses métier en DTOs web</li>
- * </ul>
+ * <p><strong>Architecture :</strong></p>
+ * <pre>
+ * OpenAPI Spec (openapi.yaml)
+ *    ↓ génère
+ * AuthenticationApi
+ *    ↓ implémentée par
+ * AuthenticationController ← Cette classe
+ *    ↓ délègue à
+ * AuthenticationDelegate
+ *    ↓ utilise
+ * AuthenticationService + Jwt
+ * </pre>
  * 
- * <p><strong>Endpoints exposés :</strong></p>
+ * <p><strong>Responsabilités :</strong></p>
  * <ul>
- *   <li>POST /ecclesiaflow/auth/token - Authentification et génération de tokens</li>
- *   <li>POST /ecclesiaflow/auth/refresh - Rafraîchissement des tokens</li>
+ *   <li>Implémentation de l'interface AuthenticationApi générée</li>
+ *   <li>Délégation de la logique métier au délégué approprié</li>
+ *   <li>Respect strict des contrats définis dans la spécification OpenAPI</li>
  * </ul>
- * 
- * <p><strong>Garanties :</strong> Thread-safe, stateless, gestion d'erreurs HTTP.</p>
  * 
  * @author EcclesiaFlow Team
- * @since 1.0.0
+ * @since 2.0.0 (Refactorisé avec pattern Delegate)
  */
 @Slf4j
 @RestController
-@RequestMapping("/ecclesiaflow/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "API d'authentification EcclesiaFlow")
-public class AuthenticationController {
+public class AuthenticationController implements AuthenticationApi {
 
-    private final AuthenticationService authenticationService;
-    private final Jwt jwt;
-    private final TemporaryTokenMapper temporaryTokenMapper;
+    private final AuthenticationDelegate authenticationDelegate;
 
     /**
      * Génère un token JWT pour l'authentification d'un utilisateur.
+     * <p>
+     * Authentifie un utilisateur et génère un token JWT d'accès ainsi qu'un refresh token.
+     * </p>
      * 
-     * @param request Requête d'authentification contenant les identifiants de l'utilisateur
+     * @param signinRequest Requête d'authentification contenant les identifiants
      * @return Réponse d'authentification contenant le token JWT
      * @throws InvalidCredentialsException si les identifiants sont invalides
      * @throws InvalidTokenException si le token est invalide
      * @throws JwtProcessingException si une erreur se produit lors du traitement du token
+     * 
+     * @implNote <strong>Implémentation :</strong> Délègue au {@link AuthenticationDelegate}
+     * @see AuthenticationDelegate#generateToken(SigninRequest)
      */
-    @PostMapping(value = "/token", produces = "application/vnd.ecclesiaflow.auth.v1+json")
-    @Operation(
-            summary = "Génération de token JWT",
-            description = "Authentifie un utilisateur et génère un token JWT d'accès ainsi qu'un refresh token"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Token généré avec succès",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = JwtAuthenticationResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Données d'authentification invalides",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ApiErrorResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Identifiants incorrects",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ApiErrorResponse.class)
-                    )
-            )
-    })
-    public ResponseEntity<JwtAuthenticationResponse> generateToken(@Valid @RequestBody SigninRequest request) throws InvalidCredentialsException, InvalidTokenException, JwtProcessingException {
-        SigninCredentials credentials = MemberMapper.fromSigninRequest(request);
-        Member member = authenticationService.getAuthenticatedMember(credentials);
-        UserTokens userTokens = jwt.generateUserTokens(member);
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(userTokens);
-        return ResponseEntity.ok(response);
+    @Override
+    public ResponseEntity<JwtAuthenticationResponse> _generateToken(SigninRequest signinRequest) 
+            throws InvalidCredentialsException, InvalidTokenException, JwtProcessingException {
+        return authenticationDelegate.generateToken(signinRequest);
     }
 
     /**
      * Rafraîchit un token JWT existant.
+     * <p>
+     * Génère un nouveau token JWT à partir d'un refresh token valide.
+     * </p>
      * 
      * @param refreshTokenRequest Requête de rafraîchissement du token
      * @return Réponse d'authentification contenant le nouveau token JWT
+     * @throws InvalidTokenException si le refresh token est invalide
+     * @throws JwtProcessingException si une erreur se produit lors du traitement
+     * 
+     * @implNote <strong>Implémentation :</strong> Délègue au {@link AuthenticationDelegate}
+     * @see AuthenticationDelegate#refreshToken(RefreshTokenRequest)
      */
-    @PostMapping(value = "/refresh", produces = "application/vnd.ecclesiaflow.auth.v1+json")
-    @Operation(
-            summary = "Rafraîchissement du token JWT",
-            description = "Génère un nouveau token JWT à partir d'un refresh token valide"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Token rafraîchi avec succès",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = JwtAuthenticationResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Refresh token invalide ou expiré",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ApiErrorResponse.class)
-                    )
-            )
-    })
-    public ResponseEntity<JwtAuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) throws InvalidTokenException, JwtProcessingException {
-        TokenCredentials tokenCredentials = new TokenCredentials(refreshTokenRequest.getRefreshToken());
-        String email = jwt.validateAndExtractEmail(tokenCredentials.token());
-        Member member = authenticationService.getMemberByEmail(email);
-        UserTokens userTokens = jwt.refreshTokenForMember(tokenCredentials.token(), member);
-        JwtAuthenticationResponse response = AuthenticationMapper.toDto(userTokens);
-        return ResponseEntity.ok(response);
+    @Override
+    public ResponseEntity<JwtAuthenticationResponse> _refreshToken(RefreshTokenRequest refreshTokenRequest) 
+            throws InvalidTokenException, JwtProcessingException {
+        return authenticationDelegate.refreshToken(refreshTokenRequest);
     }
 
     /**
      * Génère un token temporaire pour la confirmation d'inscription.
+     * <p>
+     * Génère un token temporaire pour la confirmation d'inscription d'un membre.
+     * </p>
      *
      * @param temporaryTokenRequest Requête contenant l'email pour générer le token temporaire
      * @return Réponse contenant le token temporaire
+     * @throws InvalidTokenException si le token ne peut pas être généré
+     * @throws JwtProcessingException si une erreur se produit lors du traitement
+     * 
+     * @implNote <strong>Implémentation :</strong> Délègue au {@link AuthenticationDelegate}
+     * @see AuthenticationDelegate#generateTemporaryToken(TemporaryTokenRequest)
      */
-    @PostMapping(value = "/temporary-token", produces = "application/vnd.ecclesiaflow.auth.v1+json")
-    @Operation(
-            summary = "Génération de token temporaire",
-            description = "Génère un token temporaire pour la confirmation d'inscription d'un membre"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Token temporaire généré avec succès",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = TemporaryTokenResponse.class)
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Email invalide",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ApiErrorResponse.class)
-                    )
-            )
-    })
-    public ResponseEntity<TemporaryTokenResponse> generateTemporaryToken(@Valid @RequestBody TemporaryTokenRequest temporaryTokenRequest) throws InvalidTokenException, JwtProcessingException {
-        String email = temporaryTokenMapper.extractEmail(temporaryTokenRequest);
-        String temporaryToken = jwt.generateTemporaryToken(email);
-        TemporaryTokenResponse response = temporaryTokenMapper.toResponse(temporaryToken);
-        return ResponseEntity.ok(response);
+    @Override
+    public ResponseEntity<TemporaryTokenResponse> _generateTemporaryToken(TemporaryTokenRequest temporaryTokenRequest) 
+            throws InvalidTokenException, JwtProcessingException {
+        return authenticationDelegate.generateTemporaryToken(temporaryTokenRequest);
     }
 
 }
