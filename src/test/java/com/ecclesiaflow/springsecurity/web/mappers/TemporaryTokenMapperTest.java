@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.mappers;
 
+import com.ecclesiaflow.springsecurity.business.domain.token.TemporaryToken;
 import com.ecclesiaflow.springsecurity.web.model.TemporaryTokenRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -11,13 +12,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("TemporaryTokenMapper - Tests de Validation")
+@DisplayName("TemporaryTokenMapper - Transformation Web DTO → Domain")
 class TemporaryTokenMapperTest {
 
     private static Validator validator;
+    private static final UUID VALID_MEMBER_ID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+    
     private TemporaryTokenRequest request;
     private TemporaryTokenMapper mapper;
 
@@ -34,18 +39,65 @@ class TemporaryTokenMapperTest {
         // Objet valide de base
         request = new TemporaryTokenRequest();
         request.setEmail("valid.user@example.com");
+        request.setMemberId(VALID_MEMBER_ID);
         mapper = new TemporaryTokenMapper();
     }
 
     // ====================================================================
-    // Tests du mapper TemporaryTokenMapper
+    // Tests du Mapper - Transformation toDomain()
     // ====================================================================
 
     @Test
-    @DisplayName("extractEmail() doit renvoyer l'email de la requête")
-    void extractEmail_ShouldReturnEmail() {
-        String email = mapper.extractEmail(request);
-        assertThat(email).isEqualTo("valid.user@example.com");
+    @DisplayName("toDomain() devrait transformer DTO web en Value Object domain")
+    void toDomain_ShouldTransformWebDtoToDomainObject() {
+        // When
+        TemporaryToken domainToken = mapper.toDomain(request);
+
+        // Then
+        assertThat(domainToken).isNotNull();
+        assertThat(domainToken.email()).isEqualTo("valid.user@example.com");
+        assertThat(domainToken.memberId()).isEqualTo(VALID_MEMBER_ID);
+    }
+
+    @Test
+    @DisplayName("toDomain() devrait conserver tous les champs du DTO")
+    void toDomain_ShouldPreserveAllFields() {
+        // Given
+        String complexEmail = "user.name+tag@sub.domain.com";
+        UUID specificMemberId = UUID.randomUUID();
+        request.setEmail(complexEmail);
+        request.setMemberId(specificMemberId);
+
+        // When
+        TemporaryToken domainToken = mapper.toDomain(request);
+
+        // Then
+        assertThat(domainToken.email()).isEqualTo(complexEmail);
+        assertThat(domainToken.memberId()).isEqualTo(specificMemberId);
+    }
+
+    @Test
+    @DisplayName("toDomain() devrait lever une exception si email est null")
+    void toDomain_ShouldThrowException_WhenEmailIsNull() {
+        // Given
+        request.setEmail(null);
+
+        // When/Then
+        assertThatThrownBy(() -> mapper.toDomain(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("L'email ne peut pas être null ou vide");
+    }
+
+    @Test
+    @DisplayName("toDomain() devrait lever une exception si memberId est null")
+    void toDomain_ShouldThrowException_WhenMemberIdIsNull() {
+        // Given
+        request.setMemberId(null);
+
+        // When/Then
+        assertThatThrownBy(() -> mapper.toDomain(request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Le memberId ne peut pas être null");
     }
 
     // ====================================================================

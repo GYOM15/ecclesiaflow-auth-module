@@ -1,14 +1,17 @@
 package com.ecclesiaflow.springsecurity.web.mappers;
 
+import com.ecclesiaflow.springsecurity.business.domain.token.TemporaryToken;
 import com.ecclesiaflow.springsecurity.web.model.TemporaryTokenRequest;
 import org.springframework.stereotype.Component;
 
 /**
- * Mapper pour les opérations de token temporaire avec modèles OpenAPI.
+ * Mapper pour les opérations de token temporaire - Couche Web vers Domain.
  * <p>
- * Cette classe gère la transformation entre les modèles OpenAPI et les données métier
- * pour les opérations de génération de token temporaire.
+ * Transforme les DTOs OpenAPI (couche web) en objets domain purs (couche métier).
+ * Respecte la séparation des couches de la Clean Architecture.
  * </p>
+ * 
+ * <p><strong>Rôle architectural:</strong> Mapper Web → Domain</p>
  * 
  * @author EcclesiaFlow Team
  * @since 1.0.0
@@ -17,12 +20,22 @@ import org.springframework.stereotype.Component;
 public class TemporaryTokenMapper {
 
     /**
-     * Extrait l'email depuis la requête OpenAPI.
+     * Transforme un DTO OpenAPI en Value Object domain.
+     * <p>
+     * Effectue la transformation de la couche web vers la couche domain,
+     * en assurant l'indépendance du domain vis-à-vis du framework web.
+     * </p>
      * 
-     * @param request la requête de token temporaire (modèle OpenAPI)
-     * @return l'email extrait
+     * @param temporaryTokenRequest la requête OpenAPI (couche web)
+     * @return le Value Object domain correspondant
+     * @throws IllegalArgumentException si les données du DTO sont invalides
      */
-    public String extractEmail(TemporaryTokenRequest request) {
-        return request.getEmail();
+    public TemporaryToken toDomain(
+            TemporaryTokenRequest temporaryTokenRequest) {
+        
+        return new TemporaryToken(
+                temporaryTokenRequest.getEmail(),
+                temporaryTokenRequest.getMemberId()
+        );
     }
 }
