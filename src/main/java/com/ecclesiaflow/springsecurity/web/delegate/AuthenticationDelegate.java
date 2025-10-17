@@ -2,6 +2,7 @@ package com.ecclesiaflow.springsecurity.web.delegate;
 
 import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
+import com.ecclesiaflow.springsecurity.business.domain.token.TemporaryToken;
 import com.ecclesiaflow.springsecurity.business.domain.token.TokenCredentials;
 import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
@@ -146,11 +147,14 @@ public class AuthenticationDelegate {
     public ResponseEntity<TemporaryTokenResponse> generateTemporaryToken(TemporaryTokenRequest temporaryTokenRequest) 
             throws InvalidTokenException, JwtProcessingException {
         
-        // Extraction de l'email
-        String email = temporaryTokenMapper.extractEmail(temporaryTokenRequest);
-        
-        // Génération du token temporaire
-        String temporaryToken = jwt.generateTemporaryToken(email);
+        // Transformation DTO web → Domain
+        TemporaryToken tempToken =
+            temporaryTokenMapper.toDomain(temporaryTokenRequest);
+
+        String temporaryToken = jwt.generateTemporaryToken(
+            tempToken.email(),
+            tempToken.memberId()
+        );
         
         // Transformation vers le modèle OpenAPI
         TemporaryTokenResponse response = openApiModelMapper.createTemporaryTokenResponse(temporaryToken);

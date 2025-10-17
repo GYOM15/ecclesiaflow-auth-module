@@ -158,10 +158,11 @@ paths:
             schema:
               $ref: '#/components/schemas/TemporaryTokenRequest'
             examples:
-              validEmail:
-                summary: Email valide
+              validRequest:
+                summary: Requête valide avec email et memberId
                 value:
                   email: "nouveau.membre@ecclesiaflow.com"
+                  memberId: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '200':
           description: Token temporaire généré avec succès
@@ -437,12 +438,18 @@ components:
       type: object
       required:
         - email
+        - memberId
       properties:
         email:
           type: string
           format: email
           description: Email du membre pour lequel générer le token temporaire
           example: "nouveau.membre@ecclesiaflow.com"
+        memberId:
+          type: string
+          format: uuid
+          description: UUID du membre généré par le module Members (identifiant partagé)
+          example: "550e8400-e29b-41d4-a716-446655440000"
     
     TemporaryTokenResponse:
       type: object

@@ -8,6 +8,8 @@ import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 /**
  * Utilitaire JWT pour la couche web d'EcclesiaFlow.
  * <p>
@@ -118,8 +120,8 @@ public class Jwt {
      * @return un token JWT temporaire sécurisé
      * @throws JwtProcessingException si la génération du token échoue
      */
-    public String generateTemporaryToken(String email) throws JwtProcessingException {
-        return jwtProcessor.generateTemporaryToken(email);
+    public String generateTemporaryToken(String email, UUID memberId) throws JwtProcessingException {
+        return jwtProcessor.generateTemporaryToken(email, memberId);
     }
 
     /**

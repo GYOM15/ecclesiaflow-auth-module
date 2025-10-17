@@ -46,7 +46,7 @@ class AuthenticationControllerTest {
         refreshTokenRequest = new RefreshTokenRequest();
         refreshTokenRequest.setRefreshToken("refresh-token-456");
 
-        // Setup TemporaryTokenRequest
+        // Setup TemporaryToken
         temporaryTokenRequest = new TemporaryTokenRequest();
         temporaryTokenRequest.setEmail("user@example.com");
 

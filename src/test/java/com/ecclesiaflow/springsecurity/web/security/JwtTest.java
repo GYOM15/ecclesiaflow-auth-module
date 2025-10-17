@@ -40,6 +40,7 @@ class JwtTest {
 
     // Constantes de test
     private static final String TEST_EMAIL = "test@ecclesiaflow.com";
+    private static final UUID TEST_MEMBER_ID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
     private static final String ACCESS_TOKEN = "mock.access.token";
     private static final String REFRESH_TOKEN = "mock.refresh.token";
     private static final String TEMP_TOKEN = "mock.temp.token";
@@ -50,6 +51,7 @@ class JwtTest {
         // Construction d'un mockMember avec le builder de l'objet de domaine pur
         mockMember = Member.builder()
                 .id(UUID.randomUUID())
+                .memberId(TEST_MEMBER_ID)
                 .email(TEST_EMAIL)
                 .password("hashedPassword") // Doit être haché dans le domaine
                 .createdAt(LocalDateTime.now())
@@ -164,13 +166,13 @@ class JwtTest {
     @DisplayName("generateTemporaryToken - Devrait déléguer au processor et retourner le token")
     void generateTemporaryToken_ShouldDelegateAndReturnToken() throws JwtProcessingException {
         // Arrange
-        when(jwtProcessor.generateTemporaryToken(TEST_EMAIL)).thenReturn(TEMP_TOKEN);
+        when(jwtProcessor.generateTemporaryToken(TEST_EMAIL, TEST_MEMBER_ID)).thenReturn(TEMP_TOKEN);
 
         // Act
-        String resultToken = jwt.generateTemporaryToken(TEST_EMAIL);
+        String resultToken = jwt.generateTemporaryToken(TEST_EMAIL, TEST_MEMBER_ID);
 
         // Assert
-        verify(jwtProcessor, times(1)).generateTemporaryToken(TEST_EMAIL);
+        verify(jwtProcessor, times(1)).generateTemporaryToken(TEST_EMAIL, TEST_MEMBER_ID);
         assertThat(resultToken).isEqualTo(TEMP_TOKEN);
     }
 

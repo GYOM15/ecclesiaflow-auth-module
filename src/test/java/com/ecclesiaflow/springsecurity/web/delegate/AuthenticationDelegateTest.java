@@ -2,6 +2,7 @@ package com.ecclesiaflow.springsecurity.web.delegate;
 
 import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
+import com.ecclesiaflow.springsecurity.business.domain.token.TemporaryToken;
 import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
@@ -85,9 +86,10 @@ class AuthenticationDelegateTest {
         refreshTokenRequest = new RefreshTokenRequest();
         refreshTokenRequest.setRefreshToken("refresh-token-456");
 
-        // Setup TemporaryTokenRequest
+        // Setup TemporaryToken
         temporaryTokenRequest = new TemporaryTokenRequest();
         temporaryTokenRequest.setEmail("user@example.com");
+        temporaryTokenRequest.setMemberId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
 
         // Setup JwtAuthenticationResponse
         jwtAuthenticationResponse = new JwtAuthenticationResponse();
@@ -314,10 +316,13 @@ class AuthenticationDelegateTest {
     @DisplayName("generateTemporaryToken - Devrait retourner TemporaryTokenResponse")
     void generateTemporaryToken_ShouldReturnTemporaryTokenResponse() throws Exception {
         // Given
+        String email = "user@example.com";
+        UUID memberId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
         String tempToken = "temp-token-xyz";
+        TemporaryToken domainToken = new TemporaryToken(email, memberId);
 
-        when(temporaryTokenMapper.extractEmail(temporaryTokenRequest)).thenReturn("user@example.com");
-        when(jwt.generateTemporaryToken("user@example.com")).thenReturn(tempToken);
+        when(temporaryTokenMapper.toDomain(temporaryTokenRequest)).thenReturn(domainToken);
+        when(jwt.generateTemporaryToken(email, memberId)).thenReturn(tempToken);
         when(openApiModelMapper.createTemporaryTokenResponse(tempToken))
                 .thenReturn(temporaryTokenResponse);
 
@@ -332,8 +337,8 @@ class AuthenticationDelegateTest {
         assertThat(response.getBody().getTemporaryToken()).isEqualTo("temp-token-789");
         assertThat(response.getBody().getExpiresIn()).isEqualTo(900);
 
-        verify(temporaryTokenMapper).extractEmail(temporaryTokenRequest);
-        verify(jwt).generateTemporaryToken("user@example.com");
+        verify(temporaryTokenMapper).toDomain(temporaryTokenRequest);
+        verify(jwt).generateTemporaryToken(email, memberId);
         verify(openApiModelMapper).createTemporaryTokenResponse(tempToken);
     }
 
@@ -342,10 +347,12 @@ class AuthenticationDelegateTest {
     void generateTemporaryToken_ShouldCallServicesInCorrectOrder() throws Exception {
         // Given
         String email = "test@ecclesiaflow.com";
+        UUID memberId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
         String tempToken = "temp-123";
+        TemporaryToken domainToken = new TemporaryToken(email, memberId);
 
-        when(temporaryTokenMapper.extractEmail(temporaryTokenRequest)).thenReturn(email);
-        when(jwt.generateTemporaryToken(email)).thenReturn(tempToken);
+        when(temporaryTokenMapper.toDomain(temporaryTokenRequest)).thenReturn(domainToken);
+        when(jwt.generateTemporaryToken(email, memberId)).thenReturn(tempToken);
         when(openApiModelMapper.createTemporaryTokenResponse(tempToken))
                 .thenReturn(temporaryTokenResponse);
 
@@ -353,8 +360,8 @@ class AuthenticationDelegateTest {
         authenticationDelegate.generateTemporaryToken(temporaryTokenRequest);
 
         // Then
-        verify(temporaryTokenMapper).extractEmail(temporaryTokenRequest);
-        verify(jwt).generateTemporaryToken(email);
+        verify(temporaryTokenMapper).toDomain(temporaryTokenRequest);
+        verify(jwt).generateTemporaryToken(email, memberId);
         verify(openApiModelMapper).createTemporaryTokenResponse(tempToken);
     }
 
@@ -366,8 +373,12 @@ class AuthenticationDelegateTest {
     @DisplayName("generateTemporaryToken - Devrait propager InvalidTokenException")
     void generateTemporaryToken_ShouldThrowInvalidTokenException() {
         // Given
-        when(temporaryTokenMapper.extractEmail(temporaryTokenRequest)).thenReturn("user@example.com");
-        when(jwt.generateTemporaryToken("user@example.com"))
+        String email = "user@example.com";
+        UUID memberId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+        TemporaryToken domainToken = new TemporaryToken(email, memberId);
+
+        when(temporaryTokenMapper.toDomain(temporaryTokenRequest)).thenReturn(domainToken);
+        when(jwt.generateTemporaryToken(email, memberId))
                 .thenThrow(new InvalidTokenException("Erreur génération token temporaire"));
 
         // When & Then
@@ -375,8 +386,8 @@ class AuthenticationDelegateTest {
                 .isInstanceOf(InvalidTokenException.class)
                 .hasMessage("Erreur génération token temporaire");
 
-        verify(temporaryTokenMapper).extractEmail(temporaryTokenRequest);
-        verify(jwt).generateTemporaryToken("user@example.com");
+        verify(temporaryTokenMapper).toDomain(temporaryTokenRequest);
+        verify(jwt).generateTemporaryToken(email, memberId);
         verify(openApiModelMapper, never()).createTemporaryTokenResponse(anyString());
     }
 
@@ -384,8 +395,12 @@ class AuthenticationDelegateTest {
     @DisplayName("generateTemporaryToken - Devrait propager JwtProcessingException")
     void generateTemporaryToken_ShouldThrowJwtProcessingException() {
         // Given
-        when(temporaryTokenMapper.extractEmail(temporaryTokenRequest)).thenReturn("user@example.com");
-        when(jwt.generateTemporaryToken("user@example.com"))
+        String email = "user@example.com";
+        UUID memberId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+        TemporaryToken domainToken = new TemporaryToken(email, memberId);
+
+        when(temporaryTokenMapper.toDomain(temporaryTokenRequest)).thenReturn(domainToken);
+        when(jwt.generateTemporaryToken(email, memberId))
                 .thenThrow(new JwtProcessingException("Erreur traitement JWT"));
 
         // When & Then
@@ -395,44 +410,18 @@ class AuthenticationDelegateTest {
     }
 
     @Test
-    @DisplayName("generateTemporaryToken - Devrait gérer email null du mapper")
-    void generateTemporaryToken_ShouldHandleNullEmailFromMapper() throws Exception {
-        // Given
-        String tempToken = "temp-token";
+    @DisplayName("generateTemporaryToken - Devrait propager IllegalArgumentException si email null dans DTO")
+    void generateTemporaryToken_ShouldPropagateIllegalArgumentException_WhenEmailNull() {
+        // Given - Le mapper toDomain() va lever une exception si email est null
+        when(temporaryTokenMapper.toDomain(temporaryTokenRequest))
+                .thenThrow(new IllegalArgumentException("L'email ne peut pas être null ou vide"));
 
-        when(temporaryTokenMapper.extractEmail(temporaryTokenRequest)).thenReturn(null);
-        when(jwt.generateTemporaryToken(null)).thenReturn(tempToken);
-        when(openApiModelMapper.createTemporaryTokenResponse(tempToken))
-                .thenReturn(temporaryTokenResponse);
+        // When & Then
+        assertThatThrownBy(() -> authenticationDelegate.generateTemporaryToken(temporaryTokenRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("L'email ne peut pas être null ou vide");
 
-        // When
-        ResponseEntity<TemporaryTokenResponse> response = authenticationDelegate.generateTemporaryToken(
-                temporaryTokenRequest
-        );
-
-        // Then
-        assertThat(response).isNotNull();
-        verify(jwt).generateTemporaryToken(null);
-    }
-
-    @Test
-    @DisplayName("generateTemporaryToken - Devrait gérer email vide du mapper")
-    void generateTemporaryToken_ShouldHandleEmptyEmailFromMapper() throws Exception {
-        // Given
-        String tempToken = "temp-token";
-
-        when(temporaryTokenMapper.extractEmail(temporaryTokenRequest)).thenReturn("");
-        when(jwt.generateTemporaryToken("")).thenReturn(tempToken);
-        when(openApiModelMapper.createTemporaryTokenResponse(tempToken))
-                .thenReturn(temporaryTokenResponse);
-
-        // When
-        ResponseEntity<TemporaryTokenResponse> response = authenticationDelegate.generateTemporaryToken(
-                temporaryTokenRequest
-        );
-
-        // Then
-        assertThat(response).isNotNull();
-        verify(jwt).generateTemporaryToken("");
+        verify(temporaryTokenMapper).toDomain(temporaryTokenRequest);
+        verify(jwt, never()).generateTemporaryToken(anyString(), any(UUID.class));
     }
 }

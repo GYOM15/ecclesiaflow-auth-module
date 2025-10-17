@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -108,16 +109,19 @@ public class JwtProcessor {
      * Ce token est utilisé après confirmation d'email pour permettre à un membre
      * de définir son mot de passe. Il a une durée de vie limitée et est marqué
      * comme token temporaire pour éviter toute confusion avec les tokens d'accès.
+     * Le memberId est embarqué dans le token pour synchronisation entre modules.
      * </p>
      *
      * @param email l'email du membre pour lequel générer le token temporaire
+     * @param memberId l'UUID du membre (identifiant partagé)
      * @return un token JWT temporaire sécurisé
      * @throws JwtProcessingException si la génération du token échoue
      */
-    public String generateTemporaryToken(String email) throws JwtProcessingException {
+    public String generateTemporaryToken(String email, UUID memberId) throws JwtProcessingException {
         Map<String, Object> extraClaims = Map.of(
             "type", "temporary",
-            "purpose", "password_setup"
+            "purpose", "password_setup",
+            "cid", memberId.toString()  // Custom claim: member ID
         );
         
         return Jwts
@@ -160,6 +164,27 @@ public class JwtProcessor {
             throw new InvalidTokenException("Token invalide: " + e.getMessage());
         }
         return isValid;
+    }
+
+    /**
+     * Extrait le memberId (UUID) depuis un token JWT.
+     * <p>
+     * Utilisé pour récupérer l'identifiant partagé du membre depuis
+     * un token temporaire ou un token d'accès.
+     * </p>
+     *
+     * @param token le token JWT dont extraire le memberId
+     * @return l'UUID du membre
+     * @throws JwtProcessingException si le token est invalide
+     * @throws InvalidTokenException si le claim 'cid' est absent
+     */
+    public UUID extractMemberId(String token) throws JwtProcessingException, InvalidTokenException {
+        Claims claims = parseAndValidateClaims(token);
+        String memberIdStr = claims.get("cid", String.class);
+        if (memberIdStr == null) {
+            throw new InvalidTokenException("Le token ne contient pas de memberId (claim 'cid')");
+        }
+        return UUID.fromString(memberIdStr);
     }
 
     // ========== PRIVATE HELPERS ==========

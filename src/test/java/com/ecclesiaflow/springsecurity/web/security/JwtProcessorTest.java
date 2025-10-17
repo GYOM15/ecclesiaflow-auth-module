@@ -3,6 +3,8 @@ package com.ecclesiaflow.springsecurity.web.security;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -19,6 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.security.Key;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.data.Offset.offset; // Import pour la correction isCloseTo
@@ -214,7 +217,7 @@ class JwtProcessorTest {
         String email = "temp@user.com";
 
         // When
-        String token = jwtProcessor.generateTemporaryToken(email);
+        String token = jwtProcessor.generateTemporaryToken(email, UUID.randomUUID());
         Claims claims = parseClaims(token);
 
         // Then
@@ -233,7 +236,7 @@ class JwtProcessorTest {
     void shouldValidateValidTemporaryToken() throws JwtProcessingException, InvalidTokenException {
         // Given
         String email = "setup@email.com";
-        String token = jwtProcessor.generateTemporaryToken(email);
+        String token = jwtProcessor.generateTemporaryToken(email, UUID.randomUUID());
 
         // When
         boolean isValid = jwtProcessor.validateTemporaryToken(token, email);
@@ -246,7 +249,7 @@ class JwtProcessorTest {
     @DisplayName("validateTemporaryToken - Devrait retourner false si l'email ne correspond pas")
     void shouldRejectTemporaryTokenIfEmailMismatch() throws JwtProcessingException, InvalidTokenException {
         // Given
-        String token = jwtProcessor.generateTemporaryToken("correct@email.com");
+        String token = jwtProcessor.generateTemporaryToken("correct@email.com", UUID.randomUUID());
 
         // When
         boolean isValid = jwtProcessor.validateTemporaryToken(token, "wrong@email.com");
@@ -312,7 +315,7 @@ class JwtProcessorTest {
     @DisplayName("validateTemporaryToken - Devrait lancer InvalidTokenException pour token avec signature invalide")
     void shouldThrowInvalidTokenExceptionForInvalidSignature() throws JwtProcessingException {
         // Given
-        String validToken = jwtProcessor.generateTemporaryToken("test@email.com");
+        String validToken = jwtProcessor.generateTemporaryToken("test@email.com", UUID.randomUUID());
         String tokenWithInvalidSignature = validToken.substring(0, validToken.lastIndexOf('.')) + ".invalidSignature";
 
         // When & Then
@@ -487,6 +490,94 @@ class JwtProcessorTest {
                 fail("Token generated in a separate thread failed validation: " + e.getMessage());
             }
         }
+    }
+
+    // ====================================================================
+    // Tests extractMemberId - Extraction du memberId depuis le token
+    // ====================================================================
+
+    @Test
+    @DisplayName("extractMemberId - Devrait extraire le memberId du token temporaire")
+    void extractMemberId_ShouldExtractMemberIdFromTemporaryToken() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        String email = "member@example.com";
+        UUID memberId = UUID.randomUUID();
+        String token = jwtProcessor.generateTemporaryToken(email, memberId);
+
+        // When
+        UUID extractedMemberId = jwtProcessor.extractMemberId(token);
+
+        // Then
+        assertThat(extractedMemberId).isEqualTo(memberId);
+    }
+
+    @Test
+    @DisplayName("extractMemberId - Devrait fonctionner avec différents UUIDs")
+    void extractMemberId_ShouldWorkWithDifferentUUIDs() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        UUID memberId1 = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+        UUID memberId2 = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+        
+        String token1 = jwtProcessor.generateTemporaryToken("user1@example.com", memberId1);
+        String token2 = jwtProcessor.generateTemporaryToken("user2@example.com", memberId2);
+
+        // When
+        UUID extracted1 = jwtProcessor.extractMemberId(token1);
+        UUID extracted2 = jwtProcessor.extractMemberId(token2);
+
+        // Then
+        assertThat(extracted1).isEqualTo(memberId1);
+        assertThat(extracted2).isEqualTo(memberId2);
+    }
+
+    @Test
+    @DisplayName("extractMemberId - Devrait lever InvalidTokenException si claim 'cid' absent")
+    void extractMemberId_ShouldThrowInvalidTokenException_WhenCidClaimMissing() {
+        // Given - Token sans claim 'cid'
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        String tokenWithoutCid = Jwts.builder()
+                .setSubject("test@example.com")
+                .setIssuedAt(new java.util.Date())
+                .setExpiration(new java.util.Date(System.currentTimeMillis() + 900000))
+                .signWith(key)
+                .compact();
+
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.extractMemberId(tokenWithoutCid))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le token ne contient pas de memberId (claim 'cid')");
+    }
+
+    @Test
+    @DisplayName("extractMemberId - Devrait lever JwtException pour token invalide")
+    void extractMemberId_ShouldThrowJwtException_ForInvalidToken() {
+        // Given
+        String invalidToken = "invalid.token.here";
+
+        // When & Then - parseAndValidateClaims lance directement les exceptions JJWT
+        assertThatThrownBy(() -> jwtProcessor.extractMemberId(invalidToken))
+                .isInstanceOf(JwtException.class);
+    }
+
+    @Test
+    @DisplayName("extractMemberId - Devrait lever ExpiredJwtException pour token expiré")
+    void extractMemberId_ShouldThrowExpiredJwtException_ForExpiredToken() {
+        // Given - Token expiré avec claim 'cid'
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        long tenSecondsAgo = System.currentTimeMillis() - 10000;
+        UUID memberId = UUID.randomUUID();
+
+        String expiredToken = Jwts.builder()
+                .setSubject("test@example.com")
+                .claim("cid", memberId.toString())
+                .setIssuedAt(new java.util.Date(tenSecondsAgo))
+                .setExpiration(new java.util.Date(tenSecondsAgo + 1))
+                .signWith(key)
+                .compact();
+
+        // When & Then - parseAndValidateClaims lance ExpiredJwtException directement
+        assertThatThrownBy(() -> jwtProcessor.extractMemberId(expiredToken))
+                .isInstanceOf(ExpiredJwtException.class);
     }
 
 
