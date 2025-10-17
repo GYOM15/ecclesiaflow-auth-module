@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.Signature;
 import org.junit.jupiter.api.*;
+import java.lang.reflect.Field;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 
 @DisplayName("AuthenticationErrorLoggingAspect - Tests unitaires")
 class AuthenticationErrorLoggingAspectTest {
@@ -62,6 +65,43 @@ class AuthenticationErrorLoggingAspectTest {
 
     @Nested
     class AuthenticationErrorLoggingTests {
+        
+        @Test
+        void shouldHandleInvalidArgumentsCount() {
+            // Given - Moins de 3 arguments
+            JoinPoint joinPoint = mock(JoinPoint.class);
+            when(joinPoint.getArgs()).thenReturn(new Object[]{mock(HttpServletRequest.class), "not a response"});
+            
+            // When
+            aspect.performAuthenticationErrorLogging(joinPoint);
+            
+            // Then - Devrait logger un message de débogage
+            List<ILoggingEvent> logs = listAppender.list;
+            assertThat(logs).hasSize(1);
+            assertThat(logs.get(0).getFormattedMessage())
+                .contains("logAuthenticationError ignoré en raison d'arguments invalides");
+            assertThat(logs.get(0).getLevel()).isEqualTo(Level.DEBUG);
+        }
+        
+        @Test
+        void shouldHandleInvalidArgumentTypes() {
+            // Given - Types d'arguments incorrects
+            JoinPoint joinPoint = mock(JoinPoint.class);
+            when(joinPoint.getArgs()).thenReturn(new Object[]{
+                "not a request", 
+                mock(HttpServletResponse.class), 
+                new RuntimeException("Not an AuthenticationException") 
+            });
+            
+            // When
+            aspect.performAuthenticationErrorLogging(joinPoint);
+            
+            // Then - Devrait logger un message de débogage
+            List<ILoggingEvent> logs = listAppender.list;
+            assertThat(logs).hasSize(1);
+            assertThat(logs.get(0).getFormattedMessage())
+                .contains("logAuthenticationError ignoré en raison d'arguments invalides");
+        }
 
         @Test
         void shouldLogAuthenticationErrorsWithFullDetails() {
@@ -149,6 +189,23 @@ class AuthenticationErrorLoggingAspectTest {
             List<String> debugLogs = logCaptor.getDebugLogs();
             assertThat(debugLogs).anyMatch(log -> log.contains("Erreur lors du logging d'authentification"));
         }
+        
+        @Test
+        void shouldHandleExceptionInGetClientIpAddress() {
+            // Given - Requête qui lève une exception lors de l'extraction de l'IP
+            HttpServletRequest faultyRequest = mock(HttpServletRequest.class);
+            when(faultyRequest.getHeader("X-Forwarded-For")).thenThrow(new RuntimeException("Header error"));
+            
+            JoinPoint joinPoint = createMockJoinPoint(faultyRequest, mockResponse, mockAuthException);
+
+            // When - Ne devrait pas lever d'exception
+            assertThatCode(() -> aspect.performAuthenticationErrorLogging(joinPoint))
+                    .doesNotThrowAnyException();
+
+            // Then - Devrait avoir un log de débogage sur l'erreur
+            List<String> debugLogs = logCaptor.getDebugLogs();
+            assertThat(debugLogs).anyMatch(log -> log.contains("Erreur lors du logging d'authentification"));
+        }
     }
 
     @Nested
@@ -191,7 +248,6 @@ class AuthenticationErrorLoggingAspectTest {
 
             JoinPoint joinPoint = createMockJoinPoint(mockRequest, mockResponse, mockAuthException);
             aspect.logAuthenticationError(joinPoint);
-
             String logMsg = listAppender.list.get(0).getFormattedMessage();
             assertThat(logMsg).contains("IP: 10.0.0.42");
         }
@@ -321,6 +377,135 @@ class AuthenticationErrorLoggingAspectTest {
     }
 
     @Nested
+    class AuthenticationEntryPointExceptionTests {
+        
+        @Test
+        void shouldLogCriticalErrorWhenExceptionThrownInEntryPoint() {
+            // Given
+            when(mockJoinPoint.getSignature()).thenReturn(mockSignature);
+            when(mockSignature.getName()).thenReturn("someMethod");
+            Exception testException = new RuntimeException("Test critical error");
+
+            // When
+            aspect.logAuthenticationEntryPointException(mockJoinPoint, testException);
+
+            // Then - Vérifie qu'une erreur critique est bien loggée
+            List<ILoggingEvent> logs = listAppender.list;
+            assertThat(logs).hasSize(1);
+            assertThat(logs.get(0).getFormattedMessage())
+                .contains("CRITICAL ERROR - Erreur critique dans CustomAuthenticationEntryPoint")
+                .contains("Test critical error")
+                .contains("someMethod");
+        }
+        
+        @Test
+        void shouldHandleNullExceptionInLogAuthenticationEntryPoint() {
+            // Given
+            when(mockJoinPoint.getSignature()).thenReturn(mockSignature);
+            when(mockSignature.getName()).thenReturn("testMethod");
+
+            // When - Appel avec exception null
+            aspect.logAuthenticationEntryPointException(mockJoinPoint, null);
+
+            // Then - Vérifie que la méthode gère le cas null
+            List<ILoggingEvent> logs = listAppender.list;
+            assertThat(logs).hasSize(1);
+            assertThat(logs.get(0).getFormattedMessage())
+                .contains("CRITICAL ERROR - Erreur critique dans CustomAuthenticationEntryPoint")
+                .contains("Exception nulle interceptée");
+        }
+    }
+    
+    @Nested
+    class PerformCriticalErrorLoggingTests {
+        
+        @Test
+        void shouldReturnTrueWhenLoggingSucceeds() {
+            // Given
+            when(mockJoinPoint.getSignature()).thenReturn(mockSignature);
+            when(mockSignature.getName()).thenReturn("testMethod");
+            Exception testException = new RuntimeException("Test error");
+
+            // When
+            boolean result = aspect.performCriticalErrorLogging(mockJoinPoint, testException);
+
+            // Then
+            assertThat(result).isTrue();
+            List<ILoggingEvent> logs = listAppender.list;
+            assertThat(logs).hasSize(1);
+            assertThat(logs.get(0).getFormattedMessage())
+                .contains("CRITICAL ERROR - Erreur critique dans CustomAuthenticationEntryPoint")
+                .contains("Test error")
+                .contains("testMethod");
+        }
+        
+        @Test
+        void shouldHandleNullJoinPoint() {
+            // Given
+            Exception testException = new RuntimeException("Test error");
+
+            // When
+            boolean result = aspect.performCriticalErrorLogging(null, testException);
+
+            // Then - La méthode devrait gérer le cas null et retourner true car le logging réussit
+            assertThat(result).isTrue();
+            
+            // Vérifie que le message d'erreur contient les informations attendues
+            List<ILoggingEvent> logs = listAppender.list;
+            assertThat(logs).hasSize(1);
+            assertThat(logs.get(0).getFormattedMessage())
+                .contains("CRITICAL ERROR - Erreur critique dans CustomAuthenticationEntryPoint")
+                .contains("Test error")
+                .contains("méthode inconnue");
+        }
+        
+        @Test
+        void shouldHandleNullSignature() {
+            // Given
+            when(mockJoinPoint.getSignature()).thenReturn(null);
+            Exception testException = new RuntimeException("Test error");
+
+            // When
+            boolean result = aspect.performCriticalErrorLogging(mockJoinPoint, testException);
+
+            // Then - Devrait gérer le cas null et retourner true car le logging a réussi
+            assertThat(result).isTrue();
+            List<ILoggingEvent> logs = listAppender.list;
+            assertThat(logs).hasSize(1);
+            assertThat(logs.get(0).getFormattedMessage())
+                .contains("CRITICAL ERROR - Erreur critique dans CustomAuthenticationEntryPoint")
+                .contains("Test error")
+                .contains("méthode inconnue");
+        }
+    }
+    
+    @Nested
+    class PointcutTests {
+        
+        @Test
+        void shouldDefineAuthenticationEntryPointMethodsPointcut() {
+            // Given - La méthode est un pointcut vide, on vérifie juste qu'elle existe et peut être appelée
+            
+            // When
+            aspect.authenticationEntryPointMethods();
+            
+            // Then - Aucune exception ne devrait être levée
+            assertThat(aspect).isNotNull();
+        }
+        
+        @Test
+        void shouldDefineAuthenticationEntryPointExecutionPointcut() {
+            // Given - La méthode est un pointcut vide, on vérifie juste qu'elle existe et peut être appelée
+            
+            // When
+            aspect.authenticationEntryPointExecution();
+            
+            // Then - Aucune exception ne devrait être levée
+            assertThat(aspect).isNotNull();
+        }
+    }
+    
+    @Nested
     class ConcurrencyTests {
 
         @Test
@@ -373,6 +558,7 @@ class AuthenticationErrorLoggingAspectTest {
         when(mockRequest.getHeader("X-Real-IP")).thenReturn(null);
     }
 
+    // Méthode utilitaire pour créer un mock de JoinPoint avec les arguments spécifiés
     private JoinPoint createMockJoinPoint(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) {
         JoinPoint joinPoint = mock(JoinPoint.class);
         when(joinPoint.getArgs()).thenReturn(new Object[]{request, response, exception});

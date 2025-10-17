@@ -117,7 +117,9 @@ public class AuthenticationErrorLoggingAspect {
      */
     @AfterThrowing(pointcut = "authenticationEntryPointMethods()", throwing = "exception")
     public void logAuthenticationEntryPointException(JoinPoint joinPoint, Exception exception) {
-        performCriticalErrorLogging(joinPoint, exception);
+        // On crée une nouvelle exception si elle est nulle pour assurer un logging cohérent
+        Exception ex = exception != null ? exception : new Exception("Exception nulle interceptée");
+        performCriticalErrorLogging(joinPoint, ex);
     }
 
     /**
@@ -130,14 +132,23 @@ public class AuthenticationErrorLoggingAspect {
      */
     public boolean performCriticalErrorLogging(JoinPoint joinPoint, Exception exception) {
         try {
+            String methodName = (joinPoint != null && joinPoint.getSignature() != null) 
+                ? joinPoint.getSignature().getName() 
+                : "méthode inconnue";
+                
+            String errorMessage = exception != null 
+                ? exception.getMessage() 
+                : "Aucun message d'erreur disponible";
+                
             log.error("CRITICAL ERROR - Erreur critique dans CustomAuthenticationEntryPoint: {} | Méthode: {}",
-                    exception.getMessage(),
-                    joinPoint.getSignature().getName(),
+                    errorMessage,
+                    methodName,
                     exception);
             return true;
         } catch (Exception e) {
             // En cas d'erreur de logging, on ne peut pas faire grand-chose
             // mais on retourne false pour indiquer l'échec
+            log.error("Échec critique lors de la journalisation d'erreur", e);
             return false;
         }
     }
