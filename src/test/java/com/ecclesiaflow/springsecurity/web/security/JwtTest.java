@@ -67,7 +67,7 @@ class JwtTest {
                 .build();
 
         memberScopes = Set.of("ef:members:read:own", "ef:profile:read:own");
-        when(scopeMapper.mapRoleToScopes(Role.MEMBER)).thenReturn(memberScopes);
+        lenient().when(scopeMapper.mapRoleToScopes(Role.MEMBER)).thenReturn(memberScopes);
     }
 
     // ====================================================================

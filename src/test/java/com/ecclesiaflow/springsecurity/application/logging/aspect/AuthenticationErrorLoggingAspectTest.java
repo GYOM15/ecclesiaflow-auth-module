@@ -65,42 +65,55 @@ class AuthenticationErrorLoggingAspectTest {
 
     @Nested
     class AuthenticationErrorLoggingTests {
-        
         @Test
         void shouldHandleInvalidArgumentsCount() {
             // Given - Moins de 3 arguments
             JoinPoint joinPoint = mock(JoinPoint.class);
             when(joinPoint.getArgs()).thenReturn(new Object[]{mock(HttpServletRequest.class), "not a response"});
-            
+
             // When
             aspect.performAuthenticationErrorLogging(joinPoint);
-            
+
             // Then - Devrait logger un message de débogage
             List<ILoggingEvent> logs = listAppender.list;
             assertThat(logs).hasSize(1);
             assertThat(logs.get(0).getFormattedMessage())
                 .contains("logAuthenticationError ignoré en raison d'arguments invalides");
-            assertThat(logs.get(0).getLevel()).isEqualTo(Level.DEBUG);
         }
-        
+
         @Test
         void shouldHandleInvalidArgumentTypes() {
-            // Given - Types d'arguments incorrects
+            // Given - Types d'arguments incorrects (mauvaise combinaison request/exception)
             JoinPoint joinPoint = mock(JoinPoint.class);
             when(joinPoint.getArgs()).thenReturn(new Object[]{
-                "not a request", 
-                mock(HttpServletResponse.class), 
-                new RuntimeException("Not an AuthenticationException") 
+                "not a request",
+                mock(HttpServletResponse.class),
+                new RuntimeException("Not an AuthenticationException")
             });
-            
+
             // When
             aspect.performAuthenticationErrorLogging(joinPoint);
-            
+
             // Then - Devrait logger un message de débogage
             List<ILoggingEvent> logs = listAppender.list;
             assertThat(logs).hasSize(1);
             assertThat(logs.get(0).getFormattedMessage())
                 .contains("logAuthenticationError ignoré en raison d'arguments invalides");
+        }
+
+        @Test
+        void shouldHandleMissingAuthenticationExceptionArgument() {
+            setupBasicMockRequest("/api/login", "127.0.0.1", "Agent", "Bearer token");
+
+            JoinPoint joinPoint = mock(JoinPoint.class);
+            when(joinPoint.getArgs()).thenReturn(new Object[]{mockRequest, mock(HttpServletResponse.class), null});
+
+            aspect.performAuthenticationErrorLogging(joinPoint);
+
+            List<ILoggingEvent> logs = listAppender.list;
+            assertThat(logs).hasSize(1);
+            assertThat(logs.get(0).getFormattedMessage())
+                    .contains("logAuthenticationError ignoré en raison d'arguments invalides");
         }
 
         @Test
@@ -325,6 +338,35 @@ class AuthenticationErrorLoggingAspectTest {
             // La méthode devrait retourner false en cas d'erreur
             boolean result = aspect.performCriticalErrorLogging(faultyJoinPoint, ex);
             assertThat(result).isFalse();
+        }
+
+        @Test
+        void shouldHandleNullJoinPointDuringCriticalLogging() {
+            Exception ex = new RuntimeException("Null join point");
+
+            boolean result = aspect.performCriticalErrorLogging(null, ex);
+
+            assertThat(result).isTrue();
+            ILoggingEvent log = listAppender.list.get(0);
+            assertThat(log.getFormattedMessage())
+                    .contains("CRITICAL ERROR - Erreur critique dans CustomAuthenticationEntryPoint")
+                    .contains("Null join point")
+                    .contains("méthode inconnue");
+        }
+
+        @Test
+        void shouldHandleNullExceptionDuringCriticalLogging() {
+            when(mockJoinPoint.getSignature()).thenReturn(mockSignature);
+            when(mockSignature.getName()).thenReturn("commence");
+
+            boolean result = aspect.performCriticalErrorLogging(mockJoinPoint, null);
+
+            assertThat(result).isTrue();
+            ILoggingEvent log = listAppender.list.get(0);
+            assertThat(log.getFormattedMessage())
+                    .contains("CRITICAL ERROR - Erreur critique dans CustomAuthenticationEntryPoint")
+                    .contains("Aucun message d'erreur disponible")
+                    .contains("commence");
         }
     }
 

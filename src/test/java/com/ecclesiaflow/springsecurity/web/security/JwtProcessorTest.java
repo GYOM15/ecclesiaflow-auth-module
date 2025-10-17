@@ -109,6 +109,82 @@ class JwtProcessorTest {
     }
 
     @Test
+    @DisplayName("Devrait générer un token d'accès avec memberId et scopes vides")
+    void shouldGenerateAccessTokenWithEmptyScopes() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        UUID memberId = UUID.randomUUID();
+
+        // When
+        String token = jwtProcessor.generateAccessToken(testUser, memberId, Set.of());
+
+        // Then
+        Claims claims = parseClaims(token);
+        assertThat(claims.get("cid", String.class)).isEqualTo(memberId.toString());
+        assertThat(claims.containsKey("scopes")).isFalse();
+        assertThat(jwtProcessor.extractMemberId(token)).isEqualTo(memberId);
+        assertThat(jwtProcessor.extractScopes(token)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Devrait générer un token d'accès sans claims additionnels")
+    void shouldGenerateAccessTokenWithoutExtraClaims() throws JwtProcessingException {
+        // When
+        String token = jwtProcessor.generateAccessToken(testUser, null, Set.of());
+
+        // Then
+        Claims claims = parseClaims(token);
+        assertThat(claims.get("cid")).isNull();
+        assertThat(claims.containsKey("scopes")).isFalse();
+        assertThat(jwtProcessor.extractScopes(token)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Devrait générer un token d'accès sans claims lorsque scopes est null")
+    void shouldGenerateAccessTokenWithoutExtraClaimsWhenScopesNull() throws JwtProcessingException {
+        // When
+        String token = jwtProcessor.generateAccessToken(testUser, null, null);
+
+        // Then
+        Claims claims = parseClaims(token);
+        assertThat(claims.get("cid")).isNull();
+        assertThat(claims.containsKey("scopes")).isFalse();
+        assertThat(jwtProcessor.extractScopes(token)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Devrait générer un token d'accès avec uniquement le memberId")
+    void shouldGenerateAccessTokenWithOnlyMemberId() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        UUID memberId = UUID.randomUUID();
+
+        // When
+        String token = jwtProcessor.generateAccessToken(testUser, memberId, null);
+
+        // Then
+        Claims claims = parseClaims(token);
+        assertThat(claims.get("cid", String.class)).isEqualTo(memberId.toString());
+        assertThat(claims.containsKey("scopes")).isFalse();
+        assertThat(jwtProcessor.extractMemberId(token)).isEqualTo(memberId);
+        assertThat(jwtProcessor.extractScopes(token)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Devrait générer un token d'accès avec uniquement les scopes")
+    void shouldGenerateAccessTokenWithOnlyScopes() throws JwtProcessingException {
+        // Given
+        Set<String> scopes = Set.of("ef:members:read:own", "ef:members:write:own");
+
+        // When
+        String token = jwtProcessor.generateAccessToken(testUser, null, scopes);
+
+        // Then
+        Claims claims = parseClaims(token);
+        assertThat(claims.get("cid")).isNull();
+        assertThat(claims.get("scopes", List.class)).containsExactlyElementsOf(scopes);
+        assertThat(jwtProcessor.extractScopes(token)).containsExactlyInAnyOrderElementsOf(scopes);
+    }
+
+    @Test
     @DisplayName("Devrait générer un refresh token valide")
     void shouldGenerateValidRefreshToken() throws JwtProcessingException {
         // When
