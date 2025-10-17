@@ -295,7 +295,8 @@
 					<excludes>
 						<exclude>**/web/dto/*</exclude>
 						<!-- Exclure les configurations Spring Boot -->
-						<exclude>**/com/ecclesiaflow/SpringsecurityApplication.class</exclude>
+						<exclude>**/com/ecclesiaflow/springsecurity/SpringsecurityApplication.class</exclude>
+						<exclude>**/com/ecclesiaflow/springsecurity/business/domain/security/Scope.class</exclude>
 						<!-- Modèles et APIs générés par OpenAPI Generator -->
 						<exclude>**/web/model/*</exclude>
 						<exclude>**/web/api/*</exclude>
