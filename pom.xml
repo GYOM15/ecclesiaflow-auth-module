@@ -304,6 +304,8 @@
 						<exclude>**/exception/InvalidRequestException.class</exclude>
 						<exclude>**/exception/InvalidTokenException.class</exclude>
 						<exclude>**/exception/JwtProcessingException.class</exclude>
+						<!-- Entités JPA (code généré par Lombok - pas de logique métier) -->
+						<exclude>**/io/persistence/jpa/MemberEntity.class</exclude>
 						<!-- Classes internes générées (Builder, etc.) -->
 						<exclude>**/*$Builder.*</exclude>
 						<exclude>**/*$*</exclude>
