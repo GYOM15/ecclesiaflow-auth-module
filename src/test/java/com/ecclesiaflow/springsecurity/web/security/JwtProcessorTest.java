@@ -21,6 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.security.Key;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
@@ -86,6 +87,25 @@ class JwtProcessorTest {
         assertThat(claims.getSubject()).isEqualTo(testUser.getUsername());
         // Correction isCloseTo
         assertThat(claims.getExpiration().getTime()).isCloseTo(System.currentTimeMillis() + ACCESS_EXP, offset(1000L));
+    }
+
+    @Test
+    @DisplayName("Devrait générer un token d'accès avec scopes et memberId")
+    void shouldGenerateAccessTokenWithScopesAndMemberId() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        UUID memberId = UUID.randomUUID();
+        Set<String> scopes = Set.of("ef:members:read:own", "ef:profile:read:own");
+
+        // When
+        String token = jwtProcessor.generateAccessToken(testUser, memberId, scopes);
+
+        // Then
+        Claims claims = parseClaims(token);
+        assertThat(claims.get("cid", String.class)).isEqualTo(memberId.toString());
+        assertThat(claims.get("scopes", List.class)).containsExactlyElementsOf(scopes);
+
+        assertThat(jwtProcessor.extractMemberId(token)).isEqualTo(memberId);
+        assertThat(jwtProcessor.extractScopes(token)).containsExactlyInAnyOrderElementsOf(scopes);
     }
 
     @Test
@@ -157,6 +177,19 @@ class JwtProcessorTest {
         assertThatThrownBy(() -> jwtProcessor.isRefreshTokenValid(accessToken))
                 .isInstanceOf(InvalidTokenException.class)
                 .hasMessage("Le token fourni n'est pas un token de rafraîchissement");
+    }
+
+    @Test
+    @DisplayName("Devrait retourner liste vide si aucun scope")
+    void shouldReturnEmptyScopesWhenMissing() throws JwtProcessingException {
+        // Given
+        String token = jwtProcessor.generateAccessToken(testUser);
+
+        // When
+        Set<String> scopes = jwtProcessor.extractScopes(token);
+
+        // Then
+        assertThat(scopes).isEmpty();
     }
 
     // ====================================================================

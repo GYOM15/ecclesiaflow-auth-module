@@ -3,6 +3,7 @@ package com.ecclesiaflow.springsecurity.web.security;
 import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.business.domain.member.Role;
 import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
+import com.ecclesiaflow.springsecurity.business.services.mappers.ScopeMapper;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,12 +16,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -35,6 +38,9 @@ class JwtTest {
     @Mock
     private JwtProcessor jwtProcessor;
 
+    @Mock
+    private ScopeMapper scopeMapper;
+
     @InjectMocks
     private Jwt jwt;
 
@@ -45,6 +51,7 @@ class JwtTest {
     private static final String REFRESH_TOKEN = "mock.refresh.token";
     private static final String TEMP_TOKEN = "mock.temp.token";
     private Member mockMember;
+    private Set<String> memberScopes;
 
     @BeforeEach
     void setUp() {
@@ -58,6 +65,9 @@ class JwtTest {
                 .role(Role.MEMBER)
                 .enabled(true)
                 .build();
+
+        memberScopes = Set.of("ef:members:read:own", "ef:profile:read:own");
+        when(scopeMapper.mapRoleToScopes(Role.MEMBER)).thenReturn(memberScopes);
     }
 
     // ====================================================================
@@ -68,14 +78,16 @@ class JwtTest {
     @DisplayName("generateUserTokens - Devrait appeler le processor pour créer les deux tokens et retourner UserTokens")
     void generateUserTokens_ShouldCallProcessorAndReturnUserTokens() throws JwtProcessingException {
         // Arrange
-        when(jwtProcessor.generateAccessToken(any(UserDetails.class))).thenReturn(ACCESS_TOKEN);
+        when(jwtProcessor.generateAccessToken(any(UserDetails.class), eq(TEST_MEMBER_ID), eq(memberScopes)))
+                .thenReturn(ACCESS_TOKEN);
         when(jwtProcessor.generateRefreshToken(any(UserDetails.class))).thenReturn(REFRESH_TOKEN);
 
         // Act
         UserTokens result = jwt.generateUserTokens(mockMember);
 
         // Assert
-        verify(jwtProcessor, times(1)).generateAccessToken(any(UserDetails.class));
+        verify(scopeMapper).mapRoleToScopes(Role.MEMBER);
+        verify(jwtProcessor, times(1)).generateAccessToken(any(UserDetails.class), eq(TEST_MEMBER_ID), eq(memberScopes));
         verify(jwtProcessor, times(1)).generateRefreshToken(any(UserDetails.class));
         assertThat(result.accessToken()).isEqualTo(ACCESS_TOKEN);
         assertThat(result.refreshToken()).isEqualTo(REFRESH_TOKEN);
@@ -85,7 +97,9 @@ class JwtTest {
     @DisplayName("generateUserTokens - Devrait propager JwtProcessingException en cas d'échec de génération")
     void generateUserTokens_ShouldPropagateException() throws JwtProcessingException {
         // Arrange
-        doThrow(new JwtProcessingException("Generation failed")).when(jwtProcessor).generateAccessToken(any(UserDetails.class));
+        doThrow(new JwtProcessingException("Generation failed"))
+                .when(jwtProcessor)
+                .generateAccessToken(any(UserDetails.class), eq(TEST_MEMBER_ID), eq(memberScopes));
 
         // Act & Assert
         assertThatThrownBy(() -> jwt.generateUserTokens(mockMember))
@@ -147,13 +161,15 @@ class JwtTest {
     void refreshTokenForMember_ShouldGenerateNewAccessToken() throws JwtProcessingException {
         // Arrange
         String newAccessToken = "new.mock.access.token";
-        when(jwtProcessor.generateAccessToken(any(UserDetails.class))).thenReturn(newAccessToken);
+        when(jwtProcessor.generateAccessToken(any(UserDetails.class), eq(TEST_MEMBER_ID), eq(memberScopes)))
+                .thenReturn(newAccessToken);
 
         // Act
         UserTokens result = jwt.refreshTokenForMember(REFRESH_TOKEN, mockMember);
 
         // Assert
-        verify(jwtProcessor, times(1)).generateAccessToken(any(UserDetails.class));
+        verify(scopeMapper, atLeastOnce()).mapRoleToScopes(Role.MEMBER);
+        verify(jwtProcessor, times(1)).generateAccessToken(any(UserDetails.class), eq(TEST_MEMBER_ID), eq(memberScopes));
         assertThat(result.accessToken()).isEqualTo(newAccessToken);
         assertThat(result.refreshToken()).isEqualTo(REFRESH_TOKEN);
     }

@@ -11,8 +11,11 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.function.Function;
 
 /**
@@ -63,7 +66,25 @@ public class JwtProcessor {
     // ========== PUBLIC API ==========
 
     public String generateAccessToken(UserDetails userDetails) throws JwtProcessingException {
-        return buildToken(userDetails, accessTokenExpiration, Map.of());
+        return generateAccessToken(userDetails, null, Set.of());
+    }
+
+    public String generateAccessToken(UserDetails userDetails, UUID memberId, Set<String> scopes)
+            throws JwtProcessingException {
+        Map<String, Object> extraClaims = Map.of();
+        if (memberId == null && (scopes == null || scopes.isEmpty())) {
+            return buildToken(userDetails, accessTokenExpiration, extraClaims);
+        }
+
+        Map<String, Object> mutableClaims = new java.util.HashMap<>();
+        if (memberId != null) {
+            mutableClaims.put("cid", memberId.toString());
+        }
+        if (scopes != null && !scopes.isEmpty()) {
+            Set<String> normalizedScopes = Set.copyOf(scopes);
+            mutableClaims.put("scopes", List.copyOf(normalizedScopes));
+        }
+        return buildToken(userDetails, accessTokenExpiration, mutableClaims);
     }
 
     public String generateRefreshToken(UserDetails userDetails) throws JwtProcessingException {
@@ -185,6 +206,17 @@ public class JwtProcessor {
             throw new InvalidTokenException("Le token ne contient pas de memberId (claim 'cid')");
         }
         return UUID.fromString(memberIdStr);
+    }
+
+    public Set<String> extractScopes(String token) throws JwtProcessingException {
+        Claims claims = parseAndValidateClaims(token);
+        Object scopesClaim = claims.get("scopes");
+        if (scopesClaim instanceof List<?> scopesList) {
+            return scopesList.stream()
+                    .map(Object::toString)
+                    .collect(Collectors.collectingAndThen(Collectors.toSet(), Set::copyOf));
+        }
+        return Set.of();
     }
 
     // ========== PRIVATE HELPERS ==========

@@ -1,13 +1,15 @@
 package com.ecclesiaflow.springsecurity.web.security;
 
-import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.domain.member.Member;
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
+import com.ecclesiaflow.springsecurity.business.services.mappers.ScopeMapper;
 import com.ecclesiaflow.springsecurity.business.services.adapters.MemberUserDetailsAdapter;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -44,6 +46,7 @@ import java.util.UUID;
 public class Jwt {
 
     private final JwtProcessor jwtProcessor;
+    private final ScopeMapper scopeMapper;
 
     /**
      * Génère une paire de tokens JWT (accès + rafraîchissement) pour un membre.
@@ -56,19 +59,18 @@ public class Jwt {
      * @param member le membre pour lequel générer les tokens, non null
      * @return un {@link UserTokens} contenant le membre et ses tokens
      * @throws JwtProcessingException si la génération des tokens échoue
-     * @throws IllegalArgumentException si member est null
      * 
      * @implNote Opération en mémoire uniquement, aucun accès à la base de données.
      */
     public UserTokens generateUserTokens(Member member) throws JwtProcessingException {
         MemberUserDetailsAdapter userDetails = new MemberUserDetailsAdapter(member);
-        String accessToken = jwtProcessor.generateAccessToken(userDetails);
+        Set<String> scopes = scopeMapper.mapRoleToScopes(member.getRole());
+        String accessToken = jwtProcessor.generateAccessToken(userDetails, member.getMemberId(), scopes);
         String refreshToken = jwtProcessor.generateRefreshToken(userDetails);
         return new UserTokens(accessToken, refreshToken);
     }
 
     /**
-     * Valide un refresh token et extrait l'email du membre.
      * <p>
      * Opération purement technique qui valide la structure et l'expiration
      * du token, puis extrait l'email sans faire appel à la couche métier.
@@ -104,7 +106,8 @@ public class Jwt {
     public UserTokens refreshTokenForMember(String refreshToken, Member member)
             throws JwtProcessingException {
         MemberUserDetailsAdapter userDetails = new MemberUserDetailsAdapter(member);
-        String newAccessToken = jwtProcessor.generateAccessToken(userDetails);
+        Set<String> scopes = scopeMapper.mapRoleToScopes(member.getRole());
+        String newAccessToken = jwtProcessor.generateAccessToken(userDetails, member.getMemberId(), scopes);
         return new UserTokens(newAccessToken, refreshToken);
     }
 
