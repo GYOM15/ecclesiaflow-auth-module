@@ -38,6 +38,7 @@ import java.util.UUID;
 @Builder(toBuilder = true)
 public class Member {
     private final UUID id;
+    private final UUID memberId;
     private final String email;
     private final String password;
     private final LocalDateTime createdAt;

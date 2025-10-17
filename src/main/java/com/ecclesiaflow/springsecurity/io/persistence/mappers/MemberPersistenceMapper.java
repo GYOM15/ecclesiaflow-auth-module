@@ -55,6 +55,7 @@ public class MemberPersistenceMapper {
 
         return Member.builder().
                 id(entity.getId()).
+                memberId(entity.getMemberId()).
                 email(entity.getEmail()).
                 role(entity.getRole()).
                 password(entity.getPassword()).
@@ -82,6 +83,7 @@ public class MemberPersistenceMapper {
 
         return MemberEntity.builder().
                 id(domain.getId()).
+                memberId(domain.getMemberId()).
                 email(domain.getEmail()).
                 role(domain.getRole()).
                 password(domain.getPassword()).

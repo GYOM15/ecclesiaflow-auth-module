@@ -510,10 +510,12 @@ class SpringDataMemberRepositoryTest {
     @DisplayName("AllArgsConstructor - Doit créer entité avec tous les champs")
     void allArgsConstructor_ShouldCreateEntityWithAllFields() {
         UUID id = UUID.randomUUID();
+        UUID memberId = UUID.randomUUID();
         LocalDateTime now = LocalDateTime.now();
 
         MemberEntity entity = new MemberEntity(
                 id,
+                memberId,
                 "constructor@example.com",
                 "ConstructorPass123!",
                 Role.MEMBER,
@@ -523,6 +525,7 @@ class SpringDataMemberRepositoryTest {
         );
 
         assertThat(entity.getId()).isEqualTo(id);
+        assertThat(entity.getMemberId()).isEqualTo(memberId);
         assertThat(entity.getEmail()).isEqualTo("constructor@example.com");
         assertThat(entity.getPassword()).isEqualTo("ConstructorPass123!");
         assertThat(entity.getRole()).isEqualTo(Role.MEMBER);
@@ -937,6 +940,7 @@ class SpringDataMemberRepositoryTest {
     void constructors_AllArgsConstructorWithNulls() {
         MemberEntity entity = new MemberEntity(
                 null, // id
+                null, // memberId
                 null, // email
                 null, // password
                 null, // role
@@ -946,6 +950,7 @@ class SpringDataMemberRepositoryTest {
         );
 
         assertThat(entity.getId()).isNull();
+        assertThat(entity.getMemberId()).isNull();
         assertThat(entity.getEmail()).isNull();
         assertThat(entity.getPassword()).isNull();
         assertThat(entity.getRole()).isNull();

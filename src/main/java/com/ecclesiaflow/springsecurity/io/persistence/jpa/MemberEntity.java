@@ -44,6 +44,9 @@ public class MemberEntity {
     @Column(name = "id", columnDefinition = "BINARY(16)", updatable = false, nullable = false)
     private UUID id;
 
+    @Column(name = "member_id", unique = true)
+    private UUID memberId;
+
     @NotBlank(message = "L’email est obligatoire")
     @Column(unique = true, nullable = false)
     private String email;
