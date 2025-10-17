@@ -3,9 +3,11 @@ package com.ecclesiaflow.springsecurity.business.services.impl;
 import com.ecclesiaflow.springsecurity.business.domain.password.SigninCredentials;
 import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import com.ecclesiaflow.springsecurity.business.domain.member.MemberRepository;
+import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
 import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
 import com.ecclesiaflow.springsecurity.web.security.Jwt;
+import com.ecclesiaflow.springsecurity.business.services.adapters.MemberUserDetailsAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -67,6 +70,57 @@ class AuthenticationServiceImplTest {
 
         // Assert
         assertThat(result).isEqualTo(mockMember);
+        verify(authenticationManager).authenticate(token);
+    }
+
+    @Test
+    @DisplayName("Devrait retourner le Member si le principal est un MemberUserDetailsAdapter")
+    void getAuthenticatedMember_ShouldReturnMember_WhenPrincipalIsAdapter() {
+        // Arrange
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(EMAIL, credentials.password());
+        MemberUserDetailsAdapter adapter = new MemberUserDetailsAdapter(mockMember);
+        when(authenticationManager.authenticate(token)).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(adapter);
+
+        // Act
+        Member result = authenticationService.getAuthenticatedMember(credentials);
+
+        // Assert
+        assertThat(result).isEqualTo(mockMember);
+        verify(authenticationManager).authenticate(token);
+    }
+
+    @Test
+    @DisplayName("Devrait lever InvalidCredentialsException si le principal UserDetails ne contient pas de Member")
+    void getAuthenticatedMember_ShouldThrowInvalidCredentials_WhenUserDetailsWithoutMember() {
+        // Arrange
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(EMAIL, credentials.password());
+        UserDetails unrelatedUserDetails = mock(UserDetails.class);
+        when(authenticationManager.authenticate(token)).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(unrelatedUserDetails);
+
+        // Act & Assert
+        assertThatThrownBy(() -> authenticationService.getAuthenticatedMember(credentials))
+                .isInstanceOf(InvalidCredentialsException.class)
+                .hasMessageContaining("Impossible de récupérer le membre authentifié");
+
+        verify(authenticationManager).authenticate(token);
+    }
+
+    @Test
+    @DisplayName("Devrait lever InvalidCredentialsException si le principal n'est pas supporté")
+    void getAuthenticatedMember_ShouldThrowInvalidCredentials_WhenPrincipalUnsupported() {
+        // Arrange
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(EMAIL, credentials.password());
+        Object unsupportedPrincipal = new Object();
+        when(authenticationManager.authenticate(token)).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(unsupportedPrincipal);
+
+        // Act & Assert
+        assertThatThrownBy(() -> authenticationService.getAuthenticatedMember(credentials))
+                .isInstanceOf(InvalidCredentialsException.class)
+                .hasMessageContaining("Impossible de récupérer le membre authentifié");
+
         verify(authenticationManager).authenticate(token);
     }
 
@@ -153,6 +207,23 @@ class AuthenticationServiceImplTest {
                 .hasMessageContaining("Token temporaire invalide ou expiré");
 
         verify(jwt).validateTemporaryToken(token, extractedEmail);
+    }
+
+    @Test
+    @DisplayName("Devrait encapsuler JwtProcessingException dans InvalidCredentialsException")
+    void getEmailFromValidatedTempToken_ShouldWrapJwtProcessingException() {
+        // Arrange
+        String token = "temp_token_exception";
+        when(jwt.extractEmailFromTemporaryToken(token)).thenThrow(new JwtProcessingException("Parsing error"));
+
+        // Act & Assert
+        assertThatThrownBy(() -> authenticationService.getEmailFromValidatedTempToken(token))
+                .isInstanceOf(InvalidCredentialsException.class)
+                .hasMessageContaining("Erreur lors du traitement du token temporaire")
+                .hasCauseInstanceOf(JwtProcessingException.class);
+
+        verify(jwt).extractEmailFromTemporaryToken(token);
+        verify(jwt, never()).validateTemporaryToken(anyString(), anyString());
     }
 
     @Test

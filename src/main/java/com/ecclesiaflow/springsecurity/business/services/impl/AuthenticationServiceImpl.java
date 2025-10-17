@@ -7,11 +7,13 @@ import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
+import com.ecclesiaflow.springsecurity.business.services.adapters.MemberUserDetailsAdapter;
 import com.ecclesiaflow.springsecurity.web.security.Jwt;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,8 +62,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(credentials.email(), credentials.password())
         );
-        return (Member) authentication.getPrincipal();
+        return extractMemberFromPrincipal(authentication.getPrincipal());
     }
+
+    private Member extractMemberFromPrincipal(Object principal) {
+        if (principal instanceof Member member) {
+            return member;
+        }
+        if (principal instanceof UserDetails userDetails) {
+            Member member = MemberUserDetailsAdapter.extractMember(userDetails);
+            if (member != null) {
+                return member;
+            }
+        }
+        throw new InvalidCredentialsException("Impossible de récupérer le membre authentifié");
+    }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -75,10 +91,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (temporaryToken == null || temporaryToken.trim().isEmpty()) {
             throw new IllegalArgumentException("Le token temporaire ne peut pas être null ou vide");
         }
-        String email = jwt.extractEmailFromTemporaryToken(temporaryToken);
-        if (!jwt.validateTemporaryToken(temporaryToken, email)) {
-            throw new InvalidCredentialsException("Token temporaire invalide ou expiré");
+        try {
+            String email = jwt.extractEmailFromTemporaryToken(temporaryToken);
+            if (!jwt.validateTemporaryToken(temporaryToken, email)) {
+                throw new InvalidCredentialsException("Token temporaire invalide ou expiré");
+            }
+            return email;
+        } catch (JwtProcessingException e) {
+            throw new InvalidCredentialsException("Erreur lors du traitement du token temporaire", e);
         }
-        return email;
     }
 }
