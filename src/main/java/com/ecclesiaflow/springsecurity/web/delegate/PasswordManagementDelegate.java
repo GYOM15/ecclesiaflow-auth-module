@@ -124,7 +124,7 @@ public class PasswordManagementDelegate {
      * @param changePasswordRequest Requête contenant email, mot de passe actuel et nouveau (modèle OpenAPI)
      * @return Réponse vide avec statut 200
      */
-    public ResponseEntity<Void> changePassword(ChangePasswordRequest changePasswordRequest) {
+    public ResponseEntity<PasswordManagementResponse> changePassword(ChangePasswordRequest changePasswordRequest) {
         
         // Changement du mot de passe via le service
         passwordService.changePassword(
@@ -132,8 +132,7 @@ public class PasswordManagementDelegate {
             changePasswordRequest.getCurrentPassword(),
             changePasswordRequest.getNewPassword()
         );
-        
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new PasswordManagementResponse().message("Mot de passe changé avec succès"));
     }
 
     /**

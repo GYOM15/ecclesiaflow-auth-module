@@ -87,7 +87,7 @@ class PasswordManagementDelegateTest {
                 .message("Mot de passe défini avec succès. Vous êtes maintenant connecté.")
                 .accessToken("access-token-123")
                 .refreshToken("refresh-token-456")
-                .expiresIn(60L);
+                .expiresIn(60);
     }
 
     // ====================================================================
@@ -343,11 +343,12 @@ class PasswordManagementDelegateTest {
         );
 
         // When
-        ResponseEntity<Void> response = passwordManagementDelegate.changePassword(changePasswordRequest);
+        ResponseEntity<PasswordManagementResponse> response = passwordManagementDelegate.changePassword(changePasswordRequest);
 
         // Then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNull();
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getMessage()).isEqualTo("Mot de passe changé avec succès");
 
         verify(passwordService).changePassword(
                 changePasswordRequest.getEmail(),
