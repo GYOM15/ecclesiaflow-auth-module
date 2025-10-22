@@ -28,8 +28,8 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
 # JWT Secret Key (Generate your own secure key)
 # Example: https://generate-random.org/encryption-key-generator?count=1&bytes=32&cipher=aes-256-cbc&string=&password=
 jwt.secret=YOUR_JWT_SECRET_KEY_HERE_MINIMUM_256_BITS
-jwt.token.expiration=86400000
-jwt.refresh-token.expiration=604800000
+jwt.token.expiration=${JWT_TOKEN_EXPIRATION}
+jwt.refresh-token.expiration=${JWT_REFRESH_TOKEN_EXPIRATION}
 
 # ============================================================================
 # ADMIN CONFIGURATION
