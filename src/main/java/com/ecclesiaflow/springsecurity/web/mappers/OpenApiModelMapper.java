@@ -79,7 +79,7 @@ public class OpenApiModelMapper {
             response.setRefreshToken(userTokens.refreshToken());
         }
         
-        response.setExpiresIn(expiresIn);
+        response.setExpiresIn(expiresIn != null ? expiresIn.intValue() : null);
         
         return response;
     }
