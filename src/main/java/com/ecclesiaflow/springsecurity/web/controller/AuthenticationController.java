@@ -1,6 +1,7 @@
 package com.ecclesiaflow.springsecurity.web.controller;
 
 import com.ecclesiaflow.springsecurity.web.api.AuthenticationApi;
+import com.ecclesiaflow.springsecurity.web.api.DefaultApi;
 import com.ecclesiaflow.springsecurity.web.delegate.AuthenticationDelegate;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidCredentialsException;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidTokenException;
@@ -12,6 +13,7 @@ import com.ecclesiaflow.springsecurity.web.model.TemporaryTokenRequest;
 import com.ecclesiaflow.springsecurity.web.model.TemporaryTokenResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -69,7 +71,7 @@ public class AuthenticationController implements AuthenticationApi {
      * @see AuthenticationDelegate#generateToken(SigninRequest)
      */
     @Override
-    public ResponseEntity<JwtAuthenticationResponse> _generateToken(SigninRequest signinRequest) 
+    public ResponseEntity<JwtAuthenticationResponse> _authGenerateToken(SigninRequest signinRequest) 
             throws InvalidCredentialsException, InvalidTokenException, JwtProcessingException {
         return authenticationDelegate.generateToken(signinRequest);
     }
@@ -89,7 +91,7 @@ public class AuthenticationController implements AuthenticationApi {
      * @see AuthenticationDelegate#refreshToken(RefreshTokenRequest)
      */
     @Override
-    public ResponseEntity<JwtAuthenticationResponse> _refreshToken(RefreshTokenRequest refreshTokenRequest) 
+    public ResponseEntity<JwtAuthenticationResponse> _authRefreshToken(RefreshTokenRequest refreshTokenRequest) 
             throws InvalidTokenException, JwtProcessingException {
         return authenticationDelegate.refreshToken(refreshTokenRequest);
     }
@@ -109,7 +111,7 @@ public class AuthenticationController implements AuthenticationApi {
      * @see AuthenticationDelegate#generateTemporaryToken(TemporaryTokenRequest)
      */
     @Override
-    public ResponseEntity<TemporaryTokenResponse> _generateTemporaryToken(TemporaryTokenRequest temporaryTokenRequest) 
+    public ResponseEntity<TemporaryTokenResponse> _authGenerateTemporaryToken(TemporaryTokenRequest temporaryTokenRequest) 
             throws InvalidTokenException, JwtProcessingException {
         return authenticationDelegate.generateTemporaryToken(temporaryTokenRequest);
     }

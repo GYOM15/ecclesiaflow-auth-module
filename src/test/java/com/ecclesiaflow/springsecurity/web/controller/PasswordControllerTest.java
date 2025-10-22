@@ -48,7 +48,7 @@ class PasswordControllerTest {
                 .message("Mot de passe défini avec succès")
                 .accessToken("access-token")
                 .refreshToken("refresh-token")
-                .expiresIn(60L);
+                .expiresIn(60);
     }
 
     // ====================================================================
@@ -64,7 +64,7 @@ class PasswordControllerTest {
                 .thenReturn(ResponseEntity.ok(passwordManagementResponse));
 
         // When
-        ResponseEntity<PasswordManagementResponse> response = passwordController._setPassword(authHeader, setPasswordRequest);
+        ResponseEntity<PasswordManagementResponse> response = passwordController._authSetInitialPassword(authHeader, setPasswordRequest);
 
         // Then
         assertNotNull(response);
@@ -85,14 +85,16 @@ class PasswordControllerTest {
     void changePassword_ShouldDelegateToPasswordManagementDelegate() {
         // Given
         when(passwordManagementDelegate.changePassword(changePasswordRequest))
-                .thenReturn(ResponseEntity.ok().build());
+                .thenReturn(ResponseEntity.ok(new PasswordManagementResponse().message("Mot de passe changé avec succès")));
 
         // When
-        ResponseEntity<Void> response = passwordController._changePassword(changePasswordRequest);
+        ResponseEntity<PasswordManagementResponse> response = passwordController._authChangePassword(changePasswordRequest);
 
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Mot de passe changé avec succès", response.getBody().getMessage());
         
         verify(passwordManagementDelegate).changePassword(changePasswordRequest);
     }

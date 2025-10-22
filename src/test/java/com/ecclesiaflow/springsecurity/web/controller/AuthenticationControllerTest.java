@@ -74,7 +74,7 @@ class AuthenticationControllerTest {
                 .thenReturn(ResponseEntity.ok(jwtResponse));
 
         // When
-        ResponseEntity<JwtAuthenticationResponse> response = authenticationController._generateToken(signinRequest);
+        ResponseEntity<JwtAuthenticationResponse> response = authenticationController._authGenerateToken(signinRequest);
 
         // Then
         assertNotNull(response);
@@ -98,7 +98,7 @@ class AuthenticationControllerTest {
                 .thenReturn(ResponseEntity.ok(jwtResponse));
 
         // When
-        ResponseEntity<JwtAuthenticationResponse> response = authenticationController._refreshToken(refreshTokenRequest);
+        ResponseEntity<JwtAuthenticationResponse> response = authenticationController._authRefreshToken(refreshTokenRequest);
 
         // Then
         assertNotNull(response);
@@ -122,7 +122,7 @@ class AuthenticationControllerTest {
                 .thenReturn(ResponseEntity.ok(temporaryTokenResponse));
 
         // When
-        ResponseEntity<TemporaryTokenResponse> response = authenticationController._generateTemporaryToken(temporaryTokenRequest);
+        ResponseEntity<TemporaryTokenResponse> response = authenticationController._authGenerateTemporaryToken(temporaryTokenRequest);
 
         // Then
         assertNotNull(response);

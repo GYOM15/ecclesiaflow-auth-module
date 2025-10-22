@@ -66,7 +66,7 @@ public class PasswordController implements PasswordManagementApi {
      * @see PasswordManagementDelegate#setPassword(String, SetPasswordRequest)
      */
     @Override
-    public ResponseEntity<PasswordManagementResponse> _setPassword(
+    public ResponseEntity<PasswordManagementResponse> _authSetInitialPassword(
             String authorization, SetPasswordRequest setPasswordRequest) {
         return passwordManagementDelegate.setPassword(authorization, setPasswordRequest);
     }
@@ -78,13 +78,13 @@ public class PasswordController implements PasswordManagementApi {
      * </p>
      * 
      * @param changePasswordRequest Requête contenant email, mot de passe actuel et nouveau
-     * @return Réponse vide avec statut 200
+     * @return Réponse avec message de confirmation
      * 
      * @implNote <strong>Implémentation :</strong> Délègue au {@link PasswordManagementDelegate}
      * @see PasswordManagementDelegate#changePassword(ChangePasswordRequest)
      */
     @Override
-    public ResponseEntity<Void> _changePassword(ChangePasswordRequest changePasswordRequest) {
+    public ResponseEntity<PasswordManagementResponse> _authChangePassword(ChangePasswordRequest changePasswordRequest) {
         return passwordManagementDelegate.changePassword(changePasswordRequest);
     }
 }
