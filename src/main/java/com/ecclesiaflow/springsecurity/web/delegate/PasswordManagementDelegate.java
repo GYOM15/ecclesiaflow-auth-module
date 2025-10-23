@@ -93,8 +93,11 @@ public class PasswordManagementDelegate {
             passwordManagement.temporaryToken()
         );
         
-        // Définition du mot de passe initial
-        passwordService.setInitialPassword(validatedEmail, passwordManagement.password());
+        // Extraction du memberId depuis le token temporaire
+        java.util.UUID memberId = jwt.extractMemberId(passwordManagement.temporaryToken());
+        
+        // Définition du mot de passe initial avec le memberId pour lier les deux modules
+        passwordService.setInitialPassword(validatedEmail, passwordManagement.password(), memberId);
         
         // Récupération du membre
         Member member = authenticationService.getMemberByEmail(validatedEmail);

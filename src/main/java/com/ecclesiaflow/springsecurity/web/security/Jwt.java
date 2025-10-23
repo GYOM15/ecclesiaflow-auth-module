@@ -158,4 +158,20 @@ public class Jwt {
         return jwtProcessor.extractUsername(temporaryToken);
     }
 
+    /**
+     * Extrait le memberId (claim 'cid') d'un token JWT.
+     * <p>
+     * Cette méthode utilise le JwtProcessor pour extraire le memberId (UUID)
+     * depuis le claim 'cid' du token. Utilisé pour lier les modules auth et members.
+     * </p>
+     *
+     * @param token le token JWT dont extraire le memberId
+     * @return le memberId (UUID) extrait du token
+     * @throws JwtProcessingException si l'extraction échoue ou si le token est malformé
+     * @throws InvalidTokenException si le claim 'cid' est absent
+     */
+    public UUID extractMemberId(String token) throws JwtProcessingException, InvalidTokenException {
+        return jwtProcessor.extractMemberId(token);
+    }
+
 }

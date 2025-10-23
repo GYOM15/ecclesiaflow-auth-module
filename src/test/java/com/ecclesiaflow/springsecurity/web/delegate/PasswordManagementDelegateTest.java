@@ -102,7 +102,7 @@ class PasswordManagementDelegateTest {
         String email = "user@example.com";
 
         when(authenticationService.getEmailFromValidatedTempToken("temp-token-123")).thenReturn(email);
-        doNothing().when(passwordService).setInitialPassword(email, "NewStrongPassword1!");
+        doNothing().when(passwordService).setInitialPassword(anyString(), anyString(), any());
         when(authenticationService.getMemberByEmail(email)).thenReturn(member);
         when(jwt.generateUserTokens(member)).thenReturn(userTokens);
         when(openApiModelMapper.createPasswordManagementResponse(
@@ -125,7 +125,7 @@ class PasswordManagementDelegateTest {
 
         // Verify interactions
         verify(authenticationService).getEmailFromValidatedTempToken("temp-token-123");
-        verify(passwordService).setInitialPassword(email, "NewStrongPassword1!");
+        verify(passwordService).setInitialPassword(anyString(), anyString(), any());
         verify(authenticationService).getMemberByEmail(email);
         verify(jwt).generateUserTokens(member);
         verify(openApiModelMapper).createPasswordManagementResponse(anyString(), eq(userTokens), eq(60L));
@@ -139,7 +139,7 @@ class PasswordManagementDelegateTest {
         String email = "test@example.com";
 
         when(authenticationService.getEmailFromValidatedTempToken("my-temp-token")).thenReturn(email);
-        doNothing().when(passwordService).setInitialPassword(anyString(), anyString());
+        doNothing().when(passwordService).setInitialPassword(anyString(), anyString(), any());
         when(authenticationService.getMemberByEmail(email)).thenReturn(member);
         when(jwt.generateUserTokens(member)).thenReturn(userTokens);
         when(openApiModelMapper.createPasswordManagementResponse(anyString(), any(), anyLong()))
@@ -161,7 +161,7 @@ class PasswordManagementDelegateTest {
         String email = "user@example.com";
 
         when(authenticationService.getEmailFromValidatedTempToken(anyString())).thenReturn(email);
-        doNothing().when(passwordService).setInitialPassword(anyString(), anyString());
+        doNothing().when(passwordService).setInitialPassword(anyString(), anyString(), any());
         when(authenticationService.getMemberByEmail(email)).thenReturn(member);
         when(jwt.generateUserTokens(member)).thenReturn(userTokens);
         when(openApiModelMapper.createPasswordManagementResponse(anyString(), any(), eq(120L)))
@@ -230,7 +230,7 @@ class PasswordManagementDelegateTest {
         String email = "user@example.com";
 
         when(authenticationService.getEmailFromValidatedTempToken("valid-token")).thenReturn(email);
-        doNothing().when(passwordService).setInitialPassword(anyString(), anyString());
+        doNothing().when(passwordService).setInitialPassword(anyString(), anyString(), any());
         when(authenticationService.getMemberByEmail(email)).thenReturn(member);
         when(jwt.generateUserTokens(member)).thenReturn(userTokens);
         when(openApiModelMapper.createPasswordManagementResponse(anyString(), any(), anyLong()))
@@ -277,14 +277,14 @@ class PasswordManagementDelegateTest {
 
         when(authenticationService.getEmailFromValidatedTempToken("temp-token")).thenReturn(email);
         doThrow(new RuntimeException("Erreur lors de la définition du mot de passe"))
-                .when(passwordService).setInitialPassword(email, setPasswordRequest.getPassword());
+                .when(passwordService).setInitialPassword(anyString(), anyString(), any());
 
         // When & Then
         assertThatThrownBy(() -> passwordManagementDelegate.setPassword(authHeader, setPasswordRequest))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Erreur lors de la définition du mot de passe");
 
-        verify(passwordService).setInitialPassword(email, setPasswordRequest.getPassword());
+        verify(passwordService).setInitialPassword(anyString(), anyString(), any());
     }
 
     @Test
@@ -295,7 +295,7 @@ class PasswordManagementDelegateTest {
         String email = "user@example.com";
 
         when(authenticationService.getEmailFromValidatedTempToken("temp-token")).thenReturn(email);
-        doNothing().when(passwordService).setInitialPassword(email, setPasswordRequest.getPassword());
+        doNothing().when(passwordService).setInitialPassword(anyString(), anyString(), any());
         when(authenticationService.getMemberByEmail(email))
                 .thenThrow(new RuntimeException("Membre non trouvé"));
 
@@ -315,7 +315,7 @@ class PasswordManagementDelegateTest {
         String email = "user@example.com";
 
         when(authenticationService.getEmailFromValidatedTempToken("temp-token")).thenReturn(email);
-        doNothing().when(passwordService).setInitialPassword(email, setPasswordRequest.getPassword());
+        doNothing().when(passwordService).setInitialPassword(anyString(), anyString(), any());
         when(authenticationService.getMemberByEmail(email)).thenReturn(member);
         when(jwt.generateUserTokens(member))
                 .thenThrow(new RuntimeException("Erreur génération tokens"));

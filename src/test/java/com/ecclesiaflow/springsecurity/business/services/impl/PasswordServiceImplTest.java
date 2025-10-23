@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -63,7 +64,7 @@ class PasswordServiceImplTest {
             when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.empty());
 
             // Act
-            passwordService.setInitialPassword(EMAIL, NEW_PASSWORD);
+            passwordService.setInitialPassword(EMAIL, NEW_PASSWORD, UUID.randomUUID());
 
             // Assert
             ArgumentCaptor<Member> memberCaptor = ArgumentCaptor.forClass(Member.class);
@@ -84,7 +85,7 @@ class PasswordServiceImplTest {
             when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.of(existingMember));
 
             // Act
-            passwordService.setInitialPassword(EMAIL, NEW_PASSWORD);
+            passwordService.setInitialPassword(EMAIL, NEW_PASSWORD, UUID.randomUUID());
 
             // Assert
             ArgumentCaptor<Member> memberCaptor = ArgumentCaptor.forClass(Member.class);
@@ -103,7 +104,7 @@ class PasswordServiceImplTest {
             when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(true);
 
             // Act & Assert
-            assertThatThrownBy(() -> passwordService.setInitialPassword(EMAIL, NEW_PASSWORD))
+            assertThatThrownBy(() -> passwordService.setInitialPassword(EMAIL, NEW_PASSWORD, UUID.randomUUID()))
                     .isInstanceOf(InvalidRequestException.class)
                     .hasMessageContaining("Le compte doit être confirmé avant de définir un mot de passe");
             verify(memberRepository, never()).save(any());
@@ -117,7 +118,7 @@ class PasswordServiceImplTest {
             when(memberRepository.getByEmail(EMAIL)).thenReturn(Optional.of(existingMember));
 
             // Act & Assert
-            assertThatThrownBy(() -> passwordService.setInitialPassword(EMAIL, NEW_PASSWORD))
+            assertThatThrownBy(() -> passwordService.setInitialPassword(EMAIL, NEW_PASSWORD, UUID.randomUUID()))
                     .isInstanceOf(InvalidRequestException.class)
                     .hasMessageContaining("Le mot de passe a déjà été défini pour ce compte");
             verify(memberRepository, never()).save(any());
@@ -133,7 +134,7 @@ class PasswordServiceImplTest {
             when(membersClient.isEmailNotConfirmed(emailWithSpaces)).thenReturn(false);
 
             // Act
-            passwordService.setInitialPassword(emailWithSpaces, NEW_PASSWORD);
+            passwordService.setInitialPassword(emailWithSpaces, NEW_PASSWORD, UUID.randomUUID());
 
             // Assert
             ArgumentCaptor<Member> memberCaptor = ArgumentCaptor.forClass(Member.class);
@@ -151,7 +152,7 @@ class PasswordServiceImplTest {
             when(memberRepository.getByEmail(normalizedEmail)).thenReturn(Optional.empty());
 
             // Act
-            passwordService.setInitialPassword(normalizedEmail, NEW_PASSWORD);
+            passwordService.setInitialPassword(normalizedEmail, NEW_PASSWORD, UUID.randomUUID());
 
             // Assert
             ArgumentCaptor<Member> memberCaptor = ArgumentCaptor.forClass(Member.class);

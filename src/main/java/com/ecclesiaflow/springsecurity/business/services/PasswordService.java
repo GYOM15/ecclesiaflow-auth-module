@@ -1,5 +1,7 @@
 package com.ecclesiaflow.springsecurity.business.services;
 
+import java.util.UUID;
+
 /**
  * Service pour la gestion des mots de passe des membres.
  * 
@@ -22,9 +24,10 @@ public interface PasswordService {
      * 
      * @param email Email du membre (déjà validé par AuthenticationService)
      * @param password Nouveau mot de passe
+     * @param memberId UUID du membre (pour lier avec le module members)
      * @throws RuntimeException si le membre n'existe pas ou si l'opération échoue
      */
-    void setInitialPassword(String email, String password);
+    void setInitialPassword(String email, String password, UUID memberId);
 
     /**
      * Change le mot de passe d'un membre authentifié.

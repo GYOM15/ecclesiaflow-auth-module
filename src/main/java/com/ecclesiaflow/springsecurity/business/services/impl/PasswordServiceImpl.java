@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +24,7 @@ public class PasswordServiceImpl implements PasswordService {
 
     @Override
     @Transactional
-    public void setInitialPassword(String email, String password) {
+    public void setInitialPassword(String email, String password, UUID memberId) {
         if (membersClient.isEmailNotConfirmed(email)) {
             throw new InvalidRequestException("Le compte doit être confirmé avant de définir un mot de passe");
         }
@@ -33,11 +34,13 @@ public class PasswordServiceImpl implements PasswordService {
                         throw new InvalidRequestException("Le mot de passe a déjà été défini pour ce compte");
                     }
                     return existing.toBuilder()
+                            .memberId(memberId)
                             .password(passwordEncoder.encode(password))
                             .enabled(true)
                             .build();
                 })
                 .orElse(Member.builder()
+                        .memberId(memberId)
                         .email(email.toLowerCase().trim())
                         .password(passwordEncoder.encode(password))
                         .role(Role.MEMBER)
