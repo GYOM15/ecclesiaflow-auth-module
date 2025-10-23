@@ -10,8 +10,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.Set;
@@ -81,8 +81,8 @@ public class JwtProcessor {
             mutableClaims.put("cid", memberId.toString());
         }
         if (scopes != null && !scopes.isEmpty()) {
-            Set<String> normalizedScopes = Set.copyOf(scopes);
-            mutableClaims.put("scopes", List.copyOf(normalizedScopes));
+            String scopeString = String.join(" ", scopes);
+            mutableClaims.put("scope", scopeString);
         }
         return buildToken(userDetails, accessTokenExpiration, mutableClaims);
     }
@@ -210,10 +210,9 @@ public class JwtProcessor {
 
     public Set<String> extractScopes(String token) throws JwtProcessingException {
         Claims claims = parseAndValidateClaims(token);
-        Object scopesClaim = claims.get("scopes");
-        if (scopesClaim instanceof List<?> scopesList) {
-            return scopesList.stream()
-                    .map(Object::toString)
+        String scopeClaim = claims.get("scope", String.class);
+        if (scopeClaim != null && !scopeClaim.isBlank()) {
+            return Arrays.stream(scopeClaim.split("\\s+"))
                     .collect(Collectors.collectingAndThen(Collectors.toSet(), Set::copyOf));
         }
         return Set.of();

@@ -20,6 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.security.Key;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -102,7 +103,9 @@ class JwtProcessorTest {
         // Then
         Claims claims = parseClaims(token);
         assertThat(claims.get("cid", String.class)).isEqualTo(memberId.toString());
-        assertThat(claims.get("scopes", List.class)).containsExactlyElementsOf(scopes);
+        String scopeString = claims.get("scope", String.class);
+        assertThat(scopeString).isNotNull();
+        assertThat(scopeString.split("\\s+")).containsExactlyInAnyOrder(scopes.toArray(new String[0]));
 
         assertThat(jwtProcessor.extractMemberId(token)).isEqualTo(memberId);
         assertThat(jwtProcessor.extractScopes(token)).containsExactlyInAnyOrderElementsOf(scopes);
@@ -180,7 +183,9 @@ class JwtProcessorTest {
         // Then
         Claims claims = parseClaims(token);
         assertThat(claims.get("cid")).isNull();
-        assertThat(claims.get("scopes", List.class)).containsExactlyElementsOf(scopes);
+        String scopeString = claims.get("scope", String.class);
+        assertThat(scopeString).isNotNull();
+        assertThat(scopeString.split("\\s+")).containsExactlyInAnyOrder(scopes.toArray(new String[0]));
         assertThat(jwtProcessor.extractScopes(token)).containsExactlyInAnyOrderElementsOf(scopes);
     }
 
@@ -263,6 +268,26 @@ class JwtProcessorTest {
 
         // When
         Set<String> scopes = jwtProcessor.extractScopes(token);
+
+        // Then
+        assertThat(scopes).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Devrait retourner un ensemble vide si le scope est blank")
+    void shouldReturnEmptySetWhenScopeIsBlank() throws JwtProcessingException {
+        // Given - Créer manuellement un token avec un scope blank
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        String tokenWithBlankScope = Jwts.builder()
+                .setSubject(testUser.getUsername())
+                .claim("scope", "   ")  // Scope blank (espaces)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_EXP))
+                .signWith(key)
+                .compact();
+
+        // When
+        Set<String> scopes = jwtProcessor.extractScopes(tokenWithBlankScope);
 
         // Then
         assertThat(scopes).isEmpty();
