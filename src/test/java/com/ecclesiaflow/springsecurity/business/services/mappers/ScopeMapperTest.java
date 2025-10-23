@@ -23,9 +23,7 @@ class ScopeMapperTest {
                 .containsExactlyInAnyOrder(
                         Scope.EF_MEMBERS_READ_OWN.getValue(),
                         Scope.EF_MEMBERS_WRITE_OWN.getValue(),
-                        Scope.EF_MEMBERS_DELETE_OWN.getValue(),
-                        Scope.EF_PROFILE_READ_OWN.getValue(),
-                        Scope.EF_PROFILE_WRITE_OWN.getValue()
+                        Scope.EF_MEMBERS_DELETE_OWN.getValue()
                 );
 
         assertThatThrownBy(() -> scopes.add("new:scope"))
@@ -42,8 +40,9 @@ class ScopeMapperTest {
                         Scope.EF_MEMBERS_READ_ALL.getValue(),
                         Scope.EF_MEMBERS_WRITE_ALL.getValue(),
                         Scope.EF_MEMBERS_DELETE_ALL.getValue(),
-                        Scope.EF_PROFILE_READ_OWN.getValue(),
-                        Scope.EF_PROFILE_WRITE_OWN.getValue()
+                        Scope.EF_MEMBERS_READ_OWN.getValue(),
+                        Scope.EF_MEMBERS_WRITE_OWN.getValue(),
+                        Scope.EF_MEMBERS_DELETE_OWN.getValue()
                 );
 
         assertThatThrownBy(() -> scopes.remove(Scope.EF_MEMBERS_READ_ALL.getValue()))

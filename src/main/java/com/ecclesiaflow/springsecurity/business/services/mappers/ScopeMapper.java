@@ -14,6 +14,12 @@ public class ScopeMapper {
 
     /**
      * Returns the scopes associated with the provided {@link Role}.
+     * 
+     * <p><strong>Logique des scopes :</strong></p>
+     * <ul>
+     *   <li><strong>MEMBER :</strong> Peut lire/modifier/supprimer uniquement ses propres données</li>
+     *   <li><strong>ADMIN :</strong> Peut tout faire (ses données + toutes les données des autres membres)</li>
+     * </ul>
      *
      * @param role authenticated member role
      * @return immutable set of scope values
@@ -23,16 +29,15 @@ public class ScopeMapper {
             case MEMBER -> Set.of(
                     Scope.EF_MEMBERS_READ_OWN.getValue(),
                     Scope.EF_MEMBERS_WRITE_OWN.getValue(),
-                    Scope.EF_MEMBERS_DELETE_OWN.getValue(),
-                    Scope.EF_PROFILE_READ_OWN.getValue(),
-                    Scope.EF_PROFILE_WRITE_OWN.getValue()
+                    Scope.EF_MEMBERS_DELETE_OWN.getValue()
             );
             case ADMIN -> Set.of(
                     Scope.EF_MEMBERS_READ_ALL.getValue(),
                     Scope.EF_MEMBERS_WRITE_ALL.getValue(),
                     Scope.EF_MEMBERS_DELETE_ALL.getValue(),
-                    Scope.EF_PROFILE_READ_OWN.getValue(),
-                    Scope.EF_PROFILE_WRITE_OWN.getValue()
+                    Scope.EF_MEMBERS_READ_OWN.getValue(),
+                    Scope.EF_MEMBERS_WRITE_OWN.getValue(),
+                    Scope.EF_MEMBERS_DELETE_OWN.getValue()
             );
         };
     }
