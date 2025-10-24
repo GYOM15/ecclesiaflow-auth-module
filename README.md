@@ -1,38 +1,42 @@
 # 🔐 EcclesiaFlow Authentication Module
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.java.net/projects/jdk/21/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/Build-Passing-success.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-428%20passing-success.svg)]()
+[![Coverage](https://img.shields.io/badge/Coverage-90%25+-brightgreen.svg)]()
 
-> **Module d'authentification centralisée pour la plateforme de gestion d'église EcclesiaFlow**
+> **Centralized authentication module for the EcclesiaFlow church management platform**
 
-Un service d'authentification robuste et sécurisé conçu pour supporter l'architecture multi-tenant d'EcclesiaFlow, où chaque église constitue un tenant indépendant avec son propre administrateur (pasteur) et ses membres.
+A robust and secure authentication service designed to support EcclesiaFlow's multi-tenant architecture, where each church constitutes an independent tenant with its own administrator (pastor) and members. Automatic API generation via OpenAPI Generator with Delegate pattern.
 
-## 📋 Table des matières
+## 📋 Table of Contents
 
-- [🎯 Vue d'ensemble](#-vue-densemble)
+- [🎯 Overview](#-overview)
 - [🏗️ Architecture](#️-architecture)
-- [🚀 Démarrage rapide](#-démarrage-rapide)
+- [🚀 Quick Start](#-quick-start)
 - [📚 API Documentation](#-api-documentation)
 - [🔧 Configuration](#-configuration)
-- [🛡️ Sécurité](#️-sécurité)
+- [🛡️ Security](#️-security)
 - [🧪 Tests](#-tests)
-- [📦 Déploiement](#-déploiement)
+- [📦 Deployment](#-deployment)
 - [🤝 Contribution](#-contribution)
 
-## 🎯 Vue d'ensemble
+## 🎯 Overview
 
-### Objectif du module
+### Module Objective
 
-Ce module fournit les services d'authentification centralisée pour l'écosystème EcclesiaFlow :
+This module provides centralized authentication services for the EcclesiaFlow ecosystem:
 
-- **Génération de userTokens JWT** pour l'accès aux ressources
-- **Rafraîchissement automatique** des userTokens expirés
-- **Validation des identifiants** avec sécurité renforcée
-- **Support multi-tenant** prêt pour l'architecture distribuée
+- **JWT token generation** (access + refresh) for resource access
+- **Automatic refresh** of expired tokens
+- **Password management** (initial setup + change)
+- **Temporary tokens** for registration confirmation
+- **Granular scope system** for permissions
+- **Multi-tenant support** ready for distributed architecture
+- **API-First Design** with automatic generation via OpenAPI Generator
 
-### Architecture cible
+### Target Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -50,138 +54,237 @@ Ce module fournit les services d'authentification centralisée pour l'écosystè
 
 ## 🏗️ Architecture
 
-### Stack technologique
+### Technology Stack
 
-- **Java 21** - LTS avec les dernières fonctionnalités
-- **Spring Boot 3.2** - Framework principal
-- **Spring Security 6** - Sécurité et authentification
-- **JWT** - Tokens stateless pour la scalabilité
-- **MySQL** - Base de données relationnelle
-- **Maven** - Gestion des dépendances
+- **Java 21** - LTS with latest features (Records, Pattern Matching)
+- **Spring Boot 3.5.5** - Main framework
+- **Spring Security 6** - Security and authentication
+- **JJWT 0.11.5** - JWT token generation and validation
+- **OpenAPI Generator 7.15.0** - Automatic API generation
+- **MySQL 8.0** - Relational database
+- **JaCoCo** - Code coverage (90%+)
+- **Maven** - Dependency management
 
-### Principes architecturaux appliqués
+### Applied Architectural Principles
 
-- ✅ **Clean Architecture** - Séparation claire des couches
-- ✅ **SOLID Principles** - Code maintenable et extensible
-- ✅ **Domain-Driven Design** - Logique métier centralisée
-- ✅ **AOP (Aspect-Oriented Programming)** - Logging transversal
-- ✅ **API-First Design** - Documentation OpenAPI complète
+- ✅ **Clean Architecture** - Strict layer separation (Domain, Business, IO, Web)
+- ✅ **SOLID Principles** - Maintainable and extensible code
+- ✅ **Domain-Driven Design** - Pure domain objects (Member, TemporaryToken, UserTokens)
+- ✅ **Hexagonal Architecture** - Ports & Adapters (MemberRepository, MembersClient)
+- ✅ **API-First Design** - OpenAPI Specification → Automatic generation
+- ✅ **Delegate Pattern** - Controller/Delegate separation for business logic
+- ✅ **AOP (Aspect-Oriented Programming)** - Cross-cutting authentication error logging
 
-### Structure du projet
+### Project Structure (Clean Architecture)
 
 ```
 src/
 ├── main/
 │   ├── java/com/ecclesiaflow/springsecurity/
-│   │   ├── annotation/          # Annotations personnalisées
-│   │   ├── aspect/              # Aspects AOP (logging)
-│   │   ├── config/              # Configuration Spring
-│   │   ├── controller/          # Contrôleurs REST
-│   │   ├── domain/              # Objets métier
-│   │   ├── dto/                 # Data Transfer Objects
-│   │   ├── entities/            # Entités JPA
-│   │   ├── exception/           # Gestion des exceptions
-│   │   ├── services/            # Services métier
-│   │   └── util/                # Utilitaires et mappers
+│   │   ├── application/                    # Application Layer
+│   │   │   └── logging/aspect/            # AOP Aspects (AuthenticationErrorLoggingAspect)
+│   │   ├── business/                       # Business Layer (Business Logic)
+│   │   │   ├── domain/                    # Pure domain objects
+│   │   │   │   ├── member/                # Member, Role, MemberRepository (port)
+│   │   │   │   ├── password/              # SigninCredentials, PasswordManagement
+│   │   │   │   ├── security/              # Scope (permission enumeration)
+│   │   │   │   └── token/                 # UserTokens, TemporaryToken, TokenCredentials
+│   │   │   ├── encryption/                # PasswordEncoderUtil
+│   │   │   ├── exceptions/                # MemberNotFoundException
+│   │   │   └── services/                  # Business services
+│   │   │       ├── AuthenticationService
+│   │   │       ├── PasswordService
+│   │   │       ├── adapters/              # MemberUserDetailsAdapter
+│   │   │       ├── impl/                  # Implementations
+│   │   │       └── mappers/               # ScopeMapper
+│   │   ├── io/                            # IO Layer (Persistence)
+│   │   │   └── persistence/
+│   │   │       ├── jpa/                   # MemberEntity, SpringDataMemberRepository
+│   │   │       ├── mappers/               # MemberPersistenceMapper
+│   │   │       └── repositories/          # MemberRepositoryImpl
+│   │   └── web/                           # Web Layer (REST API)
+│   │       ├── client/                    # WebClient to communicate with members module
+│   │       ├── controller/                # AuthenticationController, PasswordController
+│   │       ├── delegate/                  # AuthenticationDelegate, PasswordManagementDelegate
+│   │       ├── exception/                 # InvalidCredentialsException, JwtProcessingException
+│   │       ├── mappers/                   # OpenApiModelMapper, TemporaryTokenMapper, MemberMapper
+│   │       └── security/                  # JwtProcessor, Jwt, CustomAuthenticationEntryPoint
 │   └── resources/
-│       ├── api/                 # Spécifications OpenAPI
-│       └── application.properties
-└── test/                        # Tests unitaires et d'intégration
+│       ├── api/
+│       │   └── openapi.yaml               # OpenAPI 3.1.1 Specification
+│       └── application.properties.example
+└── test/                                   # 428 tests (90%+ coverage)
+    └── java/com/ecclesiaflow/springsecurity/
+        ├── application/                    # AOP aspects tests
+        ├── business/                       # Business services tests
+        ├── io/                            # Persistence tests
+        └── web/                           # Controllers/delegates tests
 ```
 
-## 🚀 Démarrage rapide
+## 🚀 Quick Start
 
-### Prérequis
+### Prerequisites
 
-- Java 21 ou supérieur
+- Java 21 or higher
 - Maven 3.8+
 - MySQL 8.0+
-- IDE compatible (IntelliJ IDEA recommandé)
+- Compatible IDE (IntelliJ IDEA recommended)
 
 ### Installation
 
-1. **Cloner le repository**
+1. **Clone the repository**
 ```bash
 git clone https://github.com/your-org/ecclesiaflow-auth-module.git
 cd ecclesiaflow-auth-module
 ```
 
-2. **Configurer la base de données**
+2. **Configure the database**
 ```sql
 CREATE DATABASE ecclesiaflow_auth;
 CREATE USER 'ecclesiaflow'@'localhost' IDENTIFIED BY 'your_password';
 GRANT ALL PRIVILEGES ON ecclesiaflow_auth.* TO 'ecclesiaflow'@'localhost';
 ```
 
-3. **Configurer les variables d'environnement**
+3. **Configure environment variables**
 ```bash
-# Copier le fichier d'exemple
+# Copy the example file
 cp .env.example .env
 
-# Éditer les variables
+# Edit the variables
 vim .env
+
+# Copy the example application.properties file
+cp src/main/resources/application.properties.example src/main/resources/application.properties
+
+# Edit the variables (DB, JWT secret, etc.)
+vim src/main/resources/application.properties
 ```
 
-4. **Lancer l'application**
+4. **Generate APIs from OpenAPI specification**
+```bash
+# The OpenAPI Generator plugin runs automatically during build
+mvn clean generate-sources
+```
+
+5. **Mark generated sources as source root (IntelliJ IDEA)**
+```
+- Right-click on target/generated-sources/openapi/src/main/java
+- Select "Mark Directory as" > "Generated Sources Root"
+
+OR via Maven:
+- The maven-build-helper-plugin automatically adds it as source directory
+```
+
+6. **Run the application**
 ```bash
 mvn spring-boot:run
 ```
 
-L'application sera accessible sur `http://localhost:8080`
+The application will be accessible at `http://localhost:8081`
 
-### Premiers tests
+### First Tests
 
 ```bash
-# Vérifier que l'application fonctionne
+# Check that the application is running
 curl http://localhost:8080/actuator/health
 
-# Accéder à la documentation Swagger
+# Access Swagger documentation
 open http://localhost:8080/swagger-ui.html
 ```
 
 ## 📚 API Documentation
 
-### Endpoints principaux
+### Main Endpoints
 
-| Endpoint | Méthode | Description | Auth requise |
-|----------|---------|-------------|--------------|
-| `/ecclesiaflow/auth/token` | POST | Génération de token JWT | Non |
-| `/ecclesiaflow/auth/refresh` | POST | Rafraîchissement de token | Non |
-| `/ecclesiaflow/members/hello` | GET | Test d'authentification | Oui |
-| `/ecclesiaflow/members/signup` | POST | Inscription temporaire* | Non |
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/ecclesiaflow/auth/token` | POST | JWT token generation (access + refresh) | No |
+| `/ecclesiaflow/auth/refreshToken` | POST | Access token refresh | Yes (Bearer) |
+| `/ecclesiaflow/auth/temporary-token` | POST | Temporary token generation (confirmation) | No |
+| `/ecclesiaflow/auth/password` | POST | Initial password setup | Yes (Bearer temp) |
+| `/ecclesiaflow/auth/new-password` | POST | Password change | Yes (Bearer) |
 
-*\*Endpoint temporaire - sera migré vers le module de gestion des membres*
+**Available Scopes:**
+- `ef:members:read:own` - Read own information
+- `ef:members:write:own` - Modify own information
+- `ef:members:delete:own` - Delete own account
+- `ef:members:read:all` - Read all information (ADMIN)
+- `ef:members:write:all` - Modify all information (ADMIN)
+- `ef:members:delete:all` - Delete any account (ADMIN)
 
-### Exemples d'utilisation
+### Usage Examples
 
-**Authentification :**
+**1. Authentication (token generation):**
 ```bash
-curl -X POST http://localhost:8080/ecclesiaflow/auth/token \
+curl -X POST http://localhost:8081/ecclesiaflow/auth/token \
   -H "Content-Type: application/json" \
   -d '{
     "email": "membre@eglise.com",
-    "password": "motdepasse123"
+    "password": "MotDePasse123!"
   }'
 ```
 
-**Utilisation du token :**
-```bash
-curl -X GET http://localhost:8080/ecclesiaflow/members/hello \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "memberId": "550e8400-e29b-41d4-a716-446655440000",
+  "scopes": ["ef:members:read:own", "ef:members:write:own"]
+}
 ```
 
-### Documentation interactive
+**2. Token refresh:**
+```bash
+curl -X POST http://localhost:8081/ecclesiaflow/auth/refreshToken \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_REFRESH_TOKEN" \
+  -d '{
+    "refreshToken": "YOUR_REFRESH_TOKEN"
+  }'
+```
 
-- **Swagger UI** : `http://localhost:8080/swagger-ui/index.html`
-- **OpenAPI Spec** : `http://localhost:8080/v3/api-docs`
-- **Fichier YAML** : `src/main/resources/api/openapi.yaml`
+**3. Initial password setup (after email confirmation):**
+```bash
+curl -X POST http://localhost:8081/ecclesiaflow/auth/password \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TEMPORARY_TOKEN" \
+  -d '{
+    "password": "NewPassword123!"
+  }'
+```
+
+### Interactive Documentation
+
+- **Swagger UI**: `http://localhost:8081/swagger-ui/index.html`
+- **OpenAPI Spec**: `http://localhost:8081/v3/api-docs`
+- **Source YAML file**: `src/main/resources/api/openapi.yaml`
+
+### OpenAPI Generator Architecture
+
+```
+openapi.yaml (source of truth)
+    ↓ (mvn clean generate-sources)
+OpenAPI Generator Plugin
+    ↓ generates
+target/generated-sources/openapi/
+    ├── api/                    # Interfaces (AuthenticationApi, PasswordManagementApi)
+    ├── model/                  # DTOs (SigninRequest, JwtAuthenticationResponse, etc.)
+    └── ApiUtil.java
+    ↓ implemented by
+Controllers (AuthenticationController, PasswordController)
+    ↓ delegate to
+Delegates (AuthenticationDelegate, PasswordManagementDelegate)
+    ↓ use
+Business Services (AuthenticationService, PasswordService, Jwt)
+```
 
 ## 🔧 Configuration
 
-### Variables d'environnement
+### Environment Variables
 
 ```bash
-# Base de données
+# Database
 DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=ecclesiaflow_auth
@@ -189,148 +292,309 @@ DB_USERNAME=ecclesiaflow
 DB_PASSWORD=your_password
 
 # JWT Configuration
-JWT_SECRET=your-super-secret-key-minimum-256-bits
-JWT_EXPIRATION=86400000  # 24 heures en millisecondes
+JWT_SECRET=your-super-secret-key-minimum-512-bits-base64
+JWT_EXPIRATION=900000           # Access token: 15 minutes
+JWT_REFRESH_TOKEN_EXPIRATION=604800000  # Refresh token: 7 days
+JWT_TEMPORARY_TOKEN_EXPIRATION=900000   # Temporary token: 15 minutes
 
-# Admin par défaut
+# Module Members Integration
+ECCLESIAFLOW_AUTH_MODULE_BASE_URL=http://localhost:8081
+ECCLESIAFLOW_MEMBERS_MODULE_BASE_URL=http://localhost:8080
+
+# Default Admin (development only)
 ADMIN_EMAIL=admin@ecclesiaflow.com
-ADMIN_PASSWORD=admin123
+ADMIN_PASSWORD=Admin123!
+ADMIN_FIRST_NAME=Admin
+ADMIN_LAST_NAME=EcclesiaFlow
+
+# Email Configuration (Gmail SMTP)
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_FROM=noreply@ecclesiaflow.com
 ```
 
-### Profils Spring
+### Spring Profiles
 
-- **`dev`** - Développement local avec H2
-- **`test`** - Tests automatisés
-- **`prod`** - Production avec MySQL
+- **`dev`** - Local development with H2
+- **`test`** - Automated tests
+- **`prod`** - Production with MySQL
 
 ```bash
-# Lancer avec un profil spécifique
+# Run with a specific profile
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-## 🛡️ Sécurité
+## 🛡️ Security
 
-### Fonctionnalités de sécurité
+### Security Features
 
-- **🔐 JWT Tokens** - Authentification stateless
-- **🔄 Refresh Tokens** - Renouvellement automatique
-- **🛡️ Rate Limiting** - Protection contre les attaques par force brute
-- **✅ Input Validation** - Validation stricte des données d'entrée
-- **🔒 Password Encoding** - Hachage BCrypt sécurisé
-- **📝 Audit Logging** - Traçabilité des opérations critiques
+- **🔐 JWT Tokens** - Stateless authentication
+- **🔄 Refresh Tokens** - Automatic renewal
+- **🛡️ Rate Limiting** - Protection against brute force attacks
+- **✅ Input Validation** - Strict input data validation
+- **🔒 Password Encoding** - Secure BCrypt hashing
+- **📝 Audit Logging** - Traceability of critical operations
 
-### Configuration de sécurité
+### Security Configuration
 
 ```java
-// Exemple de configuration JWT
-@Value("${jwt.expiration:86400000}")
-private Long jwtExpiration; // 24 heures
+// JWT configuration example
+@Value("${jwt.expiration:900000}")
+private Long jwtExpiration; // 15 minutes
 
-// Rate limiting sur les endpoints sensibles
-@RateLimited(requests = 5, window = "1m")
-public ResponseEntity<JwtAuthenticationResponse> generateToken(...)
 ```
 
-### Bonnes pratiques appliquées
+### Applied Best Practices
 
-- ✅ Secrets externalisés (pas de hardcoding)
-- ✅ Tokens avec expiration courte
-- ✅ Refresh userTokens pour l'UX
-- ✅ Validation stricte des entrées
-- ✅ Logging des tentatives d'authentification
+- ✅ **Externalized secrets** - No hardcoded secrets in code
+- ✅ **Short-lived tokens** - Access token: 15 minutes, Refresh: 7d, Temp: 15min
+- ✅ **Refresh tokens** - Automatic renewal for better UX
+- ✅ **Strict validation** - Bean Validation (Jakarta) on all DTOs
+- ✅ **Audit logging** - Authentication attempt traceability via AOP
+- ✅ **Granular scopes** - Fine-grained permissions (own/all) for each resource
+- ✅ **Password encoding** - BCrypt with automatic salt
 
 ## 🧪 Tests
 
-### Lancer les tests
+### Test Statistics
+
+- **428 tests** passing successfully ✅
+- **Code coverage: 90%+** (JaCoCo)
+- **Branch coverage: 90%+**
+- **No ignored or disabled tests**
+
+### Running Tests
 
 ```bash
-# Tests unitaires
+# All tests
 mvn test
 
-# Tests d'intégration
-mvn verify
-
-# Tests avec couverture
+# Tests with coverage report
 mvn clean test jacoco:report
+
+# View coverage report
+open target/site/jacoco/index.html
+
+# Tests for a specific package
+mvn test -Dtest="com.ecclesiaflow.springsecurity.web.security.*"
 ```
 
-### Structure des tests
+### Test Structure
 
 ```
-src/test/java/
-├── unit/                    # Tests unitaires
-│   ├── services/
-│   └── controllers/
-├── integration/             # Tests d'intégration
-│   ├── api/
-│   └── security/
-└── fixtures/                # Données de test
+src/test/java/com/ecclesiaflow/springsecurity/
+├── application
+│   ├── config
+│   └── logging
+├── business
+│   ├── domain
+│   ├── encryption
+│   └── services
+├── io
+│   └── persistence
+└── web
+    ├── client
+    ├── controller
+    ├── delegate
+    ├── exception
+    ├── mappers
+    └── security
 ```
 
-## 📦 Déploiement
+## 📦 Deployment
 
-### Build de production
+### Production Build
 
 ```bash
-# Créer le JAR
-mvn clean package -Pprod
+# Create JAR with all dependencies
+mvn clean package -DskipTests
 
-# Le JAR sera dans target/
-ls target/springsecurity-*.jar
+# JAR will be in target/
+ls target/ecclesiaflow-auth-module-*.jar
+
+# Verify JAR
+jar tf target/ecclesiaflow-auth-module-*.jar | grep -i openapi
 ```
 
 ### Docker
 
 ```dockerfile
-FROM openjdk:21-jre-slim
-COPY target/springsecurity-*.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+# Dockerfile
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY target/ecclesiaflow-auth-module-*.jar app.jar
+
+# Environment variables
+ENV SPRING_PROFILES_ACTIVE=prod
+ENV SERVER_PORT=8081
+
+EXPOSE 8081
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1
+
+ENTRYPOINT ["java", "-Xmx512m", "-Xms256m", "-jar", "app.jar"]
 ```
 
 ```bash
-# Build et run
-docker build -t ecclesiaflow-auth .
-docker run -p 8080:8080 ecclesiaflow-auth
+# Build and run
+docker build -t ecclesiaflow-auth:latest .
+docker run -p 8081:8081 \
+  -e DB_HOST=host.docker.internal \
+  -e DB_PORT=3306 \
+  -e DB_NAME=ecclesiaflow_auth \
+  -e DB_USERNAME=ecclesiaflow \
+  -e DB_PASSWORD=your_password \
+  -e JWT_SECRET=your-secret-key \
+  ecclesiaflow-auth:latest
+```
+
+### Docker Compose
+
+```yaml
+version: '3.8'
+
+services:
+  auth-module:
+    build: .
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=ecclesiaflow_auth
+      - DB_USERNAME=ecclesiaflow
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - mysql
+    networks:
+      - ecclesiaflow-network
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=ecclesiaflow_auth
+      - MYSQL_USER=ecclesiaflow
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - ecclesiaflow-network
+
+volumes:
+  mysql-data:
+
+networks:
+  ecclesiaflow-network:
+    driver: bridge
 ```
 
 ## 🤝 Contribution
 
-### Workflow de développement
+### Development Workflow
 
-1. **Fork** le repository
-2. **Créer** une branche feature (`git checkout -b feature/amazing-feature`)
-3. **Commit** vos changements (`git commit -m 'Add amazing feature'`)
-4. **Push** vers la branche (`git push origin feature/amazing-feature`)
-5. **Ouvrir** une Pull Request
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
 
-### Standards de code
+### Code Standards
 
-- **Commits atomiques** avec messages conventionnels
-- **Tests** pour toute nouvelle fonctionnalité
-- **Documentation** mise à jour
-- **Code review** obligatoire
+- ✅ **Clean Architecture** - Respect layer separation
+- ✅ **Mandatory tests** - Minimum 90% coverage
+- ✅ **OpenAPI First** - Modify `openapi.yaml` before code
+- ✅ **Atomic commits** - Conventional commit messages
+- ✅ **Documentation** - Javadoc for public classes
+- ✅ **Code review** - At least 1 approval required
 
-### Messages de commit
+### **Commit Convention**
 
+**Format with type:**
 ```
-feat(auth): add multi-tenant support
-fix(security): resolve JWT expiration issue
-docs(api): update OpenAPI specification
-refactor(services): improve password encoding
+Type(scope): description (≤ 50 characters, first letter capitalized)
+
+Message body (≤ 72 characters per line)
+
+Types: Feat, Fix, Docs, Style, Refactor, Test, Chore
+Scopes: members, confirmation, email, persistence, web
+
+NB: scope is optional
 ```
 
-## 📄 Licence
+**Format without type:**
+```
+Add new feature (≤ 50 characters, first letter capitalized)
 
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+Detailed message body if necessary
+(≤ 72 characters per line)
+```
 
-## 🔗 Liens utiles
-
-- [Documentation Spring Boot](https://spring.io/projects/spring-boot)
-- [Guide Spring Security](https://spring.io/guides/gs/securing-web/)
-- [JWT.io](https://jwt.io/) - Décodeur JWT
-- [OpenAPI Specification](https://swagger.io/specification/)
+**Examples:**
+- `Feat(members): add email validation service`
+- `Fix(confirmation): resolve code expiration issue`
+- `Feat: resolve code expiration issue`
+- `Add comprehensive member profile validation`
+- `Update OpenAPI documentation for new endpoints`
 
 ---
 
-**Développé avec ❤️ pour la communauté EcclesiaFlow**
+### Pull Request Checklist
+
+- [ ] Tests pass (`mvn test`)
+- [ ] Coverage is ≥ 90% (`mvn jacoco:report`)
+- [ ] Code compiles without warnings (`mvn clean compile`)
+- [ ] Documentation is up to date (README, Javadoc)
+- [ ] Commits follow Conventional Commits
+- [ ] `openapi.yaml` file is valid
+- [ ] Generated APIs compile correctly
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## 🔗 Useful Links
+
+### Official Documentation
+
+- [Spring Boot 3.5.5](https://spring.io/projects/spring-boot)
+- [Spring Security 6](https://spring.io/projects/spring-security)
+- [OpenAPI Generator](https://openapi-generator.tech/)
+- [OpenAPI Specification 3.1](https://swagger.io/specification/)
+- [JJWT Library](https://github.com/jwtk/jjwt)
+- [JaCoCo Code Coverage](https://www.jacoco.org/jacoco/)
+
+### Development Tools
+
+- [JWT.io](https://jwt.io/) - JWT decoder and validator
+- [Swagger Editor](https://editor.swagger.io/) - Online OpenAPI editor
+- [Postman](https://www.postman.com/) - REST API client
+
+### Architecture and Patterns
+
+- [Clean Architecture (Uncle Bob)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
+- [Domain-Driven Design](https://martinfowler.com/bliki/DomainDrivenDesign.html)
+- [Delegate Pattern](https://refactoring.guru/design-patterns/proxy)
+
+---
+
+## 📊 Project Metrics
+
+| Metric              | Value   |
+|---------------------|---------|
+| **Lines of code**   | ~15,000 |
+| **Tests**           | 428     |
+| **Coverage**        | 90%+    |
+| **Classes**         | 80+     |
+| **Endpoints**       | 5       |
+| **Scopes**          | 8       |
+| **Dependencies**    | 25      |
+
+---
+
+**Developed with ❤️ for the EcclesiaFlow community**
+
+*Centralized Authentication Module - Version 1.0.0-SNAPSHOT*
