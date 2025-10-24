@@ -1,0 +1,33 @@
+# ============================================================================
+# Test Configuration for EcclesiaFlow Auth Module
+# ============================================================================
+
+# JWT Configuration
+jwt.secret=dGVzdC1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tZ2VuZXJhdGlvbi1taW5pbXVtLTI1Ni1iaXRz
+jwt.token.expiration=900000
+jwt.refresh-token.expiration=86400000
+jwt.temporary-token.expiration=900000
+
+# Database Configuration (H2 for tests)
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+
+# JPA Configuration
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
+
+# Admin Configuration
+admin.email=admin@test.com
+admin.password=Test123!
+admin.firstName=Test
+admin.lastName=Admin
+
+# Members Module Configuration
+ecclesiaflow.members.base-url=http://localhost:8080
+
+# Logging
+logging.level.com.ecclesiaflow=DEBUG
+logging.level.org.springframework.security=DEBUG
