@@ -521,13 +521,6 @@ components:
           type: string
         refreshToken:
           type: string
-        memberId:
-          type: string
-          format: uuid
-        scopes:
-          type: array
-          items:
-            type: string
     TemporaryTokenRequest:
       type: object
       required: [email, memberId]
