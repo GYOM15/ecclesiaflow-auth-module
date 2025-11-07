@@ -407,7 +407,6 @@
 				<version>0.8.12</version>
 				<configuration>
 					<excludes>
-						<exclude>**/web/dto/*</exclude>
 						<!-- Exclure les configurations Spring Boot -->
 						<exclude>**/com/ecclesiaflow/springsecurity/SpringsecurityApplication.class</exclude>
 						<exclude>**/com/ecclesiaflow/springsecurity/business/domain/security/Scope.class</exclude>
