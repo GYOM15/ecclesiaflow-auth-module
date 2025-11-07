@@ -5,6 +5,8 @@ import com.ecclesiaflow.springsecurity.web.model.SigninRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Constructor;
+
 import static org.assertj.core.api.Assertions.*;
 
 /**
@@ -15,6 +17,14 @@ import static org.assertj.core.api.Assertions.*;
  */
 @DisplayName("MemberMapper - Tests de conversion")
 class MemberMapperTest {
+
+    @Test
+    @DisplayName("Devrait couvrir le constructeur privé")
+    void shouldCoverPrivateConstructor() throws Exception {
+        Constructor<MemberMapper> constructor = MemberMapper.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        assertThat(constructor.newInstance()).isNotNull();
+    }
 
 
 

@@ -239,4 +239,48 @@ class JwtTest {
                 .isInstanceOf(JwtProcessingException.class)
                 .hasMessage("Extraction failed");
     }
+
+    // ====================================================================
+    // Tests d'Extraction de MemberId (extractMemberId)
+    // ====================================================================
+
+    @Test
+    @DisplayName("extractMemberId - Devrait déléguer l'extraction du memberId au processor")
+    void extractMemberId_ShouldDelegateExtraction() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        when(jwtProcessor.extractMemberId(TEMP_TOKEN)).thenReturn(TEST_MEMBER_ID);
+
+        // Act
+        UUID resultMemberId = jwt.extractMemberId(TEMP_TOKEN);
+
+        // Assert
+        verify(jwtProcessor, times(1)).extractMemberId(TEMP_TOKEN);
+        assertThat(resultMemberId).isEqualTo(TEST_MEMBER_ID);
+    }
+
+    @Test
+    @DisplayName("extractMemberId - Devrait propager JwtProcessingException en cas d'échec d'extraction")
+    void extractMemberId_ShouldPropagateJwtProcessingException() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        doThrow(new JwtProcessingException("Token malformed")).when(jwtProcessor).extractMemberId(TEMP_TOKEN);
+
+        // Act & Assert
+        assertThatThrownBy(() -> jwt.extractMemberId(TEMP_TOKEN))
+                .isInstanceOf(JwtProcessingException.class)
+                .hasMessage("Token malformed");
+        verify(jwtProcessor, times(1)).extractMemberId(TEMP_TOKEN);
+    }
+
+    @Test
+    @DisplayName("extractMemberId - Devrait propager InvalidTokenException si le claim 'cid' est absent")
+    void extractMemberId_ShouldPropagateInvalidTokenException() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        doThrow(new InvalidTokenException("Missing 'cid' claim")).when(jwtProcessor).extractMemberId(TEMP_TOKEN);
+
+        // Act & Assert
+        assertThatThrownBy(() -> jwt.extractMemberId(TEMP_TOKEN))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Missing 'cid' claim");
+        verify(jwtProcessor, times(1)).extractMemberId(TEMP_TOKEN);
+    }
 }
