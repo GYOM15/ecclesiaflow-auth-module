@@ -11,8 +11,14 @@ package com.ecclesiaflow.springsecurity.business.domain.member;
  * <p><strong>Responsabilités :</strong></p>
  * <ul>
  *   <li>Vérification du statut de confirmation des membres</li>
- *   <li>Communication HTTP avec le module Members</li>
+ *   <li>Communication inter-modules (REST ou gRPC)</li>
  *   <li>Gestion des erreurs de communication inter-modules</li>
+ * </ul>
+ * 
+ * <p><strong>Implémentations :</strong></p>
+ * <ul>
+ *   <li>{@code MembersClientImpl} - Communication REST via WebClient</li>
+ *   <li>{@code MembersGrpcClient} - Communication gRPC (si grpc.enabled=true)</li>
  * </ul>
  * 
  * @author EcclesiaFlow Team
@@ -21,14 +27,15 @@ package com.ecclesiaflow.springsecurity.business.domain.member;
 public interface MembersClient {
     
     /**
-     * Vérifie si un membre avec cet email est confirmé.
+     * Vérifie si l'email d'un membre n'est PAS confirmé.
      * <p>
-     * Cette méthode interroge le module Members via HTTP pour vérifier
-     * le statut de confirmation d'un membre sans dupliquer les données.
+     * Cette méthode interroge le module Members pour vérifier le statut 
+     * de confirmation d'un membre. Utilisée pour bloquer les connexions 
+     * des membres non confirmés.
      * </p>
      * 
      * @param email l'email du membre à vérifier
-     * @return true si le membre existe et est confirmé, false sinon
+     * @return true si le membre n'existe PAS OU n'est PAS confirmé, false si confirmé
      * @throws RuntimeException si la communication avec le module Members échoue
      */
     boolean isEmailNotConfirmed(String email);

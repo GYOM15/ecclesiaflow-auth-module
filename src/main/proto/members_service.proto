@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.ecclesiaflow.grpc.members";
+option java_outer_classname = "MembersServiceProto";
+
+package ecclesiaflow.members;
+
+/**
+ * Service de gestion des membres EcclesiaFlow pour communication inter-modules.
+ * 
+ * Ce service gRPC permet aux autres modules (notamment Auth) d'interroger
+ * le statut des membres sans exposer la base de données directement.
+ *
+ * Architecture: Communication synchrone entre Auth Module et Members Module
+ * Sécurité: JWT dans metadata pour authentification inter-services
+ */
+service MembersService {
+  /**
+   * Récupère le statut de confirmation d'un membre par son email.
+   * 
+   * Flow:
+   * 1. Auth module reçoit une tentative de connexion
+   * 2. Auth appelle Members via gRPC pour vérifier si email est confirmé
+   * 3. Members retourne le statut (confirmé ou non)
+   * 4. Auth autorise ou bloque la connexion selon le statut
+   *
+   * Sécurité: Requires service-to-service authentication
+   */
+  rpc GetMemberConfirmationStatus(ConfirmationStatusRequest) returns (ConfirmationStatusResponse);
+}
+
+// ============================================================================
+// Request/Response Messages
+// ============================================================================
+
+/**
+ * Requête pour obtenir le statut de confirmation d'un membre.
+ */
+message ConfirmationStatusRequest {
+  // Email du membre à vérifier
+  string email = 1;
+}
+
+/**
+ * Réponse contenant le statut de confirmation.
+ */
+message ConfirmationStatusResponse {
+  // Indique si le membre existe dans le système
+  bool member_exists = 1;
+  
+  // Indique si l'email du membre a été confirmé
+  bool is_confirmed = 2;
+}
