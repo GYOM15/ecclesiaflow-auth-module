@@ -31,3 +31,6 @@ ecclesiaflow.members.base-url=http://localhost:8080
 # Logging
 logging.level.com.ecclesiaflow=DEBUG
 logging.level.org.springframework.security=DEBUG
+
+# Disable gRPC server in tests (we use InProcessServer instead)
+grpc.enabled=false
