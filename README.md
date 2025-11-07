@@ -3,8 +3,8 @@
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.java.net/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-428%20passing-success.svg)]()
-[![Coverage](https://img.shields.io/badge/Coverage-90%25+-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-509%20passing-success.svg)]()
+[![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)]()
 
 > **Centralized authentication module for the EcclesiaFlow church management platform**
 
@@ -35,6 +35,8 @@ This module provides centralized authentication services for the EcclesiaFlow ec
 - **Granular scope system** for permissions
 - **Multi-tenant support** ready for distributed architecture
 - **API-First Design** with automatic generation via OpenAPI Generator
+- **gRPC bi-directional communication** with Members module (Auth ↔ Members)
+- **Resilient inter-module communication** with WebClient fallback
 
 ### Target Architecture
 
@@ -60,9 +62,12 @@ This module provides centralized authentication services for the EcclesiaFlow ec
 - **Spring Boot 3.5.5** - Main framework
 - **Spring Security 6** - Security and authentication
 - **JJWT 0.11.5** - JWT token generation and validation
+- **gRPC 1.68.1** - High-performance inter-module RPC
+- **Protobuf 4.29.0** - Efficient binary serialization
 - **OpenAPI Generator 7.15.0** - Automatic API generation
+- **WebClient (Spring WebFlux)** - Fallback HTTP communication
 - **MySQL 8.0** - Relational database
-- **JaCoCo** - Code coverage (90%+)
+- **JaCoCo** - Code coverage (100%)
 - **Maven** - Dependency management
 
 ### Applied Architectural Principles
@@ -70,10 +75,11 @@ This module provides centralized authentication services for the EcclesiaFlow ec
 - ✅ **Clean Architecture** - Strict layer separation (Domain, Business, IO, Web)
 - ✅ **SOLID Principles** - Maintainable and extensible code
 - ✅ **Domain-Driven Design** - Pure domain objects (Member, TemporaryToken, UserTokens)
-- ✅ **Hexagonal Architecture** - Ports & Adapters (MemberRepository, MembersClient)
+- ✅ **Ports & Adapters** - MemberRepository (port), MembersClient (adapter)
 - ✅ **API-First Design** - OpenAPI Specification → Automatic generation
 - ✅ **Delegate Pattern** - Controller/Delegate separation for business logic
-- ✅ **AOP (Aspect-Oriented Programming)** - Cross-cutting authentication error logging
+- ✅ **AOP (Aspect-Oriented Programming)** - Cross-cutting concerns (logging, security)
+- ✅ **Resilience Patterns** - gRPC primary, WebClient fallback for fault tolerance
 
 ### Project Structure (Clean Architecture)
 
@@ -97,13 +103,16 @@ src/
 │   │   │       ├── adapters/              # MemberUserDetailsAdapter
 │   │   │       ├── impl/                  # Implementations
 │   │   │       └── mappers/               # ScopeMapper
-│   │   ├── io/                            # IO Layer (Persistence)
+│   │   ├── io/                            # IO Layer (External Communication)
+│   │   │   ├── grpc/                      # gRPC Communication
+│   │   │   │   ├── client/                # MembersGrpcClient (Auth → Members)
+│   │   │   │   └── server/                # JwtGrpcServiceImpl (Members → Auth)
 │   │   │   └── persistence/
 │   │   │       ├── jpa/                   # MemberEntity, SpringDataMemberRepository
 │   │   │       ├── mappers/               # MemberPersistenceMapper
 │   │   │       └── repositories/          # MemberRepositoryImpl
 │   │   └── web/                           # Web Layer (REST API)
-│   │       ├── client/                    # WebClient to communicate with members module
+│   │       ├── client/                    # MembersClientImpl (WebClient fallback)
 │   │       ├── controller/                # AuthenticationController, PasswordController
 │   │       ├── delegate/                  # AuthenticationDelegate, PasswordManagementDelegate
 │   │       ├── exception/                 # InvalidCredentialsException, JwtProcessingException
@@ -113,11 +122,13 @@ src/
 │       ├── api/
 │       │   └── openapi.yaml               # OpenAPI 3.1.1 Specification
 │       └── application.properties.example
-└── test/                                   # 428 tests (90%+ coverage)
+└── test/                                   # 509 tests (100% coverage)
     └── java/com/ecclesiaflow/springsecurity/
         ├── application/                    # AOP aspects tests
         ├── business/                       # Business services tests
-        ├── io/                            # Persistence tests
+        ├── io/
+        │   ├── grpc/                       # gRPC integration tests
+        │   └── persistence/                # Persistence tests
         └── web/                           # Controllers/delegates tests
 ```
 
@@ -279,6 +290,41 @@ Delegates (AuthenticationDelegate, PasswordManagementDelegate)
 Business Services (AuthenticationService, PasswordService, Jwt)
 ```
 
+### Inter-Module Communication Architecture
+
+The authentication module communicates with the Members module using a **resilient dual-protocol approach**:
+
+```
+┌─────────────────────┐         gRPC (Primary)         ┌─────────────────────┐
+│   Auth Module       │◄─────────────────────────────► │  Members Module     │
+│   (Port 8081)       │                                │   (Port 8080)       │
+│                     │                                │                     │
+│  gRPC Server: 9090  │                                │  gRPC Server: 9091  │
+│  gRPC Client ───────┼────────► gRPC Server           │                     │
+│                     │                                │                     │
+│  WebClient ─────────┼────────► REST API              │                     │
+│  (Fallback)         │   WebClient (Fallback)         │                     │
+└─────────────────────┘                                └─────────────────────┘
+```
+
+**gRPC Communication Flows:**
+
+1. **Auth → Members (gRPC Client)**
+   - Check email confirmation status
+   - Primary method: high-performance binary protocol
+   - Fallback: WebClient HTTP/REST if gRPC unavailable
+
+2. **Members → Auth (gRPC Server)**
+   - Generate temporary JWT tokens for email confirmation
+   - Members calls Auth's gRPC service for token generation
+   - Tokens used for password setup after email confirmation
+
+**Resilience Strategy:**
+- gRPC enabled by default (`grpc.enabled=true`)
+- Automatic fallback to WebClient if gRPC server unavailable
+- Graceful degradation ensures service continuity
+- Separate ports: REST (8080/8081), gRPC (9090/9091)
+
 ## 🔧 Configuration
 
 ### Environment Variables
@@ -297,9 +343,17 @@ JWT_EXPIRATION=900000           # Access token: 15 minutes
 JWT_REFRESH_TOKEN_EXPIRATION=604800000  # Refresh token: 7 days
 JWT_TEMPORARY_TOKEN_EXPIRATION=900000   # Temporary token: 15 minutes
 
-# Module Members Integration
+# Inter-Module Communication
 ECCLESIAFLOW_AUTH_MODULE_BASE_URL=http://localhost:8081
 ECCLESIAFLOW_MEMBERS_MODULE_BASE_URL=http://localhost:8080
+
+# gRPC Configuration
+GRPC_ENABLED=true
+GRPC_SERVER_PORT=9090
+GRPC_AUTH_HOST=localhost
+GRPC_AUTH_PORT=9090
+GRPC_MEMBERS_HOST=localhost
+GRPC_MEMBERS_PORT=9091
 
 # Default Admin (development only)
 ADMIN_EMAIL=admin@ecclesiaflow.com
@@ -358,9 +412,12 @@ private Long jwtExpiration; // 15 minutes
 
 ### Test Statistics
 
-- **428 tests** passing successfully ✅
-- **Code coverage: 90%+** (JaCoCo)
-- **Branch coverage: 90%+**
+- **509 tests** passing successfully ✅
+- **38 test files**
+- **Code coverage: 100%** (JaCoCo)
+- **Branch coverage: 100%**
+- **Production code: 5,148 lines**
+- **Test code: 11,573 lines**
 - **No ignored or disabled tests**
 
 ### Running Tests
@@ -407,88 +464,41 @@ src/test/java/com/ecclesiaflow/springsecurity/
 
 ```bash
 # Create JAR with all dependencies
-mvn clean package -DskipTests
+mvn clean package
 
 # JAR will be in target/
 ls target/ecclesiaflow-auth-module-*.jar
 
-# Verify JAR
+# Verify JAR contains generated APIs
 jar tf target/ecclesiaflow-auth-module-*.jar | grep -i openapi
+
+# Run the JAR
+java -jar target/ecclesiaflow-auth-module-*.jar --spring.profiles.active=prod
 ```
 
-### Docker
+### Configuration for Production
 
-```dockerfile
-# Dockerfile
-FROM eclipse-temurin:21-jre-alpine
-WORKDIR /app
-COPY target/ecclesiaflow-auth-module-*.jar app.jar
+**Important production settings:**
 
-# Environment variables
-ENV SPRING_PROFILES_ACTIVE=prod
-ENV SERVER_PORT=8081
+```properties
+# application-prod.properties
 
-EXPOSE 8081
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1
+# Enable gRPC for inter-module communication
+grpc.enabled=true
+grpc.server.port=9090
+grpc.client.shutdown-timeout-seconds=5
 
-ENTRYPOINT ["java", "-Xmx512m", "-Xms256m", "-jar", "app.jar"]
-```
+# Database connection pool
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=5
 
-```bash
-# Build and run
-docker build -t ecclesiaflow-auth:latest .
-docker run -p 8081:8081 \
-  -e DB_HOST=host.docker.internal \
-  -e DB_PORT=3306 \
-  -e DB_NAME=ecclesiaflow_auth \
-  -e DB_USERNAME=ecclesiaflow \
-  -e DB_PASSWORD=your_password \
-  -e JWT_SECRET=your-secret-key \
-  ecclesiaflow-auth:latest
-```
+# JWT security
+jwt.expiration=900000                    # 15 minutes
+jwt.refresh-token-expiration=604800000   # 7 days
 
-### Docker Compose
-
-```yaml
-version: '3.8'
-
-services:
-  auth-module:
-    build: .
-    ports:
-      - "8081:8081"
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_NAME=ecclesiaflow_auth
-      - DB_USERNAME=ecclesiaflow
-      - DB_PASSWORD=${DB_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      - mysql
-    networks:
-      - ecclesiaflow-network
-
-  mysql:
-    image: mysql:8.0
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=ecclesiaflow_auth
-      - MYSQL_USER=ecclesiaflow
-      - MYSQL_PASSWORD=${DB_PASSWORD}
-    volumes:
-      - mysql-data:/var/lib/mysql
-    networks:
-      - ecclesiaflow-network
-
-volumes:
-  mysql-data:
-
-networks:
-  ecclesiaflow-network:
-    driver: bridge
+# Logging
+logging.level.com.ecclesiaflow=INFO
+logging.level.io.grpc=WARN
 ```
 
 ## 🤝 Contribution
@@ -575,23 +585,26 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ### Architecture and Patterns
 
 - [Clean Architecture (Uncle Bob)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
 - [Domain-Driven Design](https://martinfowler.com/bliki/DomainDrivenDesign.html)
 - [Delegate Pattern](https://refactoring.guru/design-patterns/proxy)
+- [gRPC Documentation](https://grpc.io/docs/)
+- [Protocol Buffers](https://protobuf.dev/)
 
 ---
 
 ## 📊 Project Metrics
 
-| Metric              | Value   |
-|---------------------|---------|
-| **Lines of code**   | ~15,000 |
-| **Tests**           | 428     |
-| **Coverage**        | 90%+    |
-| **Classes**         | 80+     |
-| **Endpoints**       | 5       |
-| **Scopes**          | 8       |
-| **Dependencies**    | 25      |
+| Metric              | Value      |
+|---------------------|------------|
+| **Production code** | 5,148 LOC  |
+| **Test code**       | 11,573 LOC |
+| **Tests**           | 509        |
+| **Test files**      | 38         |
+| **Coverage**        | 100%       |
+| **Classes**         | 89         |
+| **Endpoints**       | 9          |
+| **Scopes**          | 8          |
+| **Dependencies**    | 25         |
 
 ---
 
