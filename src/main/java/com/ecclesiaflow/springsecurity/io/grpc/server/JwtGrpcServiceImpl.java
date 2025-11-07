@@ -64,7 +64,6 @@ import java.util.UUID;
 public class JwtGrpcServiceImpl extends AuthServiceGrpc.AuthServiceImplBase {
 
     private final Jwt jwt;
-    private final JwtProcessor jwtProcessor;
 
     /**
      * Génère un token temporaire JWT pour permettre la définition du mot de passe.

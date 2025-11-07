@@ -90,8 +90,30 @@ spring.security.filter.order=10
 # ============================================================================
 # EXTERNAL SERVICES
 # ============================================================================
-# Members Module Base URL (optional - defaults to http://localhost:8080)
+# Members Module Base URL (WebClient fallback if gRPC disabled)
 ecclesiaflow.members.base-url=${ECCLESIAFLOW_MEMBERS_MODULE_BASE_URL}
+
+# ============================================================================
+# gRPC CONFIGURATION
+# ============================================================================
+# Enable/Disable gRPC communication (default: true)
+# If disabled, falls back to WebClient (REST)
+grpc.enabled=true
+
+# gRPC Client Configuration (Auth → Members)
+# Connect to Members Module gRPC server
+grpc.members.host=${GRPC_MEMBERS_HOST:localhost}
+grpc.members.port=${GRPC_MEMBERS_PORT:9091}
+grpc.client.shutdown-timeout-seconds=${GRPC_CLIENT_SHUTDOWN_TIMEOUT:5}
+
+# gRPC Server Configuration (Members → Auth)
+# Expose Auth service for Members Module
+grpc.server.port=${GRPC_SERVER_PORT:9090}
+grpc.server.shutdown-timeout-seconds=${GRPC_SERVER_SHUTDOWN_TIMEOUT:30}
+
+# gRPC Server Settings
+# Maximum message size (optional)
+# grpc.server.max-inbound-message-size=4MB
 
 # ============================================================================
 # PROFILE-SPECIFIC CONFIGURATIONS
