@@ -2,13 +2,12 @@ package com.ecclesiaflow.springsecurity.web.client;
 
 import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
 import com.ecclesiaflow.springsecurity.io.grpc.client.MembersGrpcClient;
+import com.ecclesiaflow.springsecurity.web.model.MemberConfirmationStatusResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-
-import java.util.Map;
 
 /**
  * Implémentation REST (WebClient) du client Members.
@@ -43,13 +42,13 @@ public class MembersClientImpl implements MembersClient {
     @Override
     public boolean isEmailNotConfirmed(String email) {
         try {
-            Map response = membersWebClient.get()
+            MemberConfirmationStatusResponse response = membersWebClient.get()
                     .uri("/ecclesiaflow/members/{email}/confirmation-status", email)
                     .retrieve()
-                    .bodyToMono(Map.class)
+                    .bodyToMono(MemberConfirmationStatusResponse.class)
                     .block(); // Blocage volontaire pour Spring MVC
 
-            return response == null || !Boolean.TRUE.equals(response.get("confirmed"));
+            return response == null || !response.getConfirmed();
         } catch (WebClientResponseException.NotFound ex) {
             return true;
         }

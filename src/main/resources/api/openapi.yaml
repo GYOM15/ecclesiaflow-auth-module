@@ -739,6 +739,19 @@ components:
           type: string
           description: Issuer
           example: https://auth.ecclesiaflow.com
+    MemberConfirmationStatusResponse:
+      type: object
+      description: |
+        Réponse du statut de confirmation d'un membre provenant du module Members.
+        
+        **Utilisé par :** MembersClientImpl (WebClient fallback)
+      required:
+        - confirmed
+      properties:
+        confirmed:
+          type: boolean
+          description: Indique si le membre a confirmé son compte par email
+          example: true
 
 tags:
   - name: Authentication
