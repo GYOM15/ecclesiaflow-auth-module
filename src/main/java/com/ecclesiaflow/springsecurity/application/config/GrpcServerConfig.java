@@ -1,5 +1,6 @@
-package com.ecclesiaflow.springsecurity.io.grpc.server;
+package com.ecclesiaflow.springsecurity.application.config;
 
+import com.ecclesiaflow.springsecurity.io.grpc.server.JwtGrpcServiceImpl;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.protobuf.services.HealthStatusManager;

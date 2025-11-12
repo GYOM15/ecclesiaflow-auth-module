@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.io.grpc.client;
+package com.ecclesiaflow.springsecurity.io.grpc.members;
 
 import com.ecclesiaflow.grpc.members.ConfirmationStatusRequest;
 import com.ecclesiaflow.grpc.members.ConfirmationStatusResponse;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests d'intégration pour MembersGrpcClient.
  * <p>
- * Teste le client gRPC avec un vrai serveur Members mock via InProcessServer.
+ * Teste le members gRPC avec un vrai serveur Members mock via InProcessServer.
  * Couvre la communication réelle et les scénarios d'erreur.
  * </p>
  */
@@ -99,13 +99,13 @@ class MembersGrpcClientIntegrationTest {
                 .build()
                 .start();
 
-        // Créer le canal client
+        // Créer le canal members
         channel = InProcessChannelBuilder
                 .forName(SERVER_NAME)
                 .directExecutor()
                 .build();
 
-        // Créer le client
+        // Créer le members
         client = new MembersGrpcClient(channel);
     }
 

@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.io.grpc.client;
+package com.ecclesiaflow.springsecurity.io.grpc.members;
 
 import com.ecclesiaflow.grpc.members.*;
 import com.ecclesiaflow.springsecurity.io.members.MembersGrpcClient;
@@ -24,7 +24,7 @@ class MembersGrpcClientTest {
     // =====================================================
 
     @Test
-    @DisplayName("Doit créer le client avec un canal valide")
+    @DisplayName("Doit créer le members avec un canal valide")
     void shouldConstructWithValidChannel() {
         // Given
         ManagedChannel channel = mock(ManagedChannel.class);
@@ -33,7 +33,7 @@ class MembersGrpcClientTest {
         MembersGrpcClient client = new MembersGrpcClient(channel);
 
         // Then
-        assertNotNull(client, "Le client ne doit pas être null");
+        assertNotNull(client, "Le members ne doit pas être null");
     }
 
     @Test
