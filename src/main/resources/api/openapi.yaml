@@ -199,18 +199,27 @@ paths:
     post:
       tags:
         - Password Management
-      summary: Définir le mot de passe initial
+      summary: Définir le mot de passe initial (nouveau membre)
       description: |
-        Définit le mot de passe initial d'un membre après confirmation et génère automatiquement ses tokens d'authentification
-        (access token et refresh token).
+        Définit le mot de passe initial d'un nouveau membre après confirmation d'email.
+        Le token temporaire avec purpose="password_setup" doit être fourni dans le header Authorization.
 
         **Important :**
-        Le token temporaire doit être fourni dans le header Authorization au format `Bearer {token}`.
+        - Accepte UNIQUEMENT les tokens avec purpose="password_setup"
+        - Le compte doit être NON activé (enabled=false)
+        - Après succès, le compte devient activé (enabled=true)
+        - Pour réinitialiser un mot de passe oublié, utiliser /auth/reset-password
+
+        **Différence avec /auth/reset-password :**
+        - /auth/password → Définit le mot de passe INITIAL d'un nouveau membre (purpose="password_setup", enabled: false → true)
+        - /auth/reset-password → Réinitialise le mot de passe d'un membre existant (purpose="password_reset", enabled reste true)
 
         **Processus :**
-        1. Validation du token temporaire
-        2. Définition du mot de passe
-        3. Génération et retour des tokens d'authentification
+        1. Validation du token temporaire avec purpose="password_setup"
+        2. Vérification que le compte n'est pas encore activé (enabled=false)
+        3. Définition du mot de passe
+        4. Activation du compte (enabled=true)
+        5. Génération et retour des tokens d'authentification
       operationId: Auth.SetInitialPassword
       parameters:
         - $ref: '#/components/parameters/AuthorizationHeader'
@@ -242,10 +251,11 @@ paths:
         - Password Management
       summary: Changer le mot de passe
       description: |
-        Change le mot de passe d'un membre authentifié.
+        Change le mot de passe du membre authentifié.
+        L'email est automatiquement extrait du token JWT d'authentification.
 
         **Processus :**
-        1. Validation de l'email
+        1. Extraction de l'email depuis le token d'authentification
         2. Vérification du mot de passe actuel
         3. Validation du nouveau mot de passe
         4. Mise à jour du mot de passe
@@ -263,7 +273,6 @@ paths:
               validChange:
                 summary: Changement valide
                 value:
-                  email: membre@ecclesiaflow.com
                   currentPassword: OldPassword123!
                   newPassword: NewPassword456!
       responses:
@@ -280,10 +289,116 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /ecclesiaflow/auth/forgot-password:
+    post:
+      tags:
+        - Password Management
+      summary: Demande de réinitialisation du mot de passe
+      description: |
+        Initie une demande de réinitialisation de mot de passe en envoyant un email
+        avec un lien contenant un token temporaire.
+
+        **Processus :**
+        1. L'utilisateur fournit son email
+        2. Si le compte existe, un token temporaire est généré (valide 15 minutes) avec purpose="password_reset"
+        3. Un email est envoyé avec un lien : https://app.ecclesiaflow.com/reset-password?token={temporaryToken}
+        4. L'utilisateur clique sur le lien et arrive sur la page de reset
+        5. L'utilisateur appelle /auth/reset-password avec le token pour réinitialiser son mot de passe
+
+        **Sécurité :**
+        Pour des raisons de sécurité, la réponse est toujours la même, que le compte
+        existe ou non, pour ne pas révéler l'existence d'un compte.
+      operationId: Auth.RequestPasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+            examples:
+              validRequest:
+                summary: Demande valide
+                value:
+                  email: membre@ecclesiaflow.com
+      responses:
+        '200':
+          description: Email de réinitialisation envoyé (si le compte existe)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgotPasswordResponse'
+              examples:
+                success:
+                  summary: Réponse générique
+                  value:
+                    message: "Si un compte existe avec cet email, vous recevrez un lien de réinitialisation."
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /ecclesiaflow/auth/reset-password:
+    post:
+      tags:
+        - Password Management
+      summary: Réinitialiser le mot de passe avec token
+      description: |
+        Réinitialise le mot de passe d'un membre qui a oublié son mot de passe.
+        Le token temporaire avec purpose="password_reset" doit être fourni dans le header Authorization.
+
+        **Différence avec /auth/password :**
+        - /auth/password → Définit le mot de passe INITIAL d'un nouveau membre (purpose="password_setup", enabled: false → true)
+        - /auth/reset-password → Réinitialise le mot de passe d'un membre existant (purpose="password_reset", enabled reste true)
+
+        **Processus :**
+        1. Validation du token temporaire avec purpose="password_reset"
+        2. Vérification que le compte est déjà activé (enabled=true)
+        3. Mise à jour du mot de passe
+        4. Envoi d'un email de confirmation "Password Changed"
+        5. Génération et retour des tokens d'authentification
+      operationId: Auth.ResetPassword
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+            examples:
+              validRequest:
+                summary: Réinitialisation valide
+                value:
+                  password: NewSecurePass2024!
+      responses:
+        '200':
+          description: Mot de passe réinitialisé avec succès et tokens générés
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordManagementResponse'
+              examples:
+                success:
+                  summary: Réinitialisation réussie
+                  value:
+                    message: "Mot de passe réinitialisé avec succès. Vous êtes maintenant connecté."
+                    accessToken: "eyJhbGci..."
+                    refreshToken: "eyJhbGci..."
+                    expiresIn: 900
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /ecclesiaflow/auth/logout:
     post:
       summary: Déconnexion de l'utilisateur
-      description: Déconnexion de l'utilisateur. Révocation côté client (pas de stockage nécessaire).
+      description: Déconnexion de l'utilisateur. Révocation côté members (pas de stockage nécessaire).
       operationId: Auth.Logout
       x-status: planned
       parameters:
@@ -564,15 +679,9 @@ components:
     ChangePasswordRequest:
       type: object
       required:
-        - email
         - currentPassword
         - newPassword
       properties:
-        email:
-          type: string
-          format: email
-          description: Adresse email du membre
-          example: membre@ecclesiaflow.com
         currentPassword:
           type: string
           format: password
@@ -752,6 +861,25 @@ components:
           type: boolean
           description: Indique si le membre a confirmé son compte par email
           example: true
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Adresse email du compte pour lequel réinitialiser le mot de passe
+          example: membre@ecclesiaflow.com
+
+    ForgotPasswordResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message générique pour des raisons de sécurité
+          example: Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.
 
 tags:
   - name: Authentication
