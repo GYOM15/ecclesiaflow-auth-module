@@ -9,6 +9,7 @@ import com.ecclesiaflow.springsecurity.web.exception.JwtProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 
@@ -116,23 +117,23 @@ public class Jwt {
      * <p>
      * Cette méthode utilise le JwtProcessor pour créer un token temporaire sécurisé
      * destiné à permettre à un membre de définir son mot de passe après confirmation d'email.
-     * Opération technique pure qui respecte l'architecture en couches.
      * </p>
      *
      * @param email l'email du membre pour lequel générer le token temporaire
+     * @param memberId l'UUID du membre
+     * @param purpose le but du token ("password_setup" ou "password_reset")
      * @return un token JWT temporaire sécurisé
      * @throws JwtProcessingException si la génération du token échoue
      */
-    public String generateTemporaryToken(String email, UUID memberId) throws JwtProcessingException {
-        return jwtProcessor.generateTemporaryToken(email, memberId);
+    public String generateTemporaryToken(String email, UUID memberId, String purpose) throws JwtProcessingException {
+        return jwtProcessor.generateTemporaryToken(email, memberId, purpose);
     }
 
     /**
      * Valide un token temporaire JWT pour un email donné.
      * <p>
      * Cette méthode utilise le JwtProcessor pour valider un token temporaire
-     * et vérifier qu'il correspond à l'email fourni. Opération technique pure
-     * qui respecte l'architecture en couches.
+     * et vérifier qu'il correspond à l'email fourni.
      * </p>
      *
      * @param token le token temporaire à valider
@@ -147,7 +148,7 @@ public class Jwt {
      * Extrait l'email d'un token temporaire JWT.
      * <p>
      * Cette méthode utilise le JwtProcessor pour extraire l'email (username)
-     * d'un token temporaire. Opération technique pure qui respecte l'architecture en couches.
+     * d'un token temporaire.
      * </p>
      *
      * @param temporaryToken le token temporaire dont extraire l'email
@@ -174,4 +175,59 @@ public class Jwt {
         return jwtProcessor.extractMemberId(token);
     }
 
+    /**
+     * Extrait le purpose d'un token JWT temporaire.
+     * <p>
+     * Cette méthode utilise le JwtProcessor pour extraire le purpose du token.
+     * Utilisé pour distinguer entre "password_setup" et "password_reset".
+     * </p>
+     *
+     * @param token le token JWT dont extraire le purpose
+     * @return le purpose extrait du token ("password_setup" ou "password_reset")
+     * @throws JwtProcessingException si l'extraction échoue ou si le token est malformé
+     * @throws InvalidTokenException si le claim 'purpose' est absent
+     */
+    public String extractPurpose(String token) throws JwtProcessingException, InvalidTokenException {
+        return jwtProcessor.extractPurpose(token);
+    }
+
+    /**
+     * Extrait la date d'émission (issuedAt) d'un token JWT.
+     * <p>
+     * Cette méthode utilise le JwtProcessor pour extraire la date d'émission du token.
+     * Utilisé pour valider que le token a été émis après la dernière modification du mot de passe.
+     * </p>
+     *
+     * @param token le token JWT dont extraire la date d'émission
+     * @return la date d'émission du token
+     * @throws JwtProcessingException si l'extraction échoue ou si le token est malformé
+     * @throws InvalidTokenException si la date d'émission est absente
+     */
+    public LocalDateTime extractIssuedAt(String token) throws JwtProcessingException, InvalidTokenException {
+        return jwtProcessor.extractIssuedAt(token);
+    }
+
+    public String extractEmail(String token) throws JwtProcessingException, InvalidTokenException {
+        return jwtProcessor.extractUsername(token);
+    }
+
+    /**
+     * Valide qu'un token n'a pas été émis avant la dernière modification du mot de passe.
+     * <p>
+     * Utilisé pour invalider automatiquement les tokens générés avant un changement de mot de passe,
+     * forçant ainsi l'utilisateur à se reconnecter avec ses nouvelles credentials.
+     * </p>
+     *
+     * @param token le token à valider (access token ou temporary token)
+     * @param member le membre dont on vérifie le passwordUpdatedAt
+     * @return true si le token est valide (émis après ou en même temps que le dernier changement de MDP), false sinon
+     * @throws JwtProcessingException si l'extraction du iat échoue
+     */
+    public boolean isTokenValidForPasswordUpdate(String token, Member member) {
+        if (member.getPasswordUpdatedAt() == null) {
+            return true;
+        }
+        LocalDateTime tokenIssuedAt = extractIssuedAt(token);
+        return !tokenIssuedAt.isBefore(member.getPasswordUpdatedAt());
+    }
 }

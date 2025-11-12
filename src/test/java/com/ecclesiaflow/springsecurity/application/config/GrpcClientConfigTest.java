@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.io.grpc.client;
 
+import com.ecclesiaflow.springsecurity.application.config.GrpcClientConfig;
 import io.grpc.ManagedChannel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -82,7 +83,8 @@ class GrpcClientConfigTest {
     @DisplayName("Shutdown doit gérer un canal null sans erreur")
     void shutdownShouldHandleNullChannel() {
         // Given
-        ReflectionTestUtils.setField(config, "managedChannel", null);
+        ReflectionTestUtils.setField(config, "membersChannel", null);
+        ReflectionTestUtils.setField(config, "emailChannel", null);
 
         // When/Then - Ne doit pas lancer d'exception
         assertDoesNotThrow(() -> config.shutdown());
@@ -93,7 +95,8 @@ class GrpcClientConfigTest {
     void shutdownShouldHandleAlreadyShutdownChannel() throws InterruptedException {
         // Given
         when(mockChannel.isShutdown()).thenReturn(true);
-        ReflectionTestUtils.setField(config, "managedChannel", mockChannel);
+        ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
+        ReflectionTestUtils.setField(config, "emailChannel", null);
 
         // When
         config.shutdown();
@@ -109,7 +112,8 @@ class GrpcClientConfigTest {
         // Given
         when(mockChannel.isShutdown()).thenReturn(false);
         when(mockChannel.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
-        ReflectionTestUtils.setField(config, "managedChannel", mockChannel);
+        ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
+        ReflectionTestUtils.setField(config, "emailChannel", null);
         ReflectionTestUtils.setField(config, "shutdownTimeoutSeconds", 5);
 
         // When
@@ -129,7 +133,8 @@ class GrpcClientConfigTest {
         when(mockChannel.isShutdown()).thenReturn(false);
         when(mockChannel.awaitTermination(5, TimeUnit.SECONDS)).thenReturn(false);
         when(mockChannel.awaitTermination(1, TimeUnit.SECONDS)).thenReturn(true);
-        ReflectionTestUtils.setField(config, "managedChannel", mockChannel);
+        ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
+        ReflectionTestUtils.setField(config, "emailChannel", null);
         ReflectionTestUtils.setField(config, "shutdownTimeoutSeconds", 5);
 
         // When
@@ -150,7 +155,8 @@ class GrpcClientConfigTest {
         when(mockChannel.isShutdown()).thenReturn(false);
         when(mockChannel.awaitTermination(anyLong(), any(TimeUnit.class)))
                 .thenThrow(new InterruptedException("Test interruption"));
-        ReflectionTestUtils.setField(config, "managedChannel", mockChannel);
+        ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
+        ReflectionTestUtils.setField(config, "emailChannel", null);
 
         // When/Then
         assertThrows(InterruptedException.class, () -> config.shutdown());
@@ -163,7 +169,8 @@ class GrpcClientConfigTest {
         when(mockChannel.isShutdown()).thenReturn(false);
         when(mockChannel.awaitTermination(0, TimeUnit.SECONDS)).thenReturn(false);
         when(mockChannel.awaitTermination(1, TimeUnit.SECONDS)).thenReturn(true);
-        ReflectionTestUtils.setField(config, "managedChannel", mockChannel);
+        ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
+        ReflectionTestUtils.setField(config, "emailChannel", null);
         ReflectionTestUtils.setField(config, "shutdownTimeoutSeconds", 0);
 
         // When

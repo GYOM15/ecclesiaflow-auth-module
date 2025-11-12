@@ -1,6 +1,7 @@
 package com.ecclesiaflow.springsecurity.io.grpc.client;
 
 import com.ecclesiaflow.grpc.members.*;
+import com.ecclesiaflow.springsecurity.io.members.MembersGrpcClient;
 import io.grpc.ManagedChannel;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

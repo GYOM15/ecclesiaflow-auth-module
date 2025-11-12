@@ -3,6 +3,7 @@ package com.ecclesiaflow.springsecurity.io.grpc.client;
 import com.ecclesiaflow.grpc.members.ConfirmationStatusRequest;
 import com.ecclesiaflow.grpc.members.ConfirmationStatusResponse;
 import com.ecclesiaflow.grpc.members.MembersServiceGrpc;
+import com.ecclesiaflow.springsecurity.io.members.MembersGrpcClient;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.Status;

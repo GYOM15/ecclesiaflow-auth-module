@@ -182,13 +182,14 @@ class JwtTest {
     @DisplayName("generateTemporaryToken - Devrait déléguer au processor et retourner le token")
     void generateTemporaryToken_ShouldDelegateAndReturnToken() throws JwtProcessingException {
         // Arrange
-        when(jwtProcessor.generateTemporaryToken(TEST_EMAIL, TEST_MEMBER_ID)).thenReturn(TEMP_TOKEN);
+        String purpose = "password_setup";
+        when(jwtProcessor.generateTemporaryToken(TEST_EMAIL, TEST_MEMBER_ID, purpose)).thenReturn(TEMP_TOKEN);
 
         // Act
-        String resultToken = jwt.generateTemporaryToken(TEST_EMAIL, TEST_MEMBER_ID);
+        String resultToken = jwt.generateTemporaryToken(TEST_EMAIL, TEST_MEMBER_ID, purpose);
 
         // Assert
-        verify(jwtProcessor, times(1)).generateTemporaryToken(TEST_EMAIL, TEST_MEMBER_ID);
+        verify(jwtProcessor, times(1)).generateTemporaryToken(TEST_EMAIL, TEST_MEMBER_ID, purpose);
         assertThat(resultToken).isEqualTo(TEMP_TOKEN);
     }
 
@@ -282,5 +283,210 @@ class JwtTest {
                 .isInstanceOf(InvalidTokenException.class)
                 .hasMessage("Missing 'cid' claim");
         verify(jwtProcessor, times(1)).extractMemberId(TEMP_TOKEN);
+    }
+
+    // ====================================================================
+    // Tests extractEmail (pour access token)
+    // ====================================================================
+
+    @Test
+    @DisplayName("extractEmail - Devrait extraire l'email d'un access token")
+    void extractEmail_ShouldExtractEmailFromAccessToken() throws JwtProcessingException {
+        // Arrange
+        when(jwtProcessor.extractUsername(ACCESS_TOKEN)).thenReturn(TEST_EMAIL);
+
+        // Act
+        String resultEmail = jwt.extractEmail(ACCESS_TOKEN);
+
+        // Assert
+        verify(jwtProcessor, times(1)).extractUsername(ACCESS_TOKEN);
+        assertThat(resultEmail).isEqualTo(TEST_EMAIL);
+    }
+
+    @Test
+    @DisplayName("extractEmail - Devrait propager JwtProcessingException")
+    void extractEmail_ShouldPropagateException() throws JwtProcessingException {
+        // Arrange
+        doThrow(new JwtProcessingException("Token expired")).when(jwtProcessor).extractUsername(ACCESS_TOKEN);
+
+        // Act & Assert
+        assertThatThrownBy(() -> jwt.extractEmail(ACCESS_TOKEN))
+                .isInstanceOf(JwtProcessingException.class)
+                .hasMessage("Token expired");
+    }
+
+    // ====================================================================
+    // Tests extractIssuedAt
+    // ====================================================================
+
+    @Test
+    @DisplayName("extractIssuedAt - Devrait extraire la date d'émission du token")
+    void extractIssuedAt_ShouldExtractIssuedAtDate() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        LocalDateTime issuedAt = LocalDateTime.now().minusHours(1);
+        when(jwtProcessor.extractIssuedAt(ACCESS_TOKEN)).thenReturn(issuedAt);
+
+        // Act
+        LocalDateTime result = jwt.extractIssuedAt(ACCESS_TOKEN);
+
+        // Assert
+        verify(jwtProcessor, times(1)).extractIssuedAt(ACCESS_TOKEN);
+        assertThat(result).isEqualTo(issuedAt);
+    }
+
+    @Test
+    @DisplayName("extractIssuedAt - Devrait propager JwtProcessingException")
+    void extractIssuedAt_ShouldPropagateJwtProcessingException() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        doThrow(new JwtProcessingException("Invalid token")).when(jwtProcessor).extractIssuedAt(ACCESS_TOKEN);
+
+        // Act & Assert
+        assertThatThrownBy(() -> jwt.extractIssuedAt(ACCESS_TOKEN))
+                .isInstanceOf(JwtProcessingException.class)
+                .hasMessage("Invalid token");
+    }
+
+    @Test
+    @DisplayName("extractIssuedAt - Devrait propager InvalidTokenException")
+    void extractIssuedAt_ShouldPropagateInvalidTokenException() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        doThrow(new InvalidTokenException("Missing iat claim")).when(jwtProcessor).extractIssuedAt(ACCESS_TOKEN);
+
+        // Act & Assert
+        assertThatThrownBy(() -> jwt.extractIssuedAt(ACCESS_TOKEN))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Missing iat claim");
+    }
+
+    // ====================================================================
+    // Tests extractPurpose
+    // ====================================================================
+
+    @Test
+    @DisplayName("extractPurpose - Devrait extraire le purpose d'un token temporaire")
+    void extractPurpose_ShouldExtractPurpose() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        String purpose = "password_reset";
+        when(jwtProcessor.extractPurpose(TEMP_TOKEN)).thenReturn(purpose);
+
+        // Act
+        String result = jwt.extractPurpose(TEMP_TOKEN);
+
+        // Assert
+        verify(jwtProcessor, times(1)).extractPurpose(TEMP_TOKEN);
+        assertThat(result).isEqualTo(purpose);
+    }
+
+    @Test
+    @DisplayName("extractPurpose - Devrait propager JwtProcessingException")
+    void extractPurpose_ShouldPropagateJwtProcessingException() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        doThrow(new JwtProcessingException("Malformed token")).when(jwtProcessor).extractPurpose(TEMP_TOKEN);
+
+        // Act & Assert
+        assertThatThrownBy(() -> jwt.extractPurpose(TEMP_TOKEN))
+                .isInstanceOf(JwtProcessingException.class)
+                .hasMessage("Malformed token");
+    }
+
+    // ====================================================================
+    // Tests isTokenValidForPasswordUpdate
+    // ====================================================================
+
+    @Test
+    @DisplayName("isTokenValidForPasswordUpdate - Devrait retourner true si token émis après dernier changement de mot de passe")
+    void isTokenValidForPasswordUpdate_ShouldReturnTrue_WhenTokenIssuedAfterPasswordUpdate() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        LocalDateTime passwordUpdatedAt = LocalDateTime.now().minusDays(2);
+        LocalDateTime tokenIssuedAt = LocalDateTime.now().minusHours(1);
+        
+        Member memberWithPasswordUpdate = mockMember.toBuilder()
+                .passwordUpdatedAt(passwordUpdatedAt)
+                .build();
+        
+        // Mock au niveau du processor (appelé via jwt.extractIssuedAt())
+        when(jwtProcessor.extractIssuedAt(ACCESS_TOKEN)).thenReturn(tokenIssuedAt);
+
+        // Act
+        boolean result = jwt.isTokenValidForPasswordUpdate(ACCESS_TOKEN, memberWithPasswordUpdate);
+
+        // Assert
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("isTokenValidForPasswordUpdate - Devrait retourner false si token émis avant dernier changement de mot de passe")
+    void isTokenValidForPasswordUpdate_ShouldReturnFalse_WhenTokenIssuedBeforePasswordUpdate() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        LocalDateTime passwordUpdatedAt = LocalDateTime.now().minusHours(1);
+        LocalDateTime tokenIssuedAt = LocalDateTime.now().minusDays(2);
+        
+        Member memberWithPasswordUpdate = mockMember.toBuilder()
+                .passwordUpdatedAt(passwordUpdatedAt)
+                .build();
+        
+        when(jwtProcessor.extractIssuedAt(ACCESS_TOKEN)).thenReturn(tokenIssuedAt);
+
+        // Act
+        boolean result = jwt.isTokenValidForPasswordUpdate(ACCESS_TOKEN, memberWithPasswordUpdate);
+
+        // Assert
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("isTokenValidForPasswordUpdate - Devrait retourner true si passwordUpdatedAt est null")
+    void isTokenValidForPasswordUpdate_ShouldReturnTrue_WhenPasswordUpdatedAtIsNull() {
+        // Arrange
+        Member memberWithoutPasswordUpdate = mockMember.toBuilder()
+                .passwordUpdatedAt(null)
+                .build();
+        
+        // Pas besoin de mock car la méthode retourne directement true si passwordUpdatedAt est null
+
+        // Act
+        boolean result = jwt.isTokenValidForPasswordUpdate(ACCESS_TOKEN, memberWithoutPasswordUpdate);
+
+        // Assert
+        assertThat(result).isTrue();
+        // extractIssuedAt ne devrait PAS être appelé car on retourne avant
+        verifyNoInteractions(jwtProcessor);
+    }
+
+    @Test
+    @DisplayName("isTokenValidForPasswordUpdate - Devrait propager JwtProcessingException")
+    void isTokenValidForPasswordUpdate_ShouldPropagateJwtProcessingException() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        Member memberWithPasswordUpdate = mockMember.toBuilder()
+                .passwordUpdatedAt(LocalDateTime.now().minusDays(1))
+                .build();
+        
+        when(jwtProcessor.extractIssuedAt(ACCESS_TOKEN))
+                .thenThrow(new JwtProcessingException("Invalid token"));
+
+        // Act & Assert
+        assertThatThrownBy(() -> jwt.isTokenValidForPasswordUpdate(ACCESS_TOKEN, memberWithPasswordUpdate))
+                .isInstanceOf(JwtProcessingException.class)
+                .hasMessage("Invalid token");
+    }
+
+    @Test
+    @DisplayName("isTokenValidForPasswordUpdate - Devrait retourner true si token et password ont même timestamp")
+    void isTokenValidForPasswordUpdate_ShouldReturnTrue_WhenTokenAndPasswordHaveSameTimestamp() throws JwtProcessingException, InvalidTokenException {
+        // Arrange
+        LocalDateTime sameTime = LocalDateTime.now().minusHours(1);
+        
+        Member memberWithPasswordUpdate = mockMember.toBuilder()
+                .passwordUpdatedAt(sameTime)
+                .build();
+        
+        when(jwtProcessor.extractIssuedAt(ACCESS_TOKEN)).thenReturn(sameTime);
+
+        // Act
+        boolean result = jwt.isTokenValidForPasswordUpdate(ACCESS_TOKEN, memberWithPasswordUpdate);
+
+        // Assert
+        // La logique est !tokenIssuedAt.isBefore() donc si égal, retourne true
+        assertThat(result).isTrue();
     }
 }

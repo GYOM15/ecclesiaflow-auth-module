@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
@@ -138,10 +139,10 @@ public class JwtProcessor {
      * @return un token JWT temporaire sécurisé
      * @throws JwtProcessingException si la génération du token échoue
      */
-    public String generateTemporaryToken(String email, UUID memberId) throws JwtProcessingException {
+    public String generateTemporaryToken(String email, UUID memberId, String purpose) throws JwtProcessingException {
         Map<String, Object> extraClaims = Map.of(
             "type", "temporary",
-            "purpose", "password_setup",
+            "purpose", purpose,  // "password_setup" ou "password_reset"
             "cid", memberId.toString()  // Custom claim: member ID
         );
         
@@ -174,7 +175,12 @@ public class JwtProcessor {
             String type = claims.get("type", String.class);
             String purpose = claims.get("purpose", String.class);
 
-            if (!"temporary".equals(type) || !"password_setup".equals(purpose)) {
+            if (!"temporary".equals(type)) {
+                throw new InvalidTokenException("Le token fourni n'est pas un token temporaire valide");
+            }
+            
+            // Accepter les deux types de purpose : password_setup (nouveau membre) et password_reset (forgot password)
+            if (purpose == null || (!"password_setup".equals(purpose) && !"password_reset".equals(purpose))) {
                 throw new InvalidTokenException("Le token fourni n'est pas un token temporaire valide");
             }
 
@@ -216,6 +222,44 @@ public class JwtProcessor {
                     .collect(Collectors.collectingAndThen(Collectors.toSet(), Set::copyOf));
         }
         return Set.of();
+    }
+
+    /**
+     * Extrait le purpose depuis un token JWT temporaire.
+     *
+     * @param token le token JWT
+     * @return le purpose extrait du token ("password_setup" ou "password_reset")
+     * @throws InvalidTokenException si le purpose est absent
+     */
+    public String extractPurpose(String token) throws JwtProcessingException, InvalidTokenException {
+        Claims claims = parseAndValidateClaims(token);
+        String purpose = claims.get("purpose", String.class);
+        
+        if (purpose == null || purpose.isEmpty()) {
+            throw new InvalidTokenException("Le token ne contient pas de purpose");
+        }
+        
+        return purpose;
+    }
+
+    /**
+     * Extrait la date d'émission (issuedAt) depuis un token JWT.
+     *
+     * @param token le token JWT
+     * @return la date d'émission du token
+     * @throws InvalidTokenException si la date est absente
+     */
+    public LocalDateTime extractIssuedAt(String token) throws JwtProcessingException, InvalidTokenException {
+        Claims claims = parseAndValidateClaims(token);
+        Date issuedAt = claims.getIssuedAt();
+        
+        if (issuedAt == null) {
+            throw new InvalidTokenException("Le token ne contient pas de date d'émission");
+        }
+        
+        return issuedAt.toInstant()
+                .atZone(java.time.ZoneId.systemDefault())
+                .toLocalDateTime();
     }
 
     // ========== PRIVATE HELPERS ==========
