@@ -31,12 +31,14 @@ This module provides centralized authentication services for the EcclesiaFlow ec
 
 - **JWT token generation** (access + refresh) for resource access
 - **Automatic refresh** of expired tokens
-- **Password management** (initial setup + change)
-- **Temporary tokens** for registration confirmation
+- **Password management** (initial setup + change + forgot/reset)
+- **Temporary tokens** for registration and password reset
+- **Event-driven architecture** for asynchronous operations
+- **Email notifications** via gRPC delegation to Email module
 - **Granular scope system** for permissions
 - **Multi-tenant support** ready for distributed architecture
 - **API-First Design** with automatic generation via OpenAPI Generator
-- **gRPC bi-directional communication** with Members module (Auth ↔ Members)
+- **gRPC tri-directional communication** (Auth ↔ Members ↔ Email)
 - **Resilient inter-module communication** with WebClient fallback
 
 ### Target Architecture
@@ -76,42 +78,81 @@ This module provides centralized authentication services for the EcclesiaFlow ec
 - ✅ **Clean Architecture** - Strict layer separation (Domain, Business, IO, Web)
 - ✅ **SOLID Principles** - Maintainable and extensible code
 - ✅ **Domain-Driven Design** - Pure domain objects (Member, TemporaryToken, UserTokens)
-- ✅ **Ports & Adapters** - MemberRepository (port), MembersClient (adapter)
+- ✅ **Event-Driven Architecture** - Domain events for async operations
+- ✅ **Ports & Adapters** - MemberRepository (port), MembersClient, EmailClient (adapters)
 - ✅ **API-First Design** - OpenAPI Specification → Automatic generation
 - ✅ **Delegate Pattern** - Controller/Delegate separation for business logic
 - ✅ **AOP (Aspect-Oriented Programming)** - Cross-cutting concerns (logging, security)
 - ✅ **Resilience Patterns** - gRPC primary, WebClient fallback for fault tolerance
 
-### Project Structure (Clean Architecture)
+### Project Structure
 
 ```
 src/
 ├── main/
 │   ├── java/com/ecclesiaflow/springsecurity/
-│   │   ├── application/                    # Application Layer
-│   │   │   └── logging/aspect/            # AOP Aspects (AuthenticationErrorLoggingAspect)
-│   │   ├── business/                       # Business Layer (Business Logic)
-│   │   │   ├── domain/                    # Pure domain objects
-│   │   │   │   ├── member/                # Member, Role, MemberRepository (port)
-│   │   │   │   ├── password/              # SigninCredentials, PasswordManagement
-│   │   │   │   ├── security/              # Scope (permission enumeration)
-│   │   │   │   └── token/                 # UserTokens, TemporaryToken, TokenCredentials
+│   │   ├── application/                    # Application Layer (Configuration & Cross-cutting)
+│   │   │   ├── config/                    # Spring configurations
+│   │   │   │   ├── SecurityConfiguration.java
+│   │   │   │   ├── GrpcClientConfig.java  # gRPC channel management
+│   │   │   │   ├── GrpcServerConfig.java  # gRPC server startup
+│   │   │   │   ├── AsyncConfig.java       # Async event processing
+│   │   │   │   ├── OpenApiConfig.java
+│   │   │   │   └── WebClientConfig.java
+│   │   │   ├── handlers/                  # Event handlers (Application layer)
+│   │   │   │   └── PasswordEventHandler.java  # Password events → Email actions
+│   │   │   └── logging/aspect/            # AOP Aspects (cross-cutting concerns)
+│   │   │       ├── BusinessOperationLoggingAspect.java
+│   │   │       ├── GrpcClientLoggingAspect.java
+│   │   │       ├── GrpcServerLoggingAspect.java
+│   │   │       ├── EmailEventLoggingAspect.java
+│   │   │       └── LoggingAspect.java
+│   │   │
+│   │   ├── business/                       # Business Layer (Pure Business Logic)
+│   │   │   ├── domain/                    # Domain objects + Ports (interfaces)
+│   │   │   │   ├── email/                 # Email domain
+│   │   │   │   │   └── EmailClient.java   # Port (interface)
+│   │   │   │   ├── member/                # Member domain
+│   │   │   │   │   ├── Member.java        # Domain entity
+│   │   │   │   │   ├── Role.java
+│   │   │   │   │   ├── MemberRepository.java   # Port (interface)
+│   │   │   │   │   └── MembersClient.java      # Port (interface)
+│   │   │   │   ├── password/              # Password domain
+│   │   │   │   │   ├── SigninCredentials.java
+│   │   │   │   │   └── PasswordManagement.java
+│   │   │   │   ├── security/              # Security domain
+│   │   │   │   │   └── Scope.java         # Permission enumeration
+│   │   │   │   └── token/                 # Token domain
+│   │   │   │       ├── UserTokens.java
+│   │   │   │       ├── TemporaryToken.java
+│   │   │   │       └── TokenCredentials.java
 │   │   │   ├── encryption/                # PasswordEncoderUtil
-│   │   │   ├── exceptions/                # MemberNotFoundException
-│   │   │   └── services/                  # Business services
-│   │   │       ├── AuthenticationService
-│   │   │       ├── PasswordService
+│   │   │   ├── events/                    # Domain events (event-driven)
+│   │   │   │   ├── PasswordSetEvent.java
+│   │   │   │   ├── PasswordChangedEvent.java
+│   │   │   │   ├── PasswordResetRequestedEvent.java
+│   │   │   │   └── PasswordResetEvent.java
+│   │   │   ├── exceptions/                # Business exceptions
+│   │   │   └── services/                  # Business services (use cases)
+│   │   │       ├── AuthenticationService.java
+│   │   │       ├── PasswordService.java
 │   │   │       ├── adapters/              # MemberUserDetailsAdapter
-│   │   │       ├── impl/                  # Implementations
-│   │   │       └── mappers/               # ScopeMapper
-│   │   ├── io/                            # IO Layer (External Communication)
-│   │   │   ├── grpc/                      # gRPC Communication
-│   │   │   │   ├── client/                # MembersGrpcClient (Auth → Members)
-│   │   │   │   └── server/                # JwtGrpcServiceImpl (Members → Auth)
-│   │   │   └── persistence/
-│   │   │       ├── jpa/                   # MemberEntity, SpringDataMemberRepository
-│   │   │       ├── mappers/               # MemberPersistenceMapper
-│   │   │       └── repositories/          # MemberRepositoryImpl
+│   │   │       ├── impl/                  # Service implementations
+│   │   │       └── mappers/               # Business mappers
+│   │   │
+│   │   ├── io/                            # IO Layer (Adapters - Hexagonal Architecture)
+│   │   │   ├── email/                     # Email adapters (by domain)
+│   │   │   │   └── EmailGrpcClient.java   # gRPC implementation of EmailClient port
+│   │   │   ├── members/                   # Members adapters (by domain)
+│   │   │   │   └── MembersGrpcClient.java # gRPC implementation of MembersClient port
+│   │   │   ├── grpc/                      # gRPC server endpoints
+│   │   │   │   └── server/
+│   │   │   │       └── JwtGrpcServiceImpl.java  # Auth service exposed via gRPC
+│   │   │   └── persistence/               # Persistence adapters
+│   │   │       ├── jpa/                   # JPA entities
+│   │   │       ├── mappers/               # Persistence mappers
+│   │   │       └── repositories/impl/     # Repository implementations
+│   │   │
 │   │   └── web/                           # Web Layer (REST API)
 │   │       ├── client/                    # MembersClientImpl (WebClient fallback)
 │   │       ├── controller/                # AuthenticationController, PasswordController
@@ -121,13 +162,16 @@ src/
 │   │       └── security/                  # JwtProcessor, Jwt, CustomAuthenticationEntryPoint
 │   └── resources/
 │       ├── api/
-│       │   └── openapi.yaml               # OpenAPI 3.1.1 Specification
+│       │   └── openapi.yaml               # OpenAPI 3.1.1 Specification (API contract)
 │       └── application.properties.example
-└── test/                                   # 509 tests (100% coverage)
+│
+└── test/                                   # Tests (100% coverage)
     └── java/com/ecclesiaflow/springsecurity/
-        ├── application/                    # AOP aspects tests
+        ├── application/                    # Configuration & AOP tests
         ├── business/                       # Business services tests
         ├── io/
+        │   ├── email/                      # Email client tests
+        │   ├── members/                    # Members client tests
         │   ├── grpc/                       # gRPC integration tests
         │   └── persistence/                # Persistence tests
         └── web/                           # Controllers/delegates tests
@@ -213,8 +257,10 @@ open http://localhost:8080/swagger-ui.html
 | `/ecclesiaflow/auth/token` | POST | JWT token generation (access + refresh) | No |
 | `/ecclesiaflow/auth/refreshToken` | POST | Access token refresh | Yes (Bearer) |
 | `/ecclesiaflow/auth/temporary-token` | POST | Temporary token generation (confirmation) | No |
-| `/ecclesiaflow/auth/password` | POST | Initial password setup | Yes (Bearer temp) |
-| `/ecclesiaflow/auth/new-password` | POST | Password change | Yes (Bearer) |
+| `/ecclesiaflow/auth/password` | POST | Initial password setup (new member) | Yes (Bearer temp) |
+| `/ecclesiaflow/auth/new-password` | POST | Password change (authenticated user) | Yes (Bearer) |
+| `/ecclesiaflow/auth/forgot-password` | POST | Request password reset email | No |
+| `/ecclesiaflow/auth/reset-password` | POST | Reset forgotten password | Yes (Bearer temp) |
 
 **Available Scopes:**
 - `ef:members:read:own` - Read own information
@@ -240,9 +286,7 @@ curl -X POST http://localhost:8081/ecclesiaflow/auth/token \
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "memberId": "550e8400-e29b-41d4-a716-446655440000",
-  "scopes": ["ef:members:read:own", "ef:members:write:own"]
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
@@ -264,6 +308,63 @@ curl -X POST http://localhost:8081/ecclesiaflow/auth/password \
   -d '{
     "password": "NewPassword123!"
   }'
+```
+
+**4. Request password reset (forgot password):**
+```bash
+curl -X POST http://localhost:8081/ecclesiaflow/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "membre@eglise.com"
+  }'
+```
+
+**Response:**
+```json
+{
+  "message": "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé."
+}
+```
+
+**5. Reset password with token:**
+```bash
+curl -X POST http://localhost:8081/ecclesiaflow/auth/reset-password \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer RESET_TOKEN_FROM_EMAIL" \
+  -d '{
+    "password": "NewSecurePassword456!"
+  }'
+```
+
+**Response:**
+```json
+{
+  "message": "Mot de passe réinitialisé avec succès",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 900
+}
+```
+
+**6. Change password (authenticated user):**
+```bash
+curl -X POST http://localhost:8081/ecclesiaflow/auth/new-password \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "currentPassword": "OldPassword123!",
+    "newPassword": "NewPassword456!"
+  }'
+```
+
+**Response:**
+```json
+{
+  "message": "Mot de passe modifié avec succès",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 900
+}
 ```
 
 ### Interactive Documentation
@@ -291,40 +392,64 @@ Delegates (AuthenticationDelegate, PasswordManagementDelegate)
 Business Services (AuthenticationService, PasswordService, Jwt)
 ```
 
-### Inter-Module Communication Architecture
+### Password Change Flow (Auth Module)
 
-The authentication module communicates with the Members module using a **resilient dual-protocol approach**:
+```mermaid
+sequenceDiagram
+    participant Auth
+    participant Email
 
+    Note over Auth: 1. Change Password (REST)
+    Auth->>Auth: POST /new-password<br/>(Bearer access token)
+    Auth->>Auth: Extract email from JWT
+    Auth->>Auth: Validate current password
+    Auth->>Auth: Validate token issuedAt
+    Auth->>Auth: Update password
+    Auth->>Auth: Publish PasswordChangedEvent
+    Auth->>Auth: Generate new tokens
+
+    Note over Auth,Email: 2. Async Notification (Event)
+    Auth->>Email: Send confirmation
 ```
-┌─────────────────────┐         gRPC (Primary)         ┌─────────────────────┐
-│   Auth Module       │◄─────────────────────────────► │  Members Module     │
-│   (Port 8081)       │                                │   (Port 8080)       │
-│                     │                                │                     │
-│  gRPC Server: 9090  │                                │  gRPC Server: 9091  │
-│  gRPC Client ───────┼────────► gRPC Server           │                     │
-│                     │                                │                     │
-│  WebClient ─────────┼────────► REST API              │                     │
-│  (Fallback)         │   WebClient (Fallback)         │                     │
-└─────────────────────┘                                └─────────────────────┘
+
+**Key Points:**
+- **Email from JWT**: Extracted automatically (security)
+- **Token validation**: Issued after last password change
+- **Async notification**: Email doesn't block operation
+- **New tokens**: Force re-authentication with new credentials
+
+### Password Reset Flow (Auth Module)
+
+```mermaid
+sequenceDiagram
+    participant Auth
+    participant Email
+
+    Note over Auth: 1. Request Reset (REST)
+    Auth->>Auth: POST /forgot-password {email}
+    Auth->>Auth: Publish PasswordResetRequestedEvent
+    Auth->>Auth: Return generic message
+
+    Note over Auth,Email: 2. Async Email (Event)
+    Auth->>Auth: Generate JWT (purpose: reset)
+    Auth->>Email: Send reset link
+
+    Note over Auth: 3. Reset Password (REST)
+    Auth->>Auth: POST /reset-password (Bearer token)
+    Auth->>Auth: Validate token + purpose
+    Auth->>Auth: Update password
+    Auth->>Auth: Publish PasswordResetEvent
+    Auth->>Auth: Generate tokens
+
+    Note over Auth,Email: 4. Async Confirmation (Event)
+    Auth->>Email: Send confirmation
 ```
 
-**gRPC Communication Flows:**
-
-1. **Auth → Members (gRPC Client)**
-   - Check email confirmation status
-   - Primary method: high-performance binary protocol
-   - Fallback: WebClient HTTP/REST if gRPC unavailable
-
-2. **Members → Auth (gRPC Server)**
-   - Generate temporary JWT tokens for email confirmation
-   - Members calls Auth's gRPC service for token generation
-   - Tokens used for password setup after email confirmation
-
-**Resilience Strategy:**
-- gRPC enabled by default (`grpc.enabled=true`)
-- Automatic fallback to WebClient if gRPC server unavailable
-- Graceful degradation ensures service continuity
-- Separate ports: REST (8080/8081), gRPC (9090/9091)
+**Key Points:**
+- **Security**: Generic message prevents email enumeration
+- **Async emails**: Non-blocking operations
+- **Event-driven**: Resilient architecture
+- **Auto-login**: Returns tokens after reset
 
 ## 🔧 Configuration
 
@@ -597,13 +722,13 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 | Metric              | Value      |
 |---------------------|------------|
-| **Production code** | 5,148 LOC  |
-| **Test code**       | 11,573 LOC |
-| **Tests**           | 509        |
-| **Test files**      | 38         |
+| **Production code** | 6,381 LOC  |
+| **Test code**       | 14,068 LOC |
+| **Tests**           | 617        |
+| **Test files**      | 45         |
 | **Coverage**        | 100%       |
-| **Classes**         | 89         |
-| **Endpoints**       | 9          |
+| **Classes**         | 69         |
+| **Endpoints**       | 11         |
 | **Scopes**          | 8          |
 | **Dependencies**    | 25         |
 
