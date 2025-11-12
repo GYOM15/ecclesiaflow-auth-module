@@ -25,12 +25,10 @@ public final class Messages {
     public static final String INVALID_OR_EXPIRED_LINK = "Le lien utilisé n'est plus valide ou a expiré.";
     public static final String PASSWORD_SETUP_ERROR = "Erreur lors de la définition du mot de passe";
     public static final String INVALID_LINK_PURPOSE = "Le lien utilisé n'est pas valide pour cette opération.";
-    public static final String PASSWORD_RESET_ERROR = "";
 
     // === Account ===
     public static final String ACCOUNT_DISABLED = "Ce compte est actuellement désactivé.";
     public static final String ACCOUNT_LOCKED = "Votre compte est verrouillé. Contactez l'administrateur.";
-    public static final String ACCOUNT_NOT_FOUND = "Aucun compte associé à cette adresse n'a été trouvé.";
 
     // === Password ===
     public static final String PASSWORD_SETUP_SUCCESS = "Votre mot de passe a été défini avec succès. Vous êtes maintenant connecté.";
@@ -42,12 +40,6 @@ public final class Messages {
 
     // === Email / Reset ===
     public static final String RESET_EMAIL_SENT = "Un lien de réinitialisation a été envoyé.";
-    public static final String EMAIL_INVALID_FORMAT = "L'adresse email fournie est invalide.";
     public static final String EMAIL_SEND_ERROR = "Une erreur est survenue lors de l'envoi de l'email de réinitialisation.";
 
-    // === Generic ===
-    public static final String BAD_REQUEST = "Requête invalide. Veuillez vérifier les informations fournies.";
-    public static final String INTERNAL_ERROR = "Une erreur interne est survenue. Veuillez réessayer plus tard.";
-    public static final String UNAUTHORIZED_ACTION = "Vous n'êtes pas autorisé à effectuer cette action.";
-    public static final String RESOURCE_NOT_FOUND = "La ressource demandée est introuvable.";
 }

@@ -71,7 +71,6 @@ class EmailGrpcClientTest {
         SendEmailResponse response = SendEmailResponse.newBuilder()
                 .setEmailId(EMAIL_ID.toString())
                 .setStatus(com.ecclesiaflow.grpc.email.Status.STATUS_QUEUED)
-                .setQueuedAt(System.currentTimeMillis())
                 .build();
         
         when(mockStub.sendEmail(any(SendEmailRequest.class))).thenReturn(response);
@@ -127,7 +126,6 @@ class EmailGrpcClientTest {
         SendEmailResponse response = SendEmailResponse.newBuilder()
                 .setEmailId(EMAIL_ID.toString())
                 .setStatus(com.ecclesiaflow.grpc.email.Status.STATUS_QUEUED)
-                .setQueuedAt(System.currentTimeMillis())
                 .build();
         
         when(mockStub.sendEmail(any(SendEmailRequest.class))).thenReturn(response);
@@ -182,7 +180,6 @@ class EmailGrpcClientTest {
         SendEmailResponse response = SendEmailResponse.newBuilder()
                 .setEmailId(EMAIL_ID.toString())
                 .setStatus(com.ecclesiaflow.grpc.email.Status.STATUS_QUEUED)
-                .setQueuedAt(System.currentTimeMillis())
                 .build();
         
         when(mockStub.sendEmail(any(SendEmailRequest.class))).thenReturn(response);
