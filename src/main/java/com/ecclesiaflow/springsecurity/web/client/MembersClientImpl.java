@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.web.client;
 
 import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
-import com.ecclesiaflow.springsecurity.io.grpc.client.MembersGrpcClient;
+import com.ecclesiaflow.springsecurity.io.members.MembersGrpcClient;
 import com.ecclesiaflow.springsecurity.web.model.MemberConfirmationStatusResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -10,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 /**
- * Implémentation REST (WebClient) du client Members.
+ * Implémentation REST (WebClient) du members Members.
  * <p>
  * <strong>⚠️ LEGACY / FALLBACK ONLY</strong>
  * </p>
@@ -48,7 +48,7 @@ public class MembersClientImpl implements MembersClient {
                     .bodyToMono(MemberConfirmationStatusResponse.class)
                     .block(); // Blocage volontaire pour Spring MVC
 
-            return response == null || !response.getConfirmed();
+            return response == null || response.getConfirmed() == null || !response.getConfirmed();
         } catch (WebClientResponseException.NotFound ex) {
             return true;
         }

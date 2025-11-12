@@ -6,6 +6,7 @@ import com.ecclesiaflow.springsecurity.web.model.RefreshTokenRequest;
 import com.ecclesiaflow.springsecurity.web.model.SigninRequest;
 import com.ecclesiaflow.springsecurity.web.model.TemporaryTokenRequest;
 import com.ecclesiaflow.springsecurity.web.model.TemporaryTokenResponse;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,10 +33,11 @@ class AuthenticationControllerTest {
     private TemporaryTokenRequest temporaryTokenRequest;
     private JwtAuthenticationResponse jwtResponse;
     private TemporaryTokenResponse temporaryTokenResponse;
+    private AutoCloseable closeable;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         // Setup SigninRequest
         signinRequest = new SigninRequest();
@@ -60,6 +62,13 @@ class AuthenticationControllerTest {
         temporaryTokenResponse.setTemporaryToken("temp-token-789");
         temporaryTokenResponse.setExpiresIn(900);
         temporaryTokenResponse.setMessage("Token temporaire généré avec succès");
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        if (closeable != null) {
+            closeable.close();
+        }
     }
 
     // ====================================================================
