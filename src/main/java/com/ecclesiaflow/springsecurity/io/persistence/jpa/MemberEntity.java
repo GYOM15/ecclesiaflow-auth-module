@@ -60,6 +60,9 @@ public class MemberEntity {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "password_updated_at")
+    private LocalDateTime passwordUpdatedAt;
+
     @NotNull(message = "Le rôle est obligatoire")
     @Enumerated(EnumType.ORDINAL)
     @Column(nullable = false)
