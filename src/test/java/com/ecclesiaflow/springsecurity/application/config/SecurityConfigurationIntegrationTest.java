@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.application.config;
 
+import com.ecclesiaflow.springsecurity.business.domain.email.EmailClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -7,11 +8,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -19,9 +25,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests d'intégration pour SecurityConfiguration.
  * Teste la configuration complète de Spring Security incluant securityFilterChain().
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+    "grpc.enabled=false",
+    "spring.datasource.url=jdbc:h2:mem:testdb",
+    "spring.jpa.hibernate.ddl-auto=create-drop"
+})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(SecurityConfigurationIntegrationTest.TestSecurityConfig.class)
 @DisplayName("SecurityConfiguration - Tests d'Intégration")
 class SecurityConfigurationIntegrationTest {
 
@@ -30,6 +41,20 @@ class SecurityConfigurationIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    // ====================================================================
+    // Configuration de test pour mocker EmailClient
+    // ====================================================================
+
+    @TestConfiguration
+    public static class TestSecurityConfig {
+
+        @Bean
+        @Primary
+        public EmailClient emailClient() {
+            return mock(EmailClient.class);
+        }
+    }
 
     // ====================================================================
     // Tests des endpoints publics (/ecclesiaflow/auth/**)

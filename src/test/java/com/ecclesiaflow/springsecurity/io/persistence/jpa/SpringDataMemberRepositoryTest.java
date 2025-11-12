@@ -518,9 +518,10 @@ class SpringDataMemberRepositoryTest {
                 memberId,
                 "constructor@example.com",
                 "ConstructorPass123!",
+                now,  // passwordUpdatedAt
                 Role.MEMBER,
-                now,
-                now,
+                now,  // createdAt
+                now,  // updatedAt
                 true
         );
 
@@ -943,6 +944,7 @@ class SpringDataMemberRepositoryTest {
                 null, // memberId
                 null, // email
                 null, // password
+                null, // passwordUpdatedAt
                 null, // role
                 null, // createdAt
                 null, // updatedAt
