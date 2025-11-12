@@ -19,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.security.Key;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -351,7 +352,7 @@ class JwtProcessorTest {
         String email = "temp@user.com";
 
         // When
-        String token = jwtProcessor.generateTemporaryToken(email, UUID.randomUUID());
+        String token = jwtProcessor.generateTemporaryToken(email, UUID.randomUUID(), "password_setup");
         Claims claims = parseClaims(token);
 
         // Then
@@ -370,7 +371,7 @@ class JwtProcessorTest {
     void shouldValidateValidTemporaryToken() throws JwtProcessingException, InvalidTokenException {
         // Given
         String email = "setup@email.com";
-        String token = jwtProcessor.generateTemporaryToken(email, UUID.randomUUID());
+        String token = jwtProcessor.generateTemporaryToken(email, UUID.randomUUID(), "password_setup");
 
         // When
         boolean isValid = jwtProcessor.validateTemporaryToken(token, email);
@@ -383,7 +384,7 @@ class JwtProcessorTest {
     @DisplayName("validateTemporaryToken - Devrait retourner false si l'email ne correspond pas")
     void shouldRejectTemporaryTokenIfEmailMismatch() throws JwtProcessingException, InvalidTokenException {
         // Given
-        String token = jwtProcessor.generateTemporaryToken("correct@email.com", UUID.randomUUID());
+        String token = jwtProcessor.generateTemporaryToken("correct@email.com", UUID.randomUUID(), "password_setup");
 
         // When
         boolean isValid = jwtProcessor.validateTemporaryToken(token, "wrong@email.com");
@@ -449,7 +450,7 @@ class JwtProcessorTest {
     @DisplayName("validateTemporaryToken - Devrait lancer InvalidTokenException pour token avec signature invalide")
     void shouldThrowInvalidTokenExceptionForInvalidSignature() throws JwtProcessingException {
         // Given
-        String validToken = jwtProcessor.generateTemporaryToken("test@email.com", UUID.randomUUID());
+        String validToken = jwtProcessor.generateTemporaryToken("test@email.com", UUID.randomUUID(), "password_setup");
         String tokenWithInvalidSignature = validToken.substring(0, validToken.lastIndexOf('.')) + ".invalidSignature";
 
         // When & Then
@@ -553,6 +554,86 @@ class JwtProcessorTest {
                 .hasMessage("Le token fourni n'est pas un token temporaire valide");
     }
 
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait rejeter token avec purpose null")
+    void shouldRejectTemporaryTokenWithNullPurpose() throws JwtProcessingException {
+        // Given
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        String email = "test@email.com";
+
+        String tokenWithNullPurpose = Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(new java.util.Date())
+                .setExpiration(new java.util.Date(System.currentTimeMillis() + TEMP_EXP))
+                .claim("type", "temporary")
+                // purpose = null (pas de claim purpose)
+                .signWith(key)
+                .compact();
+
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.validateTemporaryToken(tokenWithNullPurpose, email))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le token fourni n'est pas un token temporaire valide");
+    }
+
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait rejeter token avec purpose invalide")
+    void shouldRejectTemporaryTokenWithInvalidPurpose() throws JwtProcessingException {
+        // Given
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        String email = "test@email.com";
+
+        String tokenWithInvalidPurpose = Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(new java.util.Date())
+                .setExpiration(new java.util.Date(System.currentTimeMillis() + TEMP_EXP))
+                .claim("type", "temporary")
+                .claim("purpose", "invalid_purpose")  // Purpose invalide (ni password_setup ni password_reset)
+                .signWith(key)
+                .compact();
+
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.validateTemporaryToken(tokenWithInvalidPurpose, email))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le token fourni n'est pas un token temporaire valide");
+    }
+
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait accepter token avec purpose 'password_reset'")
+    void shouldAcceptTemporaryTokenWithPasswordResetPurpose() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        String email = "reset@email.com";
+        String token = jwtProcessor.generateTemporaryToken(email, UUID.randomUUID(), "password_reset");
+
+        // When
+        boolean isValid = jwtProcessor.validateTemporaryToken(token, email);
+
+        // Then
+        assertThat(isValid).isTrue();
+    }
+
+    @Test
+    @DisplayName("validateTemporaryToken - Devrait rejeter token avec purpose vide")
+    void shouldRejectTemporaryTokenWithEmptyPurpose() {
+        // Given
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        String email = "test@email.com";
+
+        String tokenWithEmptyPurpose = Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(new java.util.Date())
+                .setExpiration(new java.util.Date(System.currentTimeMillis() + TEMP_EXP))
+                .claim("type", "temporary")
+                .claim("purpose", "")  // Purpose vide
+                .signWith(key)
+                .compact();
+
+        // When & Then - Le purpose vide est considéré comme invalide
+        assertThatThrownBy(() -> jwtProcessor.validateTemporaryToken(tokenWithEmptyPurpose, email))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le token fourni n'est pas un token temporaire valide");
+    }
+
     // ====================================================================
     // Tests de Cohérence et de Thread Safety
     // ====================================================================
@@ -636,7 +717,7 @@ class JwtProcessorTest {
         // Given
         String email = "member@example.com";
         UUID memberId = UUID.randomUUID();
-        String token = jwtProcessor.generateTemporaryToken(email, memberId);
+        String token = jwtProcessor.generateTemporaryToken(email, memberId, "password_setup");
 
         // When
         UUID extractedMemberId = jwtProcessor.extractMemberId(token);
@@ -652,8 +733,8 @@ class JwtProcessorTest {
         UUID memberId1 = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
         UUID memberId2 = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
         
-        String token1 = jwtProcessor.generateTemporaryToken("user1@example.com", memberId1);
-        String token2 = jwtProcessor.generateTemporaryToken("user2@example.com", memberId2);
+        String token1 = jwtProcessor.generateTemporaryToken("user1@example.com", memberId1, "password_setup");
+        String token2 = jwtProcessor.generateTemporaryToken("user2@example.com", memberId2, "password_setup");
 
         // When
         UUID extracted1 = jwtProcessor.extractMemberId(token1);
@@ -712,6 +793,109 @@ class JwtProcessorTest {
         // When & Then - parseAndValidateClaims lance ExpiredJwtException directement
         assertThatThrownBy(() -> jwtProcessor.extractMemberId(expiredToken))
                 .isInstanceOf(ExpiredJwtException.class);
+    }
+
+    @Test
+    @DisplayName("Devrait extraire la date d'émission (issuedAt) d'un token")
+    void shouldExtractIssuedAt() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        String token = jwtProcessor.generateAccessToken(testUser);
+        
+        // When
+        LocalDateTime issuedAt = jwtProcessor.extractIssuedAt(token);
+        
+        // Then
+        assertThat(issuedAt).isNotNull();
+        assertThat(issuedAt).isBeforeOrEqualTo(LocalDateTime.now());
+        assertThat(issuedAt).isAfter(LocalDateTime.now().minusMinutes(1));
+    }
+
+    @Test
+    @DisplayName("extractIssuedAt - Devrait lever InvalidTokenException si issuedAt est null")
+    void extractIssuedAt_ShouldThrowInvalidTokenException_WhenIssuedAtIsNull() {
+        // Given
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        String tokenWithoutIssuedAt = Jwts.builder()
+                .setSubject("test@email.com")
+                .setExpiration(new java.util.Date(System.currentTimeMillis() + ACCESS_EXP))
+                // Pas de setIssuedAt
+                .signWith(key)
+                .compact();
+
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.extractIssuedAt(tokenWithoutIssuedAt))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le token ne contient pas de date d'émission");
+    }
+
+    @Test
+    @DisplayName("Devrait extraire le purpose d'un token temporaire")
+    void shouldExtractPurpose() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        String email = "test@ecclesiaflow.com";
+        UUID memberId = UUID.randomUUID();
+        String expectedPurpose = "password_reset";
+        String token = jwtProcessor.generateTemporaryToken(email, memberId, expectedPurpose);
+        
+        // When
+        String actualPurpose = jwtProcessor.extractPurpose(token);
+        
+        // Then
+        assertThat(actualPurpose).isEqualTo(expectedPurpose);
+    }
+
+    @Test
+    @DisplayName("Devrait extraire purpose 'password_setup' correctement")
+    void shouldExtractPurposePasswordSetup() throws JwtProcessingException, InvalidTokenException {
+        // Given
+        String email = "newuser@ecclesiaflow.com";
+        UUID memberId = UUID.randomUUID();
+        String expectedPurpose = "password_setup";
+        String token = jwtProcessor.generateTemporaryToken(email, memberId, expectedPurpose);
+        
+        // When
+        String actualPurpose = jwtProcessor.extractPurpose(token);
+        
+        // Then
+        assertThat(actualPurpose).isEqualTo(expectedPurpose);
+    }
+
+    @Test
+    @DisplayName("extractPurpose - Devrait lever InvalidTokenException si purpose est null")
+    void extractPurpose_ShouldThrowInvalidTokenException_WhenPurposeIsNull() {
+        // Given
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        String tokenWithoutPurpose = Jwts.builder()
+                .setSubject("test@email.com")
+                .setIssuedAt(new java.util.Date())
+                .setExpiration(new java.util.Date(System.currentTimeMillis() + TEMP_EXP))
+                // Pas de claim purpose
+                .signWith(key)
+                .compact();
+
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.extractPurpose(tokenWithoutPurpose))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le token ne contient pas de purpose");
+    }
+
+    @Test
+    @DisplayName("extractPurpose - Devrait lever InvalidTokenException si purpose est vide")
+    void extractPurpose_ShouldThrowInvalidTokenException_WhenPurposeIsEmpty() {
+        // Given
+        Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        String tokenWithEmptyPurpose = Jwts.builder()
+                .setSubject("test@email.com")
+                .setIssuedAt(new java.util.Date())
+                .setExpiration(new java.util.Date(System.currentTimeMillis() + TEMP_EXP))
+                .claim("purpose", "")  // Purpose vide
+                .signWith(key)
+                .compact();
+
+        // When & Then
+        assertThatThrownBy(() -> jwtProcessor.extractPurpose(tokenWithEmptyPurpose))
+                .isInstanceOf(InvalidTokenException.class)
+                .hasMessage("Le token ne contient pas de purpose");
     }
 
 
