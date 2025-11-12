@@ -1,4 +1,4 @@
-package com.ecclesiaflow.springsecurity.io.grpc.client;
+package com.ecclesiaflow.springsecurity.io.members;
 
 import com.ecclesiaflow.grpc.members.*;
 import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Client gRPC pour communiquer avec le module Members.
  * <p>
- * Cette classe implémente un client gRPC qui permet au module Auth
+ * Cette classe implémente un members gRPC qui permet au module Auth
  * d'appeler les services du module Members via gRPC au lieu de REST/WebClient.
  * Elle encapsule la complexité des appels gRPC et fournit une API simple
  * et type-safe pour les services métier.

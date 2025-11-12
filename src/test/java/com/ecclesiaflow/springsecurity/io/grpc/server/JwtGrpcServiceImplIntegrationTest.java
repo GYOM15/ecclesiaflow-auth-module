@@ -21,6 +21,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -52,7 +53,7 @@ class JwtGrpcServiceImplIntegrationTest {
         jwtProcessor = mock(JwtProcessor.class);
 
         // Créer le service gRPC
-        JwtGrpcServiceImpl service = new JwtGrpcServiceImpl(jwt, jwtProcessor);
+        JwtGrpcServiceImpl service = new JwtGrpcServiceImpl(jwt);
 
         // Démarrer le serveur in-memory
         server = InProcessServerBuilder
@@ -62,7 +63,7 @@ class JwtGrpcServiceImplIntegrationTest {
                 .build()
                 .start();
 
-        // Créer le canal client
+        // Créer le canal members
         channel = InProcessChannelBuilder
                 .forName(SERVER_NAME)
                 .directExecutor()
@@ -86,7 +87,7 @@ class JwtGrpcServiceImplIntegrationTest {
     @DisplayName("Should generate temporary token successfully via real gRPC call")
     void generateTemporaryToken_Success() {
         // Given
-        when(jwt.generateTemporaryToken(EMAIL, MEMBER_ID)).thenReturn(GENERATED_TOKEN);
+        when(jwt.generateTemporaryToken(EMAIL, MEMBER_ID, "password_setup")).thenReturn(GENERATED_TOKEN);
 
         TemporaryTokenRequest request = TemporaryTokenRequest.newBuilder()
                 .setEmail(EMAIL)
@@ -143,7 +144,7 @@ class JwtGrpcServiceImplIntegrationTest {
     @DisplayName("Should throw INTERNAL when service throws exception")
     void generateTemporaryToken_ServiceError() {
         // Given
-        when(jwt.generateTemporaryToken(any(), any()))
+        when(jwt.generateTemporaryToken(any(), any(), eq("password_setup")))
                 .thenThrow(new RuntimeException("Database error"));
 
         TemporaryTokenRequest request = TemporaryTokenRequest.newBuilder()
@@ -165,7 +166,7 @@ class JwtGrpcServiceImplIntegrationTest {
     @DisplayName("Should handle multiple concurrent requests")
     void generateTemporaryToken_ConcurrentRequests() throws InterruptedException {
         // Given
-        when(jwt.generateTemporaryToken(any(), any())).thenReturn(GENERATED_TOKEN);
+        when(jwt.generateTemporaryToken(any(), any(), eq("password_setup"))).thenReturn(GENERATED_TOKEN);
 
         TemporaryTokenRequest request = TemporaryTokenRequest.newBuilder()
                 .setEmail(EMAIL)
@@ -239,7 +240,7 @@ class JwtGrpcServiceImplIntegrationTest {
     @DisplayName("Should throw INTERNAL when JwtProcessingException occurs")
     void generateTemporaryToken_JwtProcessingException() {
         // Given
-        when(jwt.generateTemporaryToken(any(), any()))
+        when(jwt.generateTemporaryToken(any(), any(), eq("password_setup")))
                 .thenThrow(new JwtProcessingException("JWT signing failed"));
 
         TemporaryTokenRequest request = TemporaryTokenRequest.newBuilder()

@@ -1,5 +1,6 @@
-package com.ecclesiaflow.springsecurity.io.grpc.client;
+package com.ecclesiaflow.springsecurity.application.config;
 
+import com.ecclesiaflow.springsecurity.io.members.MembersGrpcClient;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import jakarta.annotation.PreDestroy;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Configuration du client gRPC pour le module Auth.
+ * Configuration du members gRPC pour le module Auth.
  * <p>
  * Cette classe configure le canal de communication gRPC (ManagedChannel) vers
  * le module Members. Elle gère le cycle de vie du canal : création,
@@ -37,10 +38,17 @@ public class GrpcClientConfig {
     @Value("${grpc.members.port:9091}")
     private int membersServicePort;
 
+    @Value("${email.module.grpc.host:localhost}")
+    private String emailServiceHost;
+
+    @Value("${email.module.grpc.port:9093}")
+    private int emailServicePort;
+
     @Value("${grpc.client.shutdown-timeout-seconds:5}")
     private int shutdownTimeoutSeconds;
 
-    private ManagedChannel managedChannel;
+    private ManagedChannel membersChannel;
+    private ManagedChannel emailChannel;
 
     /**
      * Crée et configure le canal gRPC vers le module Members.
@@ -49,42 +57,60 @@ public class GrpcClientConfig {
      */
     @Bean
     public ManagedChannel membersGrpcChannel() {
-        managedChannel = ManagedChannelBuilder
+        membersChannel = ManagedChannelBuilder
                 .forAddress(membersServiceHost, membersServicePort)
-                
+
                 // DÉVELOPPEMENT: Utilise plaintext (pas de TLS)
                 // TODO PRODUCTION: Remplacer par .useTransportSecurity() + certificats
                 .usePlaintext()
-                
-                // Configuration des messages
-                .maxInboundMessageSize(4 * 1024 * 1024) // 4MB max
-                
-                // Keep-alive pour maintenir la connexion active
+                .maxInboundMessageSize(4 * 1024 * 1024)
                 .keepAliveTime(30, TimeUnit.SECONDS)
                 .keepAliveTimeout(10, TimeUnit.SECONDS)
                 .keepAliveWithoutCalls(true)
-                
-                // Idle timeout (ferme la connexion si inactive)
                 .idleTimeout(5, TimeUnit.MINUTES)
-                
                 .build();
 
-        return managedChannel;
+        return membersChannel;
     }
 
     /**
-     * Ferme proprement le canal gRPC lors de l'arrêt de l'application.
+     * Crée et configure le canal gRPC vers le module Email.
+     *
+     * @return le canal gRPC configuré et prêt à l'emploi
+     */
+    @Bean
+    public ManagedChannel emailGrpcChannel() {
+        emailChannel = ManagedChannelBuilder
+                .forAddress(emailServiceHost, emailServicePort)
+                .usePlaintext()
+                .maxInboundMessageSize(4 * 1024 * 1024)
+                .keepAliveTime(120, TimeUnit.SECONDS)  // Augmenté à 2 minutes (recommandé gRPC)
+                .keepAliveTimeout(20, TimeUnit.SECONDS)
+                .keepAliveWithoutCalls(false)           // Ne pas envoyer de ping si pas d'appels
+                .idleTimeout(5, TimeUnit.MINUTES)
+                .build();
+
+        return emailChannel;
+    }
+
+    /**
+     * Ferme proprement les canaux gRPC lors de l'arrêt de l'application.
      *
      * @throws InterruptedException si l'arrêt est interrompu
      */
     @PreDestroy
     public void shutdown() throws InterruptedException {
-        if (managedChannel != null && !managedChannel.isShutdown()) {
-            managedChannel.shutdown();
+        shutdownChannel(membersChannel);
+        shutdownChannel(emailChannel);
+    }
+
+    private void shutdownChannel(ManagedChannel channel) throws InterruptedException {
+        if (channel != null && !channel.isShutdown()) {
+            channel.shutdown();
             
-            if (!managedChannel.awaitTermination(shutdownTimeoutSeconds, TimeUnit.SECONDS)) {
-                managedChannel.shutdownNow();
-                managedChannel.awaitTermination(1, TimeUnit.SECONDS);
+            if (!channel.awaitTermination(shutdownTimeoutSeconds, TimeUnit.SECONDS)) {
+                channel.shutdownNow();
+                channel.awaitTermination(1, TimeUnit.SECONDS);
             }
         }
     }

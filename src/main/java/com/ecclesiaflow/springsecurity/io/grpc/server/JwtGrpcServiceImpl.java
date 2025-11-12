@@ -100,7 +100,7 @@ public class JwtGrpcServiceImpl extends AuthServiceGrpc.AuthServiceImplBase {
             UUID memberId = validateAndParseUUID(memberIdStr);
 
             // Délégation au service métier
-            String temporaryToken = jwt.generateTemporaryToken(email, memberId);
+            String temporaryToken = jwt.generateTemporaryToken(email, memberId, "password_setup");
 
             // Construction de la réponse Protobuf
             TemporaryTokenResponse response = TemporaryTokenResponse.newBuilder()
