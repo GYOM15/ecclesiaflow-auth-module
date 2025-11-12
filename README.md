@@ -41,6 +41,38 @@ This module provides centralized authentication services for the EcclesiaFlow ec
 - **gRPC tri-directional communication** (Auth ↔ Members ↔ Email)
 - **Resilient inter-module communication** with WebClient fallback
 
+```mermaid
+sequenceDiagram
+    participant Members as Members Module
+    participant Auth as Auth Module
+    participant Email as Email Module
+
+    Note over Members,Auth: 1. Generate Temporary Token (gRPC Server)
+    Members->>Auth: GenerateTemporaryToken(email, memberId)
+    Auth->>Auth: Create JWT (purpose: password_setup)
+    Auth-->>Members: Return temporary token
+
+    Note over Auth: 2. Password Setup (REST API)
+    Auth->>Auth: Receive POST /auth/password<br/>(Bearer temporaryToken)
+    Auth->>Auth: Validate token purpose
+    Auth->>Members: GetMemberConfirmationStatus (gRPC Client)
+    Members-->>Auth: Return confirmation status
+    Auth->>Auth: Set password + enabled=true
+    Auth->>Auth: Publish PasswordSetEvent
+    Auth->>Auth: Generate access/refresh tokens
+    Auth-->>Auth: Return {accessToken, refreshToken}
+
+    Note over Auth,Email: 3. Async Email Notification (Event Handler)
+    Auth->>Email: Send welcome email (gRPC)
+```
+### Auth Module Responsibilities
+- **Generate temporary JWT tokens** (gRPC server for Members)
+- **Manage password operations** (set, change, reset)
+- **Validate member status** (gRPC client to Members)
+- **Trigger email notifications** (event-driven, async)
+- **Issue authentication tokens** (access + refresh)
+
+
 ### Target Architecture
 
 ```
@@ -392,7 +424,7 @@ Delegates (AuthenticationDelegate, PasswordManagementDelegate)
 Business Services (AuthenticationService, PasswordService, Jwt)
 ```
 
-### Password Change Flow (Auth Module)
+### Password Change Flow When Already Connected (Auth Module)
 
 ```mermaid
 sequenceDiagram
