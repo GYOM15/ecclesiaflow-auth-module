@@ -153,7 +153,8 @@ public class AuthenticationDelegate {
 
         String temporaryToken = jwt.generateTemporaryToken(
             tempToken.email(),
-            tempToken.memberId()
+            tempToken.memberId(),
+            "password_setup"  // Nouveau membre qui définit son premier mot de passe
         );
         
         // Transformation vers le modèle OpenAPI

@@ -322,7 +322,7 @@ class AuthenticationDelegateTest {
         TemporaryToken domainToken = new TemporaryToken(email, memberId);
 
         when(temporaryTokenMapper.toDomain(temporaryTokenRequest)).thenReturn(domainToken);
-        when(jwt.generateTemporaryToken(email, memberId)).thenReturn(tempToken);
+        when(jwt.generateTemporaryToken(email, memberId, "password_setup")).thenReturn(tempToken);
         when(openApiModelMapper.createTemporaryTokenResponse(tempToken))
                 .thenReturn(temporaryTokenResponse);
 
@@ -338,7 +338,7 @@ class AuthenticationDelegateTest {
         assertThat(response.getBody().getExpiresIn()).isEqualTo(900);
 
         verify(temporaryTokenMapper).toDomain(temporaryTokenRequest);
-        verify(jwt).generateTemporaryToken(email, memberId);
+        verify(jwt).generateTemporaryToken(email, memberId, "password_setup");
         verify(openApiModelMapper).createTemporaryTokenResponse(tempToken);
     }
 
@@ -352,7 +352,7 @@ class AuthenticationDelegateTest {
         TemporaryToken domainToken = new TemporaryToken(email, memberId);
 
         when(temporaryTokenMapper.toDomain(temporaryTokenRequest)).thenReturn(domainToken);
-        when(jwt.generateTemporaryToken(email, memberId)).thenReturn(tempToken);
+        when(jwt.generateTemporaryToken(email, memberId, "password_setup")).thenReturn(tempToken);
         when(openApiModelMapper.createTemporaryTokenResponse(tempToken))
                 .thenReturn(temporaryTokenResponse);
 
@@ -361,7 +361,7 @@ class AuthenticationDelegateTest {
 
         // Then
         verify(temporaryTokenMapper).toDomain(temporaryTokenRequest);
-        verify(jwt).generateTemporaryToken(email, memberId);
+        verify(jwt).generateTemporaryToken(email, memberId, "password_setup");
         verify(openApiModelMapper).createTemporaryTokenResponse(tempToken);
     }
 
@@ -378,7 +378,7 @@ class AuthenticationDelegateTest {
         TemporaryToken domainToken = new TemporaryToken(email, memberId);
 
         when(temporaryTokenMapper.toDomain(temporaryTokenRequest)).thenReturn(domainToken);
-        when(jwt.generateTemporaryToken(email, memberId))
+        when(jwt.generateTemporaryToken(email, memberId, "password_setup"))
                 .thenThrow(new InvalidTokenException("Erreur génération token temporaire"));
 
         // When & Then
@@ -387,7 +387,7 @@ class AuthenticationDelegateTest {
                 .hasMessage("Erreur génération token temporaire");
 
         verify(temporaryTokenMapper).toDomain(temporaryTokenRequest);
-        verify(jwt).generateTemporaryToken(email, memberId);
+        verify(jwt).generateTemporaryToken(email, memberId, "password_setup");
         verify(openApiModelMapper, never()).createTemporaryTokenResponse(anyString());
     }
 
@@ -400,7 +400,7 @@ class AuthenticationDelegateTest {
         TemporaryToken domainToken = new TemporaryToken(email, memberId);
 
         when(temporaryTokenMapper.toDomain(temporaryTokenRequest)).thenReturn(domainToken);
-        when(jwt.generateTemporaryToken(email, memberId))
+        when(jwt.generateTemporaryToken(email, memberId, "password_setup"))
                 .thenThrow(new JwtProcessingException("Erreur traitement JWT"));
 
         // When & Then
@@ -422,6 +422,6 @@ class AuthenticationDelegateTest {
                 .hasMessage("L'email ne peut pas être null ou vide");
 
         verify(temporaryTokenMapper).toDomain(temporaryTokenRequest);
-        verify(jwt, never()).generateTemporaryToken(anyString(), any(UUID.class));
+        verify(jwt, never()).generateTemporaryToken(anyString(), any(UUID.class), anyString());
     }
 }

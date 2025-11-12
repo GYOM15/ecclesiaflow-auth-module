@@ -171,78 +171,9 @@ class AuthenticationServiceImplTest {
     }
 
     // ====================================================================
-    // Tests getEmailFromValidatedTempToken
+    // Note: Tests pour getEmailFromValidatedTempToken supprimés
+    // Cette méthode a été déplacée dans PasswordManagementDelegate
+    // sous forme de méthodes privées (validatePasswordSetupToken/validatePasswordResetToken)
+    // Les tests correspondants sont maintenant dans PasswordManagementDelegateTest
     // ====================================================================
-
-    @Test
-    @DisplayName("Devrait retourner l'email si le token temporaire est valide")
-    void getEmailFromValidatedTempToken_ShouldReturnEmail_OnValidToken() {
-        // Arrange
-        String token = "valid_temp_token";
-        String extractedEmail = "user_from_token@test.com";
-        when(jwt.extractEmailFromTemporaryToken(token)).thenReturn(extractedEmail);
-        when(jwt.validateTemporaryToken(token, extractedEmail)).thenReturn(true);
-
-        // Act
-        String resultEmail = authenticationService.getEmailFromValidatedTempToken(token);
-
-        // Assert
-        assertThat(resultEmail).isEqualTo(extractedEmail);
-        verify(jwt).extractEmailFromTemporaryToken(token);
-        verify(jwt).validateTemporaryToken(token, extractedEmail);
-    }
-
-    @Test
-    @DisplayName("Devrait lever InvalidCredentialsException si le token temporaire est invalide")
-    void getEmailFromValidatedTempToken_ShouldThrowInvalidCredentialsException_OnInvalidToken() {
-        // Arrange
-        String token = "invalid_temp_token";
-        String extractedEmail = "user_from_token@test.com";
-        when(jwt.extractEmailFromTemporaryToken(token)).thenReturn(extractedEmail);
-        when(jwt.validateTemporaryToken(token, extractedEmail)).thenReturn(false); // Validation échoue
-
-        // Act & Assert
-        assertThatThrownBy(() -> authenticationService.getEmailFromValidatedTempToken(token))
-                .isInstanceOf(InvalidCredentialsException.class)
-                .hasMessageContaining("Token temporaire invalide ou expiré");
-
-        verify(jwt).validateTemporaryToken(token, extractedEmail);
-    }
-
-    @Test
-    @DisplayName("Devrait encapsuler JwtProcessingException dans InvalidCredentialsException")
-    void getEmailFromValidatedTempToken_ShouldWrapJwtProcessingException() {
-        // Arrange
-        String token = "temp_token_exception";
-        when(jwt.extractEmailFromTemporaryToken(token)).thenThrow(new JwtProcessingException("Parsing error"));
-
-        // Act & Assert
-        assertThatThrownBy(() -> authenticationService.getEmailFromValidatedTempToken(token))
-                .isInstanceOf(InvalidCredentialsException.class)
-                .hasMessageContaining("Erreur lors du traitement du token temporaire")
-                .hasCauseInstanceOf(JwtProcessingException.class);
-
-        verify(jwt).extractEmailFromTemporaryToken(token);
-        verify(jwt, never()).validateTemporaryToken(anyString(), anyString());
-    }
-
-    @Test
-    @DisplayName("Devrait lever IllegalArgumentException si le token est null")
-    void getEmailFromValidatedTempToken_ShouldThrowIllegalArgumentException_OnNullToken() {
-        // Act & Assert
-        assertThatThrownBy(() -> authenticationService.getEmailFromValidatedTempToken(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Le token temporaire ne peut pas être null ou vide");
-        verifyNoInteractions(jwt);
-    }
-
-    @Test
-    @DisplayName("Devrait lever IllegalArgumentException si le token est vide")
-    void getEmailFromValidatedTempToken_ShouldThrowIllegalArgumentException_OnEmptyToken() {
-        // Act & Assert
-        assertThatThrownBy(() -> authenticationService.getEmailFromValidatedTempToken(" "))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Le token temporaire ne peut pas être null ou vide");
-        verifyNoInteractions(jwt);
-    }
 }
