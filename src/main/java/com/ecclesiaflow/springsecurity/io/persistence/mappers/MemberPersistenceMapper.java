@@ -59,6 +59,7 @@ public class MemberPersistenceMapper {
                 email(entity.getEmail()).
                 role(entity.getRole()).
                 password(entity.getPassword()).
+                passwordUpdatedAt(entity.getPasswordUpdatedAt()).
                 createdAt(entity.getCreatedAt()).
                 updatedAt(entity.getUpdatedAt()).
                 enabled(entity.isEnabled()).
@@ -87,6 +88,7 @@ public class MemberPersistenceMapper {
                 email(domain.getEmail()).
                 role(domain.getRole()).
                 password(domain.getPassword()).
+                passwordUpdatedAt(domain.getPasswordUpdatedAt()).
                 createdAt(domain.getCreatedAt()).
                 updatedAt(domain.getUpdatedAt()).
                 enabled(domain.isEnabled()).

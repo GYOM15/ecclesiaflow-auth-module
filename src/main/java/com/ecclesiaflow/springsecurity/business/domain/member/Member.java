@@ -41,6 +41,7 @@ public class Member {
     private final UUID memberId;
     private final String email;
     private final String password;
+    private final LocalDateTime passwordUpdatedAt;  // Timestamp de la dernière modification du mot de passe
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     @Builder.Default
