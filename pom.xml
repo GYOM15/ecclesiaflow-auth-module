@@ -415,9 +415,11 @@
 						<exclude>**/web/api/*</exclude>
 						<!-- Classes générées par Protobuf (stubs, builders, messages) -->
 						<exclude>**/com/ecclesiaflow/grpc/**/*</exclude>
-						<!-- Configuration gRPC Server (démarré uniquement en production, non testé) -->
-						<exclude>**/io/grpc/server/GrpcServerConfig.class</exclude>
+						<!-- Configuration gRPC Server (méthode start() nécessite test d'intégration) -->
+						<exclude>**/application/config/GrpcServerConfig.class</exclude>
 						<!-- Exceptions métier simples -->
+						<exclude>**/exceptions/EmailServiceException.class</exclude>
+						<exclude>**/exceptions/GrpcCommunicationException.class</exclude>
 						<exclude>**/exception/InvalidCredentialsException.class</exclude>
 						<exclude>**/exception/InvalidRequestException.class</exclude>
 						<exclude>**/exception/InvalidTokenException.class</exclude>
