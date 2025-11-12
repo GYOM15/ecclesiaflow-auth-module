@@ -71,7 +71,7 @@ public class GrpcServerLoggingAspect {
      * Intercepte la méthode {@code start()} pour auditer les démarrages du serveur.
      * </p>
      */
-    @Pointcut("execution(* com.ecclesiaflow.springsecurity.io.grpc.server.GrpcServerConfig.start())")
+    @Pointcut("execution(* com.ecclesiaflow.springsecurity.application.config.GrpcServerConfig.start())")
     public void grpcServerStart() {}
 
     /**
@@ -80,7 +80,7 @@ public class GrpcServerLoggingAspect {
      * Intercepte la méthode {@code stop()} pour auditer les arrêts graceful.
      * </p>
      */
-    @Pointcut("execution(* com.ecclesiaflow.springsecurity.io.grpc.server.GrpcServerConfig.stop())")
+    @Pointcut("execution(* com.ecclesiaflow.springsecurity.application.config.GrpcServerConfig.stop())")
     public void grpcServerStop() {}
 
     /**
@@ -127,7 +127,8 @@ public class GrpcServerLoggingAspect {
     public void logServerStartError(JoinPoint joinPoint, Exception exception) {
         log.error("❌ GRPC: Failed to start gRPC server - {}: {}", 
                 exception.getClass().getSimpleName(), 
-                exception.getMessage());
+                exception.getMessage(),
+                exception);
     }
 
     /**
@@ -211,18 +212,20 @@ public class GrpcServerLoggingAspect {
     public void logRpcCallError(JoinPoint joinPoint, Exception exception) {
         String methodName = joinPoint.getSignature().getName();
         
-        // Erreurs de validation (client error)
+        // Erreurs de validation (members error)
         if (exception instanceof IllegalArgumentException) {
             log.warn("⚠️  GRPC-RPC: Invalid argument in {} - {}", 
                     methodName, 
-                    exception.getMessage());
+                    exception.getMessage(),
+                    exception);
         } 
         // Erreurs internes (server error)
         else {
             log.error("❌ GRPC-RPC: Error in {} - {}: {}", 
                     methodName,
                     exception.getClass().getSimpleName(), 
-                    exception.getMessage());
+                    exception.getMessage(),
+                    exception);
         }
     }
 

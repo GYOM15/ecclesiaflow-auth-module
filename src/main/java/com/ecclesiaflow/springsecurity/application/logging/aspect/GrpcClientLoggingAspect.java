@@ -27,10 +27,10 @@ public class GrpcClientLoggingAspect {
     // Pointcuts
     // ========================================================================
 
-    @Pointcut("execution(* com.ecclesiaflow.springsecurity.io.grpc.client.GrpcClientConfig.shutdown())")
+    @Pointcut("execution(* com.ecclesiaflow.springsecurity.application.config.GrpcClientConfig.shutdown())")
     public void grpcChannelShutdown() {}
 
-    @Pointcut("execution(* com.ecclesiaflow.springsecurity.io.grpc.client.MembersGrpcClient.*(..))")
+    @Pointcut("execution(* com.ecclesiaflow.springsecurity.io.members.MembersGrpcClient.*(..))")
     public void grpcClientCalls() {}
 
     // ========================================================================

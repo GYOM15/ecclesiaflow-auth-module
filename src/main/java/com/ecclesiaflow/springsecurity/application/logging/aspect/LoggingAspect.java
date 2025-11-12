@@ -1,6 +1,8 @@
 package com.ecclesiaflow.springsecurity.application.logging.aspect;
 
 import com.ecclesiaflow.springsecurity.application.logging.annotation.LogExecution;
+import com.ecclesiaflow.springsecurity.business.exceptions.EmailServiceException;
+import com.ecclesiaflow.springsecurity.business.exceptions.GrpcCommunicationException;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -162,7 +164,29 @@ public class LoggingAspect {
         String className = joinPoint.getTarget().getClass().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
         
-        log.error("Exception non gérée dans {}.{}: {} - {}", 
-                className, methodName, exception.getClass().getSimpleName(), exception.getMessage());
+        // Log détaillé pour les exceptions gRPC Email
+        if (exception instanceof EmailServiceException emailEx) {
+            log.error("=== EMAIL SERVICE ERROR ===");
+            log.error("Class: {}.{}", className, methodName);
+            log.error("Email Operation: {}", emailEx.getOperation().getDescription());
+            log.error("Email Address: {}", emailEx.getEmailAddress());
+            log.error("Error Message: {}", emailEx.getMessage());
+            
+            // Si c'est une erreur gRPC, logger les détails
+            if (emailEx.getCause() instanceof GrpcCommunicationException grpcEx) {
+                log.error("--- gRPC Details ---");
+                log.error("Target Service: {}", grpcEx.getTargetService());
+                log.error("gRPC Operation: {}", grpcEx.getOperation());
+                log.error("gRPC Status Code: {}", grpcEx.getGrpcStatusCode());
+                log.error("gRPC Description: {}", grpcEx.getMessage());
+                
+                if (grpcEx.getCause() != null) {
+                    log.error("Root Cause: {}", grpcEx.getCause().getMessage());
+                }
+            }
+        } else {
+            log.error("Exception non gérée dans {}.{}: {} - {}", 
+                    className, methodName, exception.getClass().getSimpleName(), exception.getMessage());
+        }
     }
 }
