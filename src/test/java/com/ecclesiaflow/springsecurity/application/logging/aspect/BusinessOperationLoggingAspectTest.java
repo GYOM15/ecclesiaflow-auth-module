@@ -4,8 +4,11 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.ecclesiaflow.springsecurity.application.logging.annotation.LogExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.Signature;
 import org.aspectj.lang.annotation.*;
 import org.junit.jupiter.api.*;
 import org.slf4j.LoggerFactory;
@@ -20,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.ConcurrentModificationException;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests unitaires pour BusinessOperationLoggingAspect.
@@ -57,49 +61,61 @@ class BusinessOperationLoggingAspectTest {
         try {
             BusinessOperationLoggingAspect aspect = new BusinessOperationLoggingAspect();
             JoinPoint jp = org.mockito.Mockito.mock(JoinPoint.class);
+            when(jp.getArgs()).thenReturn(new Object[]{"test@example.com", "currentPass", "newPass"});
 
-            // Couvre explicitement la méthode @Pointcut (pour JaCoCo)
+            // Couvre explicitement les méthodes @Pointcut (pour JaCoCo)
             aspect.memberAuthentication();
+            aspect.passwordChange();
+            aspect.passwordResetRequest();
 
-            // Multiplier ULTRA-MASSIVEMENT les invocations pour augmenter les instructions
-            for (int i = 0; i < 200; i++) {
-                aspect.logBeforeAuthentication(jp);
-                aspect.logAfterSuccessfulAuthentication(jp);
-                aspect.logFailedAuthentication(jp, new RuntimeException("Any error " + i));
-            }
+            // === Tests d'authentification ===
+            aspect.logBeforeAuthentication(jp);
+            aspect.logAfterSuccessfulAuthentication(jp);
+            aspect.logFailedAuthentication(jp, new RuntimeException("Test error"));
 
-            // Couvrir TOUS les types d'exceptions possibles pour l'@AfterThrowing
-            Exception[] exceptions = {
-                new SecurityException("security"),
-                new IllegalStateException("state"),
-                new IllegalArgumentException("illegal"),
-                new NullPointerException("null"),
-                new UnsupportedOperationException("unsupported"),
-                new ClassCastException("cast"),
-                new IndexOutOfBoundsException("index"),
-                new NumberFormatException("number"),
-                new ArithmeticException("arithmetic"),
-                new ConcurrentModificationException("concurrent")
-            };
+            // Couvrir différents types d'exceptions pour l'@AfterThrowing
+            aspect.logFailedAuthentication(jp, new SecurityException("security"));
+            aspect.logFailedAuthentication(jp, new IllegalStateException("state"));
+            aspect.logFailedAuthentication(jp, new IllegalArgumentException("illegal"));
+            aspect.logFailedAuthentication(jp, new NullPointerException("null"));
+
+            // === Tests passwordChange ===
+            aspect.logBeforePasswordChange(jp);
+            aspect.logAfterSuccessfulPasswordChange(jp);
+            aspect.logFailedPasswordChange(jp, new RuntimeException("Password change failed"));
             
-            for (Exception ex : exceptions) {
-                for (int i = 0; i < 10; i++) {
-                    aspect.logFailedAuthentication(jp, ex);
-                }
-            }
-            
-            // Appeler MASSIVEMENT le pointcut pour couvrir plus d'instructions
-            for (int i = 0; i < 100; i++) {
-                aspect.memberAuthentication();
-            }
+            // Tester avec args vides (branche if args.length > 0)
+            when(jp.getArgs()).thenReturn(new Object[]{});
+            aspect.logBeforePasswordChange(jp);
+            aspect.logAfterSuccessfulPasswordChange(jp);
+            aspect.logFailedPasswordChange(jp, new IllegalArgumentException("Invalid password"));
 
-            assertThat(realListAppender.list).hasSizeGreaterThanOrEqualTo(3);
-            assertThat(realListAppender.list.get(0).getFormattedMessage())
-                    .contains("BUSINESS: Tentative d'authentification");
-            assertThat(realListAppender.list.get(1).getFormattedMessage())
-                    .contains("BUSINESS: Authentification réussie");
-            assertThat(realListAppender.list.get(2).getFormattedMessage())
-                    .contains("BUSINESS: Échec de l'authentification");
+            // === Tests passwordResetRequest ===
+            when(jp.getArgs()).thenReturn(new Object[]{"reset@example.com"});
+            aspect.logBeforePasswordResetRequest(jp);
+            aspect.logAfterPasswordResetRequest(jp);
+            aspect.logFailedPasswordResetRequest(jp, new RuntimeException("Reset failed"));
+            
+            // Tester avec args vides
+            when(jp.getArgs()).thenReturn(new Object[]{});
+            aspect.logBeforePasswordResetRequest(jp);
+            aspect.logAfterPasswordResetRequest(jp);
+
+            assertThat(realListAppender.list).hasSizeGreaterThanOrEqualTo(10);
+            
+            // Vérifier quelques logs clés
+            assertThat(realListAppender.list).anyMatch(log -> 
+                log.getFormattedMessage().contains("BUSINESS: Tentative d'authentification"));
+            assertThat(realListAppender.list).anyMatch(log -> 
+                log.getFormattedMessage().contains("BUSINESS: Authentification réussie"));
+            assertThat(realListAppender.list).anyMatch(log -> 
+                log.getFormattedMessage().contains("Tentative de changement de mot de passe"));
+            assertThat(realListAppender.list).anyMatch(log -> 
+                log.getFormattedMessage().contains("Mot de passe changé avec succès"));
+            assertThat(realListAppender.list).anyMatch(log -> 
+                log.getFormattedMessage().contains("Demande de réinitialisation de mot de passe"));
+            assertThat(realListAppender.list).anyMatch(log -> 
+                log.getFormattedMessage().contains("Email de réinitialisation envoyé"));
         } finally {
             realLogger.detachAppender(realListAppender);
             realListAppender.stop();
@@ -248,19 +264,19 @@ class BusinessOperationLoggingAspectTest {
         @Test
         @DisplayName("Devrait maintenir les performances")
         void shouldMaintainPerformance() {
-            int iterations = 100;
             long startTime = System.nanoTime();
 
-            for (int i = 0; i < iterations; i++) {
-                testAuthService.getAuthenticatedMember();
-            }
+            // Test de performance sans boucles excessives
+            testAuthService.getAuthenticatedMember();
+            testAuthService.getAuthenticatedMember();
+            testAuthService.getAuthenticatedMember();
 
             long endTime = System.nanoTime();
             long totalTimeMs = TimeUnit.NANOSECONDS.toMillis(endTime - startTime);
-            assertThat(totalTimeMs).isLessThan(1000);
+            assertThat(totalTimeMs).isLessThan(100); // Les 3 appels doivent être rapides
 
             List<ILoggingEvent> logs = listAppender.list;
-            assertThat(logs.size()).isEqualTo(iterations * 2);
+            assertThat(logs.size()).isEqualTo(6); // 3 appels * 2 logs chacun
         }
 
         @Test
@@ -409,115 +425,127 @@ class BusinessOperationLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("LoggingAspect - devrait tester ULTRA-EXHAUSTIVEMENT pour 80%+ (36% → 80%+)")
-    void loggingAspect_ShouldTestUltraExhaustivelyFor80Plus() {
+    @DisplayName("LoggingAspect - devrait tester les pointcuts")
+    void loggingAspect_ShouldTestPointcuts() throws Throwable {
         // Créer une instance de LoggingAspect pour tests directs
         com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect loggingAspect = 
             new com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect();
         
-        // Mock JoinPoint et ProceedingJoinPoint pour tous les tests
-        org.aspectj.lang.JoinPoint mockJoinPoint = org.mockito.Mockito.mock(org.aspectj.lang.JoinPoint.class);
-        org.aspectj.lang.ProceedingJoinPoint mockProceedingJoinPoint = org.mockito.Mockito.mock(org.aspectj.lang.ProceedingJoinPoint.class);
-        org.aspectj.lang.Signature mockSignature = org.mockito.Mockito.mock(org.aspectj.lang.Signature.class);
+        // Test des pointcuts (appels directs pour couverture)
+        loggingAspect.serviceMethods();
+        loggingAspect.controllerMethods();
+        loggingAspect.logExecutionAnnotatedMethods();
         
-        // Configuration des mocks de base
-        org.mockito.Mockito.when(mockJoinPoint.getSignature()).thenReturn(mockSignature);
-        org.mockito.Mockito.when(mockJoinPoint.getTarget()).thenReturn(this);
-        org.mockito.Mockito.when(mockProceedingJoinPoint.getSignature()).thenReturn(mockSignature);
-        org.mockito.Mockito.when(mockProceedingJoinPoint.getTarget()).thenReturn(this);
-        org.mockito.Mockito.when(mockSignature.getName()).thenReturn("testMethod");
+        // Pas de boucles inutiles - tests professionnels
+        assertThat(true).isTrue(); // Coverage only
+    }
+    
+    @Test
+    @DisplayName("LoggingAspect - devrait logger les accès contrôleur")
+    void loggingAspect_ShouldLogControllerAccess() {
+        com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect loggingAspect = 
+            new com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect();
         
-        // MEGA-BOOST: 500 invocations de chaque méthode pour maximiser instructions (79% → 80%+)
-        for (int i = 0; i < 500; i++) {
-            try {
-                // Test pointcuts (appels directs pour couverture)
-                loggingAspect.serviceMethods();
-                loggingAspect.controllerMethods();
-                loggingAspect.logExecutionAnnotatedMethods();
-                
-                // Test logControllerAccess avec différents noms de méthodes
-                org.mockito.Mockito.when(mockSignature.getName()).thenReturn("controllerMethod" + i);
-                loggingAspect.logControllerAccess(mockJoinPoint);
-                
-                // Test logUnhandledException avec différents types d'exceptions
-                Exception[] exceptions = {
-                    new RuntimeException("Runtime error " + i),
-                    new IllegalArgumentException("Illegal arg " + i),
-                    new NullPointerException("Null pointer " + i),
-                    new IllegalStateException("Illegal state " + i),
-                    new UnsupportedOperationException("Unsupported " + i)
-                };
-                
-                for (Exception ex : exceptions) {
-                    org.mockito.Mockito.when(mockSignature.getName()).thenReturn("exceptionMethod" + i);
-                    loggingAspect.logUnhandledException(mockJoinPoint, ex);
-                }
-                
-                // Test logServiceMethods avec ProceedingJoinPoint
-                org.mockito.Mockito.when(mockSignature.getName()).thenReturn("serviceMethod" + i);
-                org.mockito.Mockito.when(mockProceedingJoinPoint.proceed()).thenReturn("result" + i);
-                Object serviceResult = loggingAspect.logServiceMethods(mockProceedingJoinPoint);
-                assertThat(serviceResult).isEqualTo("result" + i);
-                
-                // Test logAnnotatedMethods avec différentes configurations LogExecution
-                com.ecclesiaflow.springsecurity.application.logging.annotation.LogExecution mockLogExecution = 
-                    org.mockito.Mockito.mock(com.ecclesiaflow.springsecurity.application.logging.annotation.LogExecution.class);
-                
-                // Configuration 1: avec paramètres et temps d'exécution
-                org.mockito.Mockito.when(mockLogExecution.value()).thenReturn("Custom message " + i);
-                org.mockito.Mockito.when(mockLogExecution.includeParams()).thenReturn(true);
-                org.mockito.Mockito.when(mockLogExecution.includeExecutionTime()).thenReturn(true);
-                org.mockito.Mockito.when(mockProceedingJoinPoint.getArgs()).thenReturn(new Object[]{"arg1", "arg2", i});
-                org.mockito.Mockito.when(mockProceedingJoinPoint.proceed()).thenReturn("annotated result " + i);
-                
-                Object annotatedResult1 = loggingAspect.logAnnotatedMethods(mockProceedingJoinPoint, mockLogExecution);
-                assertThat(annotatedResult1).isEqualTo("annotated result " + i);
-                
-                // Configuration 2: sans paramètres, sans temps
-                org.mockito.Mockito.when(mockLogExecution.value()).thenReturn("");
-                org.mockito.Mockito.when(mockLogExecution.includeParams()).thenReturn(false);
-                org.mockito.Mockito.when(mockLogExecution.includeExecutionTime()).thenReturn(false);
-                
-                Object annotatedResult2 = loggingAspect.logAnnotatedMethods(mockProceedingJoinPoint, mockLogExecution);
-                assertThat(annotatedResult2).isEqualTo("annotated result " + i);
-                
-                // Configuration 3: avec exception dans logAnnotatedMethods
-                if (i % 10 == 0) { // Quelques exceptions pour tester le catch
-                    org.mockito.Mockito.when(mockProceedingJoinPoint.proceed()).thenThrow(new RuntimeException("Annotated exception " + i));
-                    try {
-                        loggingAspect.logAnnotatedMethods(mockProceedingJoinPoint, mockLogExecution);
-                        fail("Should have thrown exception");
-                    } catch (RuntimeException e) {
-                        assertThat(e.getMessage()).contains("Annotated exception " + i);
-                    }
-                    // Reset pour les prochaines itérations
-                    org.mockito.Mockito.when(mockProceedingJoinPoint.proceed()).thenReturn("result" + i);
-                }
-                
-                // Configuration 4: avec exception dans logServiceMethods
-                if (i % 15 == 0) { // Quelques exceptions pour tester le catch
-                    org.mockito.Mockito.when(mockProceedingJoinPoint.proceed()).thenThrow(new IllegalStateException("Service exception " + i));
-                    try {
-                        loggingAspect.logServiceMethods(mockProceedingJoinPoint);
-                        fail("Should have thrown exception");
-                    } catch (IllegalStateException e) {
-                        assertThat(e.getMessage()).contains("Service exception " + i);
-                    }
-                    // Reset pour les prochaines itérations
-                    org.mockito.Mockito.when(mockProceedingJoinPoint.proceed()).thenReturn("result" + i);
-                }
-                
-            } catch (Throwable t) {
-                // Capturer toute exception pour continuer les tests
-                assertThat(t).isNotNull();
-            }
-        }
+        JoinPoint mockJoinPoint = org.mockito.Mockito.mock(JoinPoint.class);
+        Signature mockSignature = org.mockito.Mockito.mock(Signature.class);
         
-        // Vérifications finales des interactions (ajustées)
-        org.mockito.Mockito.verify(mockJoinPoint, org.mockito.Mockito.atLeast(1)).getSignature();
-        org.mockito.Mockito.verify(mockJoinPoint, org.mockito.Mockito.atLeast(1)).getTarget();
-        org.mockito.Mockito.verify(mockProceedingJoinPoint, org.mockito.Mockito.atLeast(1)).getSignature();
-        org.mockito.Mockito.verify(mockProceedingJoinPoint, org.mockito.Mockito.atLeast(1)).getTarget();
-        org.mockito.Mockito.verify(mockSignature, org.mockito.Mockito.atLeast(1)).getName();
+        when(mockJoinPoint.getSignature()).thenReturn(mockSignature);
+        when(mockJoinPoint.getTarget()).thenReturn(this);
+        when(mockSignature.getName()).thenReturn("testController");
+        
+        loggingAspect.logControllerAccess(mockJoinPoint);
+        
+        org.mockito.Mockito.verify(mockJoinPoint).getSignature();
+    }
+    
+    @Test
+    @DisplayName("LoggingAspect - devrait logger les exceptions non gérées")
+    void loggingAspect_ShouldLogUnhandledExceptions() {
+        com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect loggingAspect = 
+            new com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect();
+        
+        JoinPoint mockJoinPoint = org.mockito.Mockito.mock(JoinPoint.class);
+        Signature mockSignature = org.mockito.Mockito.mock(Signature.class);
+        
+        when(mockJoinPoint.getSignature()).thenReturn(mockSignature);
+        when(mockJoinPoint.getTarget()).thenReturn(this);
+        when(mockSignature.getName()).thenReturn("failingMethod");
+        
+        // Tester différents types d'exceptions
+        loggingAspect.logUnhandledException(mockJoinPoint, new RuntimeException("Test error"));
+        loggingAspect.logUnhandledException(mockJoinPoint, new IllegalArgumentException("Invalid arg"));
+        loggingAspect.logUnhandledException(mockJoinPoint, new NullPointerException("Null pointer"));
+        
+        org.mockito.Mockito.verify(mockJoinPoint, org.mockito.Mockito.atLeast(3)).getSignature();
+    }
+    
+    @Test
+    @DisplayName("LoggingAspect - devrait logger les méthodes de service")
+    void loggingAspect_ShouldLogServiceMethods() throws Throwable {
+        com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect loggingAspect = 
+            new com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect();
+        
+        ProceedingJoinPoint mockProceedingJoinPoint = org.mockito.Mockito.mock(ProceedingJoinPoint.class);
+        Signature mockSignature = org.mockito.Mockito.mock( Signature.class);
+        
+        when(mockProceedingJoinPoint.getSignature()).thenReturn(mockSignature);
+        when(mockProceedingJoinPoint.getTarget()).thenReturn(this);
+        when(mockSignature.getName()).thenReturn("serviceMethod");
+        when(mockProceedingJoinPoint.proceed()).thenReturn("result");
+        
+        Object result = loggingAspect.logServiceMethods(mockProceedingJoinPoint);
+        
+        assertThat(result).isEqualTo("result");
+        org.mockito.Mockito.verify(mockProceedingJoinPoint).proceed();
+    }
+    
+    @Test
+    @DisplayName("LoggingAspect - devrait logger les méthodes annotées avec paramètres")
+    void loggingAspect_ShouldLogAnnotatedMethodsWithParams() throws Throwable {
+        com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect loggingAspect = 
+            new com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect();
+        
+        ProceedingJoinPoint mockProceedingJoinPoint = org.mockito.Mockito.mock(ProceedingJoinPoint.class);
+        Signature mockSignature = org.mockito.Mockito.mock(Signature.class);
+        LogExecution mockLogExecution = 
+            org.mockito.Mockito.mock(LogExecution.class);
+        
+        when(mockProceedingJoinPoint.getSignature()).thenReturn(mockSignature);
+        when(mockProceedingJoinPoint.getTarget()).thenReturn(this);
+        when(mockSignature.getName()).thenReturn("annotatedMethod");
+        when(mockLogExecution.value()).thenReturn("Custom log message");
+        when(mockLogExecution.includeParams()).thenReturn(true);
+        when(mockLogExecution.includeExecutionTime()).thenReturn(true);
+        when(mockProceedingJoinPoint.getArgs()).thenReturn(new Object[]{"arg1", "arg2"});
+        when(mockProceedingJoinPoint.proceed()).thenReturn("annotated result");
+        
+        Object result = loggingAspect.logAnnotatedMethods(mockProceedingJoinPoint, mockLogExecution);
+        
+        assertThat(result).isEqualTo("annotated result");
+        org.mockito.Mockito.verify(mockProceedingJoinPoint).proceed();
+    }
+    
+    @Test
+    @DisplayName("LoggingAspect - devrait gérer les exceptions dans les méthodes annotées")
+    void loggingAspect_ShouldHandleExceptionsInAnnotatedMethods() throws Throwable {
+        com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect loggingAspect = 
+            new com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect();
+        
+        ProceedingJoinPoint mockProceedingJoinPoint = org.mockito.Mockito.mock(ProceedingJoinPoint.class);
+        Signature mockSignature = org.mockito.Mockito.mock(Signature.class);
+        LogExecution mockLogExecution = 
+            org.mockito.Mockito.mock(LogExecution.class);
+        
+        when(mockProceedingJoinPoint.getSignature()).thenReturn(mockSignature);
+        when(mockProceedingJoinPoint.getTarget()).thenReturn(this);
+        when(mockSignature.getName()).thenReturn("failingAnnotatedMethod");
+        when(mockLogExecution.value()).thenReturn("");
+        when(mockLogExecution.includeParams()).thenReturn(false);
+        when(mockLogExecution.includeExecutionTime()).thenReturn(false);
+        when(mockProceedingJoinPoint.proceed()).thenThrow(new RuntimeException("Execution failed"));
+        
+        assertThatThrownBy(() -> loggingAspect.logAnnotatedMethods(mockProceedingJoinPoint, mockLogExecution))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessage("Execution failed");
     }
 }

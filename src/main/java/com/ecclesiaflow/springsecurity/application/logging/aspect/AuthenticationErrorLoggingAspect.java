@@ -154,10 +154,10 @@ public class AuthenticationErrorLoggingAspect {
     }
 
     /**
-     * Extrait l'adresse IP réelle du client en tenant compte des proxies et load balancers.
+     * Extrait l'adresse IP réelle du members en tenant compte des proxies et load balancers.
      *
      * @param request Requête HTTP
-     * @return Adresse IP du client
+     * @return Adresse IP du members
      */
     String getClientIpAddress(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
