@@ -2,8 +2,11 @@ package com.ecclesiaflow.springsecurity.web.controller;
 
 import com.ecclesiaflow.springsecurity.web.delegate.PasswordManagementDelegate;
 import com.ecclesiaflow.springsecurity.web.model.ChangePasswordRequest;
+import com.ecclesiaflow.springsecurity.web.model.ForgotPasswordRequest;
+import com.ecclesiaflow.springsecurity.web.model.ForgotPasswordResponse;
 import com.ecclesiaflow.springsecurity.web.model.PasswordManagementResponse;
 import com.ecclesiaflow.springsecurity.web.model.SetPasswordRequest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,10 +31,11 @@ class PasswordControllerTest {
     private SetPasswordRequest setPasswordRequest;
     private ChangePasswordRequest changePasswordRequest;
     private PasswordManagementResponse passwordManagementResponse;
+    private AutoCloseable closeable;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         // Setup SetPasswordRequest
         setPasswordRequest = new SetPasswordRequest();
@@ -39,7 +43,6 @@ class PasswordControllerTest {
 
         // Setup ChangePasswordRequest
         changePasswordRequest = new ChangePasswordRequest();
-        changePasswordRequest.setEmail("user@example.com");
         changePasswordRequest.setCurrentPassword("oldPass");
         changePasswordRequest.setNewPassword("newPass");
 
@@ -49,6 +52,13 @@ class PasswordControllerTest {
                 .accessToken("access-token")
                 .refreshToken("refresh-token")
                 .expiresIn(60);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        if (closeable != null) {
+            closeable.close();
+        }
     }
 
     // ====================================================================
@@ -97,5 +107,59 @@ class PasswordControllerTest {
         assertEquals("Mot de passe changé avec succès", response.getBody().getMessage());
         
         verify(passwordManagementDelegate).changePassword(changePasswordRequest);
+    }
+
+    // ====================================================================
+    // Tests requestPasswordReset
+    // ====================================================================
+
+    @Test
+    @DisplayName("requestPasswordReset - Devrait déléguer au PasswordManagementDelegate")
+    void requestPasswordReset_ShouldDelegateToPasswordManagementDelegate() {
+        // Given
+        ForgotPasswordRequest forgotPasswordRequest = new ForgotPasswordRequest();
+        forgotPasswordRequest.setEmail("user@example.com");
+        
+        ForgotPasswordResponse forgotPasswordResponse = new ForgotPasswordResponse()
+                .message("Si un compte existe avec cet email, un lien de réinitialisation a été envoyé");
+        
+        when(passwordManagementDelegate.requestPasswordReset(forgotPasswordRequest))
+                .thenReturn(ResponseEntity.ok(forgotPasswordResponse));
+
+        // When
+        ResponseEntity<ForgotPasswordResponse> response = passwordController._authRequestPasswordReset(forgotPasswordRequest);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Si un compte existe avec cet email, un lien de réinitialisation a été envoyé", response.getBody().getMessage());
+        
+        verify(passwordManagementDelegate).requestPasswordReset(forgotPasswordRequest);
+    }
+
+    // ====================================================================
+    // Tests resetPassword
+    // ====================================================================
+
+    @Test
+    @DisplayName("resetPassword - Devrait déléguer au PasswordManagementDelegate")
+    void resetPassword_ShouldDelegateToPasswordManagementDelegate() {
+        // Given
+        String authHeader = "Bearer reset-token-456";
+        when(passwordManagementDelegate.resetPassword(authHeader, setPasswordRequest))
+                .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+        // When
+        ResponseEntity<PasswordManagementResponse> response = passwordController._authResetPassword(authHeader, setPasswordRequest);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("access-token", response.getBody().getAccessToken());
+        assertEquals("refresh-token", response.getBody().getRefreshToken());
+        
+        verify(passwordManagementDelegate).resetPassword(authHeader, setPasswordRequest);
     }
 }

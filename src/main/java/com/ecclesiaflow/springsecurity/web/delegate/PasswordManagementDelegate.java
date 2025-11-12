@@ -1,20 +1,22 @@
 package com.ecclesiaflow.springsecurity.web.delegate;
 
 import com.ecclesiaflow.springsecurity.business.domain.member.Member;
-import com.ecclesiaflow.springsecurity.business.domain.password.PasswordManagement;
 import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
+import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
 import com.ecclesiaflow.springsecurity.business.services.AuthenticationService;
 import com.ecclesiaflow.springsecurity.business.services.PasswordService;
+import com.ecclesiaflow.springsecurity.web.constants.Messages;
+import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
 import com.ecclesiaflow.springsecurity.web.mappers.OpenApiModelMapper;
-import com.ecclesiaflow.springsecurity.web.model.ChangePasswordRequest;
-import com.ecclesiaflow.springsecurity.web.model.PasswordManagementResponse;
-import com.ecclesiaflow.springsecurity.web.model.SetPasswordRequest;
+import com.ecclesiaflow.springsecurity.web.model.*;
 import com.ecclesiaflow.springsecurity.web.security.Jwt;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 /**
  * Délégué pour la gestion des mots de passe - Pattern Delegate avec OpenAPI Generator.
@@ -46,13 +48,13 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class PasswordManagementDelegate {
 
     private final PasswordService passwordService;
     private final AuthenticationService authenticationService;
     private final Jwt jwt;
     private final OpenApiModelMapper openApiModelMapper;
+    private final HttpServletRequest httpServletRequest;
 
     @Value("${jwt.token.expiration}")
     private long accessTokenExpiration;
@@ -79,81 +81,247 @@ public class PasswordManagementDelegate {
     public ResponseEntity<PasswordManagementResponse> setPassword(
             String authorizationHeader, SetPasswordRequest setPasswordRequest) {
         
-        // Extraction du token temporaire depuis le header Authorization
         String temporaryToken = extractTokenFromHeader(authorizationHeader);
+        ValidatedTokenData tokenData = validateAndExtractTemporaryTokenData(temporaryToken, "password_setup");
         
-        // Création de l'objet métier PasswordManagement
-        PasswordManagement passwordManagement = new PasswordManagement(
+
+        Member updatedMember = passwordService.setInitialPassword(
+            tokenData.member().getEmail(), 
             setPasswordRequest.getPassword(), 
-            temporaryToken
+            tokenData.memberId()
         );
         
-        // Validation du token temporaire et extraction de l'email
-        String validatedEmail = authenticationService.getEmailFromValidatedTempToken(
-            passwordManagement.temporaryToken()
+        return generateAuthenticationResponse(
+            updatedMember,
+            Messages.PASSWORD_SETUP_SUCCESS
         );
-        
-        // Extraction du memberId depuis le token temporaire
-        java.util.UUID memberId = jwt.extractMemberId(passwordManagement.temporaryToken());
-        
-        // Définition du mot de passe initial avec le memberId pour lier les deux modules
-        passwordService.setInitialPassword(validatedEmail, passwordManagement.password(), memberId);
-        
-        // Récupération du membre
-        Member member = authenticationService.getMemberByEmail(validatedEmail);
-        
-        // Génération des tokens d'authentification
-        UserTokens userTokens = jwt.generateUserTokens(member);
-        
-        // Transformation vers le modèle OpenAPI
-        PasswordManagementResponse response = openApiModelMapper.createPasswordManagementResponse(
-            "Mot de passe défini avec succès. Vous êtes maintenant connecté.",
-            userTokens,
-            accessTokenExpiration / 1000
-        );
-        
-        return ResponseEntity.ok(response);
     }
 
     /**
      * Change le mot de passe d'un membre authentifié.
      * <p>
      * Processus :
-     * 1. Extraction des informations depuis la requête OpenAPI
-     * 2. Validation du mot de passe actuel
-     * 3. Mise à jour du mot de passe
+     * 1. Extraction du token d'accès depuis le header Authorization
+     * 2. Validation du token et extraction de l'email
+     * 3. Vérification que le token n'a pas été émis avant la dernière modification du mot de passe
+     * 4. Changement du mot de passe
+     * 5. Génération de nouveaux tokens d'authentification
      * </p>
      * 
-     * @param changePasswordRequest Requête contenant email, mot de passe actuel et nouveau (modèle OpenAPI)
-     * @return Réponse vide avec statut 200
+     * @param changePasswordRequest Requête contenant mot de passe actuel et nouveau
+     * @return Réponse avec nouveaux tokens d'authentification
      */
     public ResponseEntity<PasswordManagementResponse> changePassword(ChangePasswordRequest changePasswordRequest) {
+        String authorizationHeader = httpServletRequest.getHeader("Authorization");
+        String accessToken = extractTokenFromHeader(authorizationHeader);
         
-        // Changement du mot de passe via le service
-        passwordService.changePassword(
-            changePasswordRequest.getEmail(),
+        String email;
+        try {
+            email = jwt.extractEmail(accessToken);
+        } catch (Exception e) {
+            throw new InvalidRequestException(Messages.AUTH_REQUIRED);
+        }
+        
+        Member member = authenticationService.getMemberByEmail(email);
+        
+        if (!jwt.isTokenValidForPasswordUpdate(accessToken, member)) {
+            throw new InvalidRequestException(Messages.SESSION_EXPIRED);
+        }
+        
+        Member updatedMember = passwordService.changePassword(
+            email,
             changePasswordRequest.getCurrentPassword(),
             changePasswordRequest.getNewPassword()
         );
-        return ResponseEntity.ok(new PasswordManagementResponse().message("Mot de passe changé avec succès"));
+        
+        return generateAuthenticationResponse(
+            updatedMember,
+            Messages.PASSWORD_CHANGE_SUCCESS
+        );
     }
 
     /**
-     * Extrait le token JWT depuis le header Authorization.
+     * Initie une demande de réinitialisation de mot de passe.
      * <p>
-     * Valide le format du header et extrait le token en supprimant le préfixe "Bearer ".
+     * Processus :
+     * 1. Validation de l'email
+     * 2. Appel du service métier qui :
+     *    - Recherche le membre
+     *    - Publie un événement métier si trouvé
+     * 3. Retour d'un message générique (sécurité)
+     * </p>
+     * <p>
+     * <strong>Sécurité :</strong> Le message de réponse est toujours identique,
+     * que le compte existe ou non, pour ne pas révéler l'existence d'un email.
+     * </p>
+     * <p>
+     * <strong>Architecture :</strong> Le service métier publie un événement,
+     * le handler applicatif génère le JWT et le lien, et l'infrastructure envoie l'email.
      * </p>
      * 
-     * @param authorizationHeader Header Authorization au format "Bearer {token}"
-     * @return Token JWT extrait
-     * @throws RuntimeException si le header est manquant ou invalide
+     * @param forgotPasswordRequest Requête contenant l'email (modèle OpenAPI)
+     * @return Message générique de confirmation
+     */
+    public ResponseEntity<ForgotPasswordResponse> requestPasswordReset(
+            ForgotPasswordRequest forgotPasswordRequest) {
+        
+        passwordService.requestPasswordReset(forgotPasswordRequest.getEmail());
+        
+        ForgotPasswordResponse response =
+            new ForgotPasswordResponse()
+                .message(Messages.RESET_EMAIL_SENT);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Réinitialise le mot de passe d'un membre avec un token de reset.
+     * <p>
+     * Processus :
+     * 1. Extraction du token temporaire depuis le header Authorization
+     * 2. Validation du token et extraction de l'email
+     * 3. Validation stricte : token doit avoir purpose="password_reset"
+     * 4. Validation stricte : compte doit être activé (enabled=true)
+     * 5. Réinitialisation du mot de passe
+     * 6. Envoi email de confirmation
+     * 7. Génération et retour des tokens d'authentification
+     * </p>
+     * 
+     * @param authorizationHeader Header Authorization contenant le token temporaire
+     * @param setPasswordRequest Requête contenant le nouveau mot de passe
+     * @return Réponse avec tokens d'authentification pour connexion immédiate
+     */
+    public ResponseEntity<PasswordManagementResponse> resetPassword(
+            String authorizationHeader, SetPasswordRequest setPasswordRequest) {
+        
+        String temporaryToken = extractTokenFromHeader(authorizationHeader);
+        ValidatedTokenData tokenData = validateAndExtractTemporaryTokenData(temporaryToken, "password_reset");
+        
+        if (!tokenData.member().isEnabled()) {
+            throw new InvalidRequestException(Messages.INVALID_OR_EXPIRED_LINK);
+        }
+        
+        Member updatedMember = passwordService.resetPasswordWithToken(
+            tokenData.member().getEmail(), 
+            setPasswordRequest.getPassword()
+        );
+        
+        return generateAuthenticationResponse(
+            updatedMember,
+            Messages.PASSWORD_RESET_SUCCESS
+        );
+    }
+
+    // ==================== MÉTHODES HELPER ====================
+    
+    /**
+     * Extrait le token JWT depuis le header Authorization.
      */
     private String extractTokenFromHeader(String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new RuntimeException(
-                "Header Authorization manquant ou format invalide. Format attendu: Bearer {token}"
-            );
+            throw new InvalidRequestException(Messages.INVALID_AUTH_HEADER);
         }
         return authorizationHeader.substring(7);
     }
+    
+    /**
+     * Génère une réponse d'authentification avec tokens.
+     */
+    private ResponseEntity<PasswordManagementResponse> generateAuthenticationResponse(
+            Member member, String message) {
+        UserTokens userTokens = jwt.generateUserTokens(member);
+        PasswordManagementResponse response = openApiModelMapper.createPasswordManagementResponse(
+            message,
+            userTokens,
+            accessTokenExpiration / 1000
+        );
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * Valide un token temporaire et retourne le membre validé avec le purpose vérifié.
+     * <p>
+     * Délègue à la méthode spécialisée selon le purpose (password_setup ou password_reset).
+     * </p>
+     */
+    private ValidatedTokenData validateAndExtractTemporaryTokenData(String temporaryToken, String expectedPurpose) {
+        try {
+            String email = jwt.extractEmailFromTemporaryToken(temporaryToken);
+            
+            if (!jwt.validateTemporaryToken(temporaryToken, email)) {
+                throw new InvalidRequestException(Messages.PASSWORD_SETUP_ERROR);
+            }
+            
+            String purpose = jwt.extractPurpose(temporaryToken);
+            if (!expectedPurpose.equals(purpose)) {
+                throw new InvalidRequestException(Messages.PASSWORD_SETUP_ERROR);
+            }
+            
+            return "password_setup".equals(expectedPurpose)
+                ? validatePasswordSetupToken(temporaryToken, email)
+                : validatePasswordResetToken(temporaryToken, email);
+                
+        } catch (InvalidRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new InvalidRequestException(Messages.PASSWORD_SETUP_ERROR);
+        }
+    }
+    
+    /**
+     * Valide un token pour password_setup (membre n'existe pas encore).
+     * <p>
+     * Vérifie que le membre n'existe pas déjà avec un mot de passe défini.
+     * Crée un membre temporaire (non persisté) pour la validation.
+     * Le membre sera créé dans la DB lors de l'appel à setInitialPassword().
+     * </p>
+     */
+    private ValidatedTokenData validatePasswordSetupToken(String temporaryToken, String email) {
+        UUID memberId = jwt.extractMemberId(temporaryToken);
+        
+        // Vérifier si le membre existe déjà et a déjà un mot de passe défini
+        // Note: getMemberByEmail lance MemberNotFoundException si le membre n'existe pas (normal pour password_setup)
+        try {
+            Member existingMember = authenticationService.getMemberByEmail(email);
+            if (existingMember.isEnabled()) {
+                throw new InvalidRequestException(Messages.PASSWORD_SETUP_ERROR);
+            }
+        } catch (MemberNotFoundException ignored) {
+
+        }
+        
+        Member temporaryMember = Member.builder()
+            .email(email)
+            .memberId(memberId)
+            .enabled(false)
+            .build();
+        
+        return new ValidatedTokenData(temporaryMember, memberId, "password_setup");
+    }
+    
+    /**
+     * Valide un token pour password_reset (membre doit exister).
+     * <p>
+     * Vérifie que le membre existe dans la DB et que le token n'a pas été invalidé
+     * par un changement de mot de passe ultérieur.
+     * </p>
+     */
+    private ValidatedTokenData validatePasswordResetToken(String temporaryToken, String email) {
+        Member member = authenticationService.getMemberByEmail(email);
+
+        if (member == null) {
+            throw new InvalidRequestException(Messages.PASSWORD_SETUP_ERROR);
+        }
+        
+        if (!jwt.isTokenValidForPasswordUpdate(temporaryToken, member)) {
+            throw new InvalidRequestException(Messages.PASSWORD_SETUP_ERROR);
+        }
+        
+        return new ValidatedTokenData(member, null, "password_reset");
+    }
+
+    /**
+     * Enregistrement des données validées du token temporaire avec le membre.
+     */
+    private record ValidatedTokenData(Member member, UUID memberId, String purpose) {}
 }

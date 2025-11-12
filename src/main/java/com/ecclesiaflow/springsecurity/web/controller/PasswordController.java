@@ -3,6 +3,8 @@ package com.ecclesiaflow.springsecurity.web.controller;
 import com.ecclesiaflow.springsecurity.web.api.PasswordManagementApi;
 import com.ecclesiaflow.springsecurity.web.delegate.PasswordManagementDelegate;
 import com.ecclesiaflow.springsecurity.web.model.ChangePasswordRequest;
+import com.ecclesiaflow.springsecurity.web.model.ForgotPasswordRequest;
+import com.ecclesiaflow.springsecurity.web.model.ForgotPasswordResponse;
 import com.ecclesiaflow.springsecurity.web.model.PasswordManagementResponse;
 import com.ecclesiaflow.springsecurity.web.model.SetPasswordRequest;
 import lombok.RequiredArgsConstructor;
@@ -86,5 +88,43 @@ public class PasswordController implements PasswordManagementApi {
     @Override
     public ResponseEntity<PasswordManagementResponse> _authChangePassword(ChangePasswordRequest changePasswordRequest) {
         return passwordManagementDelegate.changePassword(changePasswordRequest);
+    }
+
+    /**
+     * Initie une demande de réinitialisation de mot de passe.
+     * <p>
+     * Génère un token temporaire et envoie un email avec un lien de réinitialisation.
+     * Retourne toujours le même message générique pour des raisons de sécurité.
+     * </p>
+     * 
+     * @param forgotPasswordRequest Requête contenant l'email du compte
+     * @return Message générique (ne révèle pas si le compte existe)
+     * 
+     * @implNote <strong>Implémentation :</strong> Délègue au {@link PasswordManagementDelegate}
+     * @see PasswordManagementDelegate#requestPasswordReset(ForgotPasswordRequest)
+     */
+    @Override
+    public ResponseEntity<ForgotPasswordResponse> _authRequestPasswordReset(ForgotPasswordRequest forgotPasswordRequest) {
+        return passwordManagementDelegate.requestPasswordReset(forgotPasswordRequest);
+    }
+
+    /**
+     * Réinitialise le mot de passe d'un membre avec un token de reset.
+     * <p>
+     * Réinitialise le mot de passe d'un membre existant qui a oublié son mot de passe.
+     * Le token temporaire avec purpose="password_reset" doit être fourni dans le header Authorization.
+     * </p>
+     * 
+     * @param authorization Header Authorization contenant le token temporaire
+     * @param setPasswordRequest Requête contenant le nouveau mot de passe
+     * @return Réponse avec tokens d'authentification pour connexion immédiate
+     * 
+     * @implNote <strong>Implémentation :</strong> Délègue au {@link PasswordManagementDelegate}
+     * @see PasswordManagementDelegate#resetPassword(String, SetPasswordRequest)
+     */
+    @Override
+    public ResponseEntity<PasswordManagementResponse> _authResetPassword(
+            String authorization, SetPasswordRequest setPasswordRequest) {
+        return passwordManagementDelegate.resetPassword(authorization, setPasswordRequest);
     }
 }
