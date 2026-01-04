@@ -4,26 +4,24 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![gRPC](https://img.shields.io/badge/gRPC-1.60.0-blue.svg)](https://grpc.io/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-509%20passing-success.svg)]()
-[![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)]()
-
+[![Spring Security](https://img.shields.io/badge/Spring%20Security-6.5.x-6DB33F.svg)](https://spring.io/projects/spring-security)
 > **Centralized authentication module for the EcclesiaFlow church management platform**
 
 A robust and secure authentication service designed to support EcclesiaFlow's multi-tenant architecture, where each church constitutes an independent tenant with its own administrator (pastor) and members. Automatic API generation via OpenAPI Generator with Delegate pattern.
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [🎯 Overview](#-overview)
-- [🏗️ Architecture](#️-architecture)
-- [🚀 Quick Start](#-quick-start)
-- [📚 API Documentation](#-api-documentation)
-- [🔧 Configuration](#-configuration)
-- [🛡️ Security](#️-security)
-- [🧪 Tests](#-tests)
-- [📦 Deployment](#-deployment)
-- [🤝 Contribution](#-contribution)
+- [Overview](#-overview)
+- [Architecture](#️-architecture)
+- [Quick Start](#-quick-start)
+- [API Documentation](#-api-documentation)
+- [Configuration](#-configuration)
+- [Security](#️-security)
+- [Tests](#-tests)
+- [Deployment](#-deployment)
+- [Contribution](#-contribution)
 
-## 🎯 Overview
+## Overview
 
 ### Module Objective
 
@@ -79,21 +77,21 @@ sequenceDiagram
 ┌─────────────────────────────────────────────────────────────┐
 │                    SUPER ADMIN                              │
 ├─────────────────────────────────────────────────────────────┤
-│  TENANT 1 (Église A)    │  TENANT 2 (Église B)    │ ...    │
-│  ┌─────────────────────┐ │ ┌─────────────────────┐  │        │
-│  │ Pastor (Admin)      │ │ │ Pastor (Admin)      │  │        │
-│  │ ├─ Member 1         │ │ │ ├─ Member 1         │  │        │
-│  │ ├─ Member 2         │ │ │ ├─ Member 2         │  │        │
-│  │ └─ ...              │ │ │ └─ ...              │  │        │
-│  └─────────────────────┘ │ └─────────────────────┘  │        │
+│  TENANT 1 (Église A)     │  TENANT 2 (Église B)     │ ...   │
+│  ┌─────────────────────┐ │ ┌─────────────────────┐  │       │
+│  │ Pastor (Admin)      │ │ │ Pastor (Admin)      │  │       │
+│  │ ├─ Member 1         │ │ │ ├─ Member 1         │  │       │
+│  │ ├─ Member 2         │ │ │ ├─ Member 2         │  │       │
+│  │ └─ ...              │ │ │ └─ ...              │  │       │
+│  └─────────────────────┘ │ └─────────────────────┘  │       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ### Technology Stack
 
-- **Java 21** - LTS with latest features (Records, Pattern Matching)
+- **Java 21**
 - **Spring Boot 3.5.5** - Main framework
 - **Spring Security 6** - Security and authentication
 - **JJWT 0.11.5** - JWT token generation and validation
@@ -107,15 +105,15 @@ sequenceDiagram
 
 ### Applied Architectural Principles
 
-- ✅ **Clean Architecture** - Strict layer separation (Domain, Business, IO, Web)
-- ✅ **SOLID Principles** - Maintainable and extensible code
-- ✅ **Domain-Driven Design** - Pure domain objects (Member, TemporaryToken, UserTokens)
-- ✅ **Event-Driven Architecture** - Domain events for async operations
-- ✅ **Ports & Adapters** - MemberRepository (port), MembersClient, EmailClient (adapters)
-- ✅ **API-First Design** - OpenAPI Specification → Automatic generation
-- ✅ **Delegate Pattern** - Controller/Delegate separation for business logic
-- ✅ **AOP (Aspect-Oriented Programming)** - Cross-cutting concerns (logging, security)
-- ✅ **Resilience Patterns** - gRPC primary, WebClient fallback for fault tolerance
+-  **Clean Architecture** - Strict layer separation (Domain, Business, IO, Web)
+-  **SOLID Principles** - Maintainable and extensible code
+-  **Domain-Driven Design** - Pure domain objects (Member, TemporaryToken, UserTokens)
+-  **Event-Driven Architecture** - Domain events for async operations
+-  **Ports & Adapters** - MemberRepository (port), MembersClient, EmailClient (adapters)
+-  **API-First Design** - OpenAPI Specification → Automatic generation
+-  **Delegate Pattern** - Controller/Delegate separation for business logic
+-  **AOP (Aspect-Oriented Programming)** - Cross-cutting concerns (logging, security)
+-  **Resilience Patterns** - gRPC primary, WebClient fallback for fault tolerance
 
 ### Project Structure
 
@@ -209,7 +207,7 @@ src/
         └── web/                           # Controllers/delegates tests
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -228,9 +226,9 @@ cd ecclesiaflow-auth-module
 
 2. **Configure the database**
 ```sql
-CREATE DATABASE ecclesiaflow_auth;
+CREATE DATABASE auth_module_db;
 CREATE USER 'ecclesiaflow'@'localhost' IDENTIFIED BY 'your_password';
-GRANT ALL PRIVILEGES ON ecclesiaflow_auth.* TO 'ecclesiaflow'@'localhost';
+GRANT ALL PRIVILEGES ON auth_module_db.* TO 'ecclesiaflow'@'localhost';
 ```
 
 3. **Configure environment variables**
@@ -265,7 +263,7 @@ OR via Maven:
 
 6. **Run the application**
 ```bash
-mvn spring-boot:run
+mvn spring-boot:run '-Dspring-boot.run.arguments=--server.port=8081'
 ```
 
 The application will be accessible at `http://localhost:8081`
@@ -274,13 +272,13 @@ The application will be accessible at `http://localhost:8081`
 
 ```bash
 # Check that the application is running
-curl http://localhost:8080/actuator/health
+curl http://localhost:8081/actuator/health
 
 # Access Swagger documentation
-open http://localhost:8080/swagger-ui.html
+open http://localhost:8081/swagger-ui.html
 ```
 
-## 📚 API Documentation
+## API Documentation
 
 ### Main Endpoints
 
@@ -483,47 +481,7 @@ sequenceDiagram
 - **Event-driven**: Resilient architecture
 - **Auto-login**: Returns tokens after reset
 
-## 🔧 Configuration
-
-### Environment Variables
-
-```bash
-# Database
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=ecclesiaflow_auth
-DB_USERNAME=ecclesiaflow
-DB_PASSWORD=your_password
-
-# JWT Configuration
-JWT_SECRET=your-super-secret-key-minimum-512-bits-base64
-JWT_EXPIRATION=900000           # Access token: 15 minutes
-JWT_REFRESH_TOKEN_EXPIRATION=604800000  # Refresh token: 7 days
-JWT_TEMPORARY_TOKEN_EXPIRATION=900000   # Temporary token: 15 minutes
-
-# Inter-Module Communication
-ECCLESIAFLOW_AUTH_MODULE_BASE_URL=http://localhost:8081
-ECCLESIAFLOW_MEMBERS_MODULE_BASE_URL=http://localhost:8080
-
-# gRPC Configuration
-GRPC_ENABLED=true
-GRPC_SERVER_PORT=9090
-GRPC_AUTH_HOST=localhost
-GRPC_AUTH_PORT=9090
-GRPC_MEMBERS_HOST=localhost
-GRPC_MEMBERS_PORT=9091
-
-# Default Admin (development only)
-ADMIN_EMAIL=admin@ecclesiaflow.com
-ADMIN_PASSWORD=Admin123!
-ADMIN_FIRST_NAME=Admin
-ADMIN_LAST_NAME=EcclesiaFlow
-
-# Email Configuration (Gmail SMTP)
-MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-app-password
-MAIL_FROM=noreply@ecclesiaflow.com
-```
+## Configuration
 
 ### Spring Profiles
 
@@ -536,16 +494,15 @@ MAIL_FROM=noreply@ecclesiaflow.com
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-## 🛡️ Security
+## Security
 
 ### Security Features
 
-- **🔐 JWT Tokens** - Stateless authentication
-- **🔄 Refresh Tokens** - Automatic renewal
-- **🛡️ Rate Limiting** - Protection against brute force attacks
-- **✅ Input Validation** - Strict input data validation
-- **🔒 Password Encoding** - Secure BCrypt hashing
-- **📝 Audit Logging** - Traceability of critical operations
+- **JWT Tokens** - Stateless authentication
+- **Refresh Tokens** - Automatic renewal
+- **Input Validation** - Strict input data validation
+- **Password Encoding** - Secure BCrypt hashing
+- **Audit Logging** - Traceability of critical operations
 
 ### Security Configuration
 
@@ -558,19 +515,19 @@ private Long jwtExpiration; // 15 minutes
 
 ### Applied Best Practices
 
-- ✅ **Externalized secrets** - No hardcoded secrets in code
-- ✅ **Short-lived tokens** - Access token: 15 minutes, Refresh: 7d, Temp: 15min
-- ✅ **Refresh tokens** - Automatic renewal for better UX
-- ✅ **Strict validation** - Bean Validation (Jakarta) on all DTOs
-- ✅ **Audit logging** - Authentication attempt traceability via AOP
-- ✅ **Granular scopes** - Fine-grained permissions (own/all) for each resource
-- ✅ **Password encoding** - BCrypt with automatic salt
+-  **Externalized secrets** - No hardcoded secrets in code
+-  **Short-lived tokens** - Access token: 15 minutes, Refresh: 7d, Temp: 15min
+-  **Refresh tokens** - Automatic renewal for better UX
+-  **Strict validation** - Bean Validation (Jakarta) on all DTOs
+-  **Audit logging** - Authentication attempt traceability via AOP
+-  **Granular scopes** - Fine-grained permissions (own/all) for each resource
+-  **Password encoding** - BCrypt with automatic salt
 
-## 🧪 Tests
+## Tests
 
 ### Test Statistics
 
-- **509 tests** passing successfully ✅
+- **509 tests** passing successfully 
 - **38 test files**
 - **Code coverage: 100%** (JaCoCo)
 - **Branch coverage: 100%**
@@ -616,7 +573,7 @@ src/test/java/com/ecclesiaflow/springsecurity/
     └── security
 ```
 
-## 📦 Deployment
+## Deployment
 
 ### Production Build
 
@@ -659,7 +616,7 @@ logging.level.com.ecclesiaflow=INFO
 logging.level.io.grpc=WARN
 ```
 
-## 🤝 Contribution
+## Contribution
 
 ### Development Workflow
 
@@ -671,12 +628,12 @@ logging.level.io.grpc=WARN
 
 ### Code Standards
 
-- ✅ **Clean Architecture** - Respect layer separation
-- ✅ **Mandatory tests** - Minimum 90% coverage
-- ✅ **OpenAPI First** - Modify `openapi.yaml` before code
-- ✅ **Atomic commits** - Conventional commit messages
-- ✅ **Documentation** - Javadoc for public classes
-- ✅ **Code review** - At least 1 approval required
+-  **Clean Architecture** - Respect layer separation
+-  **Mandatory tests** - Minimum 90% coverage
+-  **OpenAPI First** - Modify `openapi.yaml` before code
+-  **Atomic commits** - Conventional commit messages
+-  **Documentation** - Javadoc for public classes
+-  **Code review** - At least 1 approval required
 
 ### **Commit Convention**
 
@@ -723,7 +680,7 @@ Detailed message body if necessary
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## 🔗 Useful Links
+## Useful Links
 
 ### Official Documentation
 
@@ -747,22 +704,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - [Delegate Pattern](https://refactoring.guru/design-patterns/proxy)
 - [gRPC Documentation](https://grpc.io/docs/)
 - [Protocol Buffers](https://protobuf.dev/)
-
----
-
-## 📊 Project Metrics
-
-| Metric              | Value      |
-|---------------------|------------|
-| **Production code** | 6,381 LOC  |
-| **Test code**       | 14,068 LOC |
-| **Tests**           | 617        |
-| **Test files**      | 45         |
-| **Coverage**        | 100%       |
-| **Classes**         | 69         |
-| **Endpoints**       | 11         |
-| **Scopes**          | 8          |
-| **Dependencies**    | 25         |
 
 ---
 
