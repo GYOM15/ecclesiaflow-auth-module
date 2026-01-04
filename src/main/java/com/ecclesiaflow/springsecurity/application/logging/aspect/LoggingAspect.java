@@ -1,6 +1,7 @@
 package com.ecclesiaflow.springsecurity.application.logging.aspect;
 
 import com.ecclesiaflow.springsecurity.application.logging.annotation.LogExecution;
+import com.ecclesiaflow.springsecurity.application.logging.SecurityMaskingUtils;
 import com.ecclesiaflow.springsecurity.business.exceptions.EmailServiceException;
 import com.ecclesiaflow.springsecurity.business.exceptions.GrpcCommunicationException;
 import lombok.extern.slf4j.Slf4j;
@@ -8,8 +9,6 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.springframework.stereotype.Component;
-
-import java.util.Arrays;
 
 /**
  * Aspect AOP responsable du logging automatique des opérations critiques EcclesiaFlow.
@@ -77,7 +76,7 @@ public class LoggingAspect {
      */
     @Around("serviceMethods()")
     public Object logServiceMethods(ProceedingJoinPoint joinPoint) throws Throwable {
-        return logMethodExecution(joinPoint, "SERVICE");
+        return logMethodExecution(joinPoint);
     }
 
     /**
@@ -95,7 +94,7 @@ public class LoggingAspect {
         // Log des paramètres si demandé
         if (logExecution.includeParams()) {
             Object[] args = joinPoint.getArgs();
-            log.info("Début: {} - Paramètres: {}", message, Arrays.toString(args));
+            log.info("Début: {} - Paramètres: {}", message, SecurityMaskingUtils.maskArgs(args));
         } else {
             log.info("Début: {}", message);
         }
@@ -131,27 +130,27 @@ public class LoggingAspect {
     /**
      * Méthode utilitaire pour le logging générique des méthodes
      */
-    private Object logMethodExecution(ProceedingJoinPoint joinPoint, String layer) throws Throwable {
+    private Object logMethodExecution(ProceedingJoinPoint joinPoint) throws Throwable {
         String className = joinPoint.getTarget().getClass().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
         long startTime = System.currentTimeMillis();
         
-        log.debug("{}: Début {}.{}", layer, className, methodName);
+        log.debug("{}: Début {}.{}", "SERVICE", className, methodName);
         
         try {
             Object result = joinPoint.proceed();
             long executionTime = System.currentTimeMillis() - startTime;
             
             if (executionTime > 1000) { // Log si > 1 seconde
-                log.warn("{}: {}.{} - Exécution lente ({}ms)", layer, className, methodName, executionTime);
+                log.warn("{}: {}.{} - Exécution lente ({}ms)", "SERVICE", className, methodName, executionTime);
             } else {
-                log.debug("{}: {}.{} - Succès ({}ms)", layer, className, methodName, executionTime);
+                log.debug("{}: {}.{} - Succès ({}ms)", "SERVICE", className, methodName, executionTime);
             }
             
             return result;
         } catch (Exception e) {
             long executionTime = System.currentTimeMillis() - startTime;
-            log.error("{}: {}.{} - Échec ({}ms): {}", layer, className, methodName, executionTime, e.getMessage());
+            log.error("{}: {}.{} - Échec ({}ms): {}", "SERVICE", className, methodName, executionTime, e.getMessage());
             throw e;
         }
     }
@@ -169,7 +168,7 @@ public class LoggingAspect {
             log.error("=== EMAIL SERVICE ERROR ===");
             log.error("Class: {}.{}", className, methodName);
             log.error("Email Operation: {}", emailEx.getOperation().getDescription());
-            log.error("Email Address: {}", emailEx.getEmailAddress());
+            log.error("Email Address: {}", SecurityMaskingUtils.maskEmail(emailEx.getEmailAddress()));
             log.error("Error Message: {}", emailEx.getMessage());
             
             // Si c'est une erreur gRPC, logger les détails
@@ -178,10 +177,10 @@ public class LoggingAspect {
                 log.error("Target Service: {}", grpcEx.getTargetService());
                 log.error("gRPC Operation: {}", grpcEx.getOperation());
                 log.error("gRPC Status Code: {}", grpcEx.getGrpcStatusCode());
-                log.error("gRPC Description: {}", grpcEx.getMessage());
+                log.error("gRPC Description: {}", SecurityMaskingUtils.sanitizeInfra(grpcEx.getMessage()));
                 
                 if (grpcEx.getCause() != null) {
-                    log.error("Root Cause: {}", grpcEx.getCause().getMessage());
+                    log.error("Root Cause: {}", SecurityMaskingUtils.sanitizeInfra(grpcEx.getCause().getMessage()));
                 }
             }
         } else {

@@ -1,13 +1,14 @@
 package com.ecclesiaflow.springsecurity.application.logging.aspect;
 
+import com.ecclesiaflow.springsecurity.application.logging.SecurityMaskingUtils;
+import com.ecclesiaflow.springsecurity.business.domain.member.Member;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.AfterReturning;
-import org.aspectj.lang.annotation.AfterThrowing;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
-import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.*;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 /**
  * Aspect AOP spécialisé dans le logging des opérations métier critiques EcclesiaFlow.
@@ -73,18 +74,18 @@ public class BusinessOperationLoggingAspect {
     // === AUTHENTIFICATION ===
     
     @Before("memberAuthentication()")
-    public void logBeforeAuthentication(JoinPoint joinPoint) {
-        log.info("BUSINESS: Tentative d'authentification");
+    public void logBeforeAuthentication() {
+        log.info("BUSINESS: auth | start");
     }
 
     @AfterReturning("memberAuthentication()")
-    public void logAfterSuccessfulAuthentication(JoinPoint joinPoint) {
-        log.info("BUSINESS: Authentification réussie");
+    public void logAfterSuccessfulAuthentication() {
+        log.info("BUSINESS: auth | success");
     }
 
     @AfterThrowing(pointcut = "memberAuthentication()", throwing = "exception")
-    public void logFailedAuthentication(JoinPoint joinPoint, Throwable exception) {
-        log.warn("BUSINESS: Échec de l'authentification - {}", exception.getMessage());
+    public void logFailedAuthentication(Throwable exception) {
+        log.warn("BUSINESS: auth | failed | reason={}", exception.getMessage());
     }
 
     // === GESTION DES MOTS DE PASSE ===
@@ -92,46 +93,59 @@ public class BusinessOperationLoggingAspect {
     @Before("passwordChange()")
     public void logBeforePasswordChange(JoinPoint joinPoint) {
         Object[] args = joinPoint.getArgs();
-        if (args.length > 0) {
-            log.info("BUSINESS: Tentative de changement de mot de passe pour email: {}", args[0]);
-        }
+        String maskedEmail = SecurityMaskingUtils.maskEmail(args != null && args.length > 0 ? String.valueOf(args[0]) : null);
+        log.info("BUSINESS: password_change | start | email={}", maskedEmail);
     }
 
     @AfterReturning("passwordChange()")
     public void logAfterSuccessfulPasswordChange(JoinPoint joinPoint) {
         Object[] args = joinPoint.getArgs();
-        if (args.length > 0) {
-            log.info("BUSINESS: ✅ Mot de passe changé avec succès pour email: {}", args[0]);
-        }
+        String maskedEmail = SecurityMaskingUtils.maskEmail(args != null && args.length > 0 ? String.valueOf(args[0]) : null);
+        log.info("BUSINESS: password_change | success | email={}", maskedEmail);
     }
 
     @AfterThrowing(pointcut = "passwordChange()", throwing = "exception")
     public void logFailedPasswordChange(JoinPoint joinPoint, Throwable exception) {
         Object[] args = joinPoint.getArgs();
-        if (args.length > 0) {
-            log.warn("BUSINESS: ❌ Échec du changement de mot de passe pour email: {} - Raison: {}", 
-                args[0], exception.getMessage());
-        }
+        String maskedEmail = SecurityMaskingUtils.maskEmail(args != null && args.length > 0 ? String.valueOf(args[0]) : null);
+        log.warn("BUSINESS: password_change | failed | email={} | reason={}", maskedEmail, exception.getMessage());
     }
 
-    @Before("passwordResetRequest()")
-    public void logBeforePasswordResetRequest(JoinPoint joinPoint) {
+    @Around("passwordResetRequest()")
+    public Object logPasswordResetRequestDetailed(ProceedingJoinPoint joinPoint) throws Throwable {
         Object[] args = joinPoint.getArgs();
-        if (args.length > 0) {
-            log.info("BUSINESS: 🔐 Demande de réinitialisation de mot de passe pour email: {}", args[0]);
-        }
-    }
+        String rawEmail = (args != null && args.length > 0) ? String.valueOf(args[0]) : null;
+        String maskedEmail = SecurityMaskingUtils.maskEmail(rawEmail);
 
-    @AfterReturning("passwordResetRequest()")
-    public void logAfterPasswordResetRequest(JoinPoint joinPoint) {
-        Object[] args = joinPoint.getArgs();
-        if (args.length > 0) {
-            log.info("BUSINESS: ✅ Email de réinitialisation envoyé (si compte existe) pour: {}", args[0]);
-        }
-    }
+        log.info("BUSINESS: password_reset_request | start | email={}", maskedEmail);
 
-    @AfterThrowing(pointcut = "passwordResetRequest()", throwing = "exception")
-    public void logFailedPasswordResetRequest(JoinPoint joinPoint, Throwable exception) {
-        log.error("BUSINESS: ❌ Erreur lors de la demande de réinitialisation - {}", exception.getMessage());
+        try {
+            Object result = joinPoint.proceed();
+
+            log.info("BUSINESS: password_reset_request | processed | email={}", maskedEmail);
+
+            if (log.isDebugEnabled() && result instanceof Optional<?> opt) {
+                if (opt.isPresent() && opt.get() instanceof Member m) {
+                    log.debug("BUSINESS: password_reset_request | member_state=present | email={} | memberId={}",
+                            maskedEmail,
+                            SecurityMaskingUtils.maskId(m.getMemberId()));
+                } else {
+                    log.debug("BUSINESS: password_reset_request | member_state=absent | email={}", maskedEmail);
+                }
+            } else if (log.isDebugEnabled()) {
+                log.debug("BUSINESS: password_reset_request | returnType={} | email={}",
+                        (result == null ? "null" : result.getClass().getSimpleName()),
+                        maskedEmail);
+            }
+
+            return result;
+
+        } catch (Throwable ex) {
+            log.error("BUSINESS: password_reset_request | failed | email={} | reason={}",
+                    maskedEmail,
+                    SecurityMaskingUtils.rootMessage(ex),
+                    ex);
+            throw ex;
+        }
     }
 }
