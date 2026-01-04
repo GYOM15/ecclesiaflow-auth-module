@@ -104,17 +104,14 @@ public class PasswordEventHandler {
     @Async
     public void handlePasswordResetRequested(PasswordResetRequestedEvent event) {
         try {
-            // Génération du token temporaire (Application/Web concern)
             String temporaryToken = jwt.generateTemporaryToken(
                 event.getEmail(), 
                 event.getMemberId(), 
                 "password_reset"
             );
             
-            // Construction du lien de réinitialisation
             String resetLink = buildResetLink(temporaryToken);
             
-            // Envoi de l'email via Infrastructure
             emailClient.sendPasswordResetEmail(event.getEmail(), resetLink);
         } catch (Exception e) {
             // Exception capturée pour ne pas impacter la transaction métier

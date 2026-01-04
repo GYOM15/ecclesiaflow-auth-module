@@ -14,10 +14,13 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -145,20 +148,36 @@ public class GlobalExceptionHandler {
         return buildUnauthorizedErrorResponse("Identifiants invalides", request.getRequestURI());
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
-        return buildUnauthorizedErrorResponse("Identifiants invalides", request.getRequestURI());
-    }
-
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiErrorResponse> handleAuthentication(AuthenticationException ex, HttpServletRequest request) {
         return buildUnauthorizedErrorResponse("Erreur d'authentification", request.getRequestURI());
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
+        return buildUnauthorizedErrorResponse("Identifiants invalides", request.getRequestURI());
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ApiErrorResponse> handleMissingRequestHeader(MissingRequestHeaderException ex, HttpServletRequest request) {
         String error = "En-tête requis manquant: " + ex.getHeaderName();
         return buildBadRequestErrorResponse(error, request.getRequestURI());
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiErrorResponse> handleHttpMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        StringBuilder message = new StringBuilder("Méthode HTTP non supportée");
+        if (ex.getSupportedHttpMethods() != null && !ex.getSupportedHttpMethods().isEmpty()) {
+            message.append(": autorisées → ")
+                    .append(ex.getSupportedHttpMethods());
+        }
+
+        return buildSimpleErrorResponse(HttpStatus.NOT_FOUND, message.toString(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNoResourceFound(NoResourceFoundException ex, HttpServletRequest request) {
+        return buildSimpleErrorResponse(HttpStatus.NOT_FOUND, "Ressource non trouvée", request.getRequestURI());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -207,6 +226,16 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    public ResponseEntity<ApiErrorResponse> handle406(HttpMediaTypeNotAcceptableException ex,
+                                                      HttpServletRequest request) {
+        return buildSimpleErrorResponse(
+                HttpStatus.NOT_ACCEPTABLE,
+                "Media type non supporté. Vérifiez le header Accept.",
+                request.getRequestURI()
+        );
     }
 
 
