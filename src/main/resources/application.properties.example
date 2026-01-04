@@ -109,7 +109,7 @@ grpc.client.shutdown-timeout-seconds=${GRPC_CLIENT_SHUTDOWN_TIMEOUT:5}
 # gRPC Client Configuration (Auth → Email)
 # Connect to Email Module gRPC server
 email.module.grpc.host=${GRPC_EMAIL_HOST:localhost}
-email.module.grpc.port=${GRPC_EMAIL_PORT:9093}
+email.module.grpc.port=${GRPC_EMAIL_PORT:9092}
 
 # gRPC Server Configuration (Members → Auth)
 # Expose Auth service for Members Module
