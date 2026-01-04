@@ -75,7 +75,7 @@ paths:
         '200':
           description: Token généré avec succès
           content:
-            application/json:
+            application/vnd.ecclesiaflow.auth.v1+json:
               schema:
                 $ref: '#/components/schemas/JwtAuthenticationResponse'
               examples:
@@ -127,7 +127,7 @@ paths:
         '200':
           description: Token rafraîchi avec succès
           content:
-            application/json:
+            application/vnd.ecclesiaflow.auth.v1+json:
               schema:
                 $ref: '#/components/schemas/JwtAuthenticationResponse'
               examples:
@@ -178,7 +178,7 @@ paths:
         '200':
           description: Token temporaire généré avec succès
           content:
-            application/json:
+            application/vnd.ecclesiaflow.auth.v1+json:
               schema:
                 $ref: '#/components/schemas/TemporaryTokenResponse'
               examples:
@@ -233,7 +233,7 @@ paths:
         '200':
           description: Mot de passe défini avec succès et tokens générés
           content:
-            application/json:
+            application/vnd.ecclesiaflow.auth.v1+json:
               schema:
                 $ref: '#/components/schemas/PasswordManagementResponse'
         '400':
@@ -279,7 +279,7 @@ paths:
         '200':
           description: Mot de passe changé avec succès
           content:
-            application/json:
+            application/vnd.ecclesiaflow.auth.v1+json:
               schema:
                 $ref: '#/components/schemas/PasswordManagementResponse'
         '400':
@@ -325,7 +325,7 @@ paths:
         '200':
           description: Email de réinitialisation envoyé (si le compte existe)
           content:
-            application/json:
+            application/vnd.ecclesiaflow.auth.v1+json:
               schema:
                 $ref: '#/components/schemas/ForgotPasswordResponse'
               examples:
@@ -375,7 +375,7 @@ paths:
         '200':
           description: Mot de passe réinitialisé avec succès et tokens générés
           content:
-            application/json:
+            application/vnd.ecclesiaflow.auth.v1+json:
               schema:
                 $ref: '#/components/schemas/PasswordManagementResponse'
               examples:
