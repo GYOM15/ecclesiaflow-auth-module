@@ -59,9 +59,8 @@ public class EmailServiceException extends RuntimeException {
     
     @Override
     public String getMessage() {
-        return String.format("[%s] %s - Email: %s", 
-            operation.getDescription(), 
-            super.getMessage(), 
-            emailAddress != null ? emailAddress : "N/A");
+        return String.format("[%s] %s",
+            operation.getDescription(),
+            super.getMessage());
     }
 }

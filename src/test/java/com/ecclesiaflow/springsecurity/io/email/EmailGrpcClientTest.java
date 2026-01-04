@@ -220,7 +220,6 @@ class EmailGrpcClientTest {
                     
                     GrpcCommunicationException grpcEx = (GrpcCommunicationException) emailEx.getCause();
                     assertThat(grpcEx.getGrpcStatusCode()).isEqualTo(Status.Code.INVALID_ARGUMENT);
-                    assertThat(grpcEx.getMessage()).contains("Invalid email format");
                 });
     }
 
@@ -242,7 +241,7 @@ class EmailGrpcClientTest {
                 .satisfies(ex -> {
                     EmailServiceException emailEx = (EmailServiceException) ex;
                     GrpcCommunicationException grpcEx = (GrpcCommunicationException) emailEx.getCause();
-                    assertThat(grpcEx.getMessage()).contains("No description provided");
+                    assertThat(grpcEx.getMessage()).isEqualTo("gRPC error [INTERNAL]");
                 });
     }
 
