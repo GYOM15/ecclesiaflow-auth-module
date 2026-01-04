@@ -16,11 +16,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.*;
 import org.springframework.stereotype.Component;
+import com.ecclesiaflow.springsecurity.application.logging.SecurityMaskingUtils;
+import com.ecclesiaflow.springsecurity.business.domain.member.Member;
+import java.util.Optional;
+import java.util.UUID;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.ConcurrentModificationException;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -49,7 +52,7 @@ class BusinessOperationLoggingAspectTest {
 
     @Test
     @DisplayName("[Direct] Devrait couvrir le vrai BusinessOperationLoggingAspect")
-    void shouldCoverRealAspectDirectly() {
+    void shouldCoverRealAspectDirectly() throws Throwable {
         // Prépare un appender attaché au logger de l'aspect réel
         ch.qos.logback.classic.Logger realLogger =
                 (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(BusinessOperationLoggingAspect.class);
@@ -60,65 +63,218 @@ class BusinessOperationLoggingAspectTest {
 
         try {
             BusinessOperationLoggingAspect aspect = new BusinessOperationLoggingAspect();
+
+            // === Authentification ===
+            aspect.logBeforeAuthentication();
+            aspect.logAfterSuccessfulAuthentication();
+            aspect.logFailedAuthentication(new RuntimeException("Test error"));
+
+            // === Changement de mot de passe (utilise SecurityMaskingUtils) ===
             JoinPoint jp = org.mockito.Mockito.mock(JoinPoint.class);
-            when(jp.getArgs()).thenReturn(new Object[]{"test@example.com", "currentPass", "newPass"});
-
-            // Couvre explicitement les méthodes @Pointcut (pour JaCoCo)
-            aspect.memberAuthentication();
-            aspect.passwordChange();
-            aspect.passwordResetRequest();
-
-            // === Tests d'authentification ===
-            aspect.logBeforeAuthentication(jp);
-            aspect.logAfterSuccessfulAuthentication(jp);
-            aspect.logFailedAuthentication(jp, new RuntimeException("Test error"));
-
-            // Couvrir différents types d'exceptions pour l'@AfterThrowing
-            aspect.logFailedAuthentication(jp, new SecurityException("security"));
-            aspect.logFailedAuthentication(jp, new IllegalStateException("state"));
-            aspect.logFailedAuthentication(jp, new IllegalArgumentException("illegal"));
-            aspect.logFailedAuthentication(jp, new NullPointerException("null"));
-
-            // === Tests passwordChange ===
+            when(jp.getArgs()).thenReturn(new Object[]{"admin@example.com"});
+            String maskedAdmin = SecurityMaskingUtils.maskEmail("admin@example.com");
             aspect.logBeforePasswordChange(jp);
             aspect.logAfterSuccessfulPasswordChange(jp);
             aspect.logFailedPasswordChange(jp, new RuntimeException("Password change failed"));
-            
-            // Tester avec args vides (branche if args.length > 0)
+
+            // Args vides -> email masqué vaut [UNKNOWN]
             when(jp.getArgs()).thenReturn(new Object[]{});
             aspect.logBeforePasswordChange(jp);
             aspect.logAfterSuccessfulPasswordChange(jp);
             aspect.logFailedPasswordChange(jp, new IllegalArgumentException("Invalid password"));
 
-            // === Tests passwordResetRequest ===
-            when(jp.getArgs()).thenReturn(new Object[]{"reset@example.com"});
-            aspect.logBeforePasswordResetRequest(jp);
-            aspect.logAfterPasswordResetRequest(jp);
-            aspect.logFailedPasswordResetRequest(jp, new RuntimeException("Reset failed"));
-            
-            // Tester avec args vides
-            when(jp.getArgs()).thenReturn(new Object[]{});
-            aspect.logBeforePasswordResetRequest(jp);
-            aspect.logAfterPasswordResetRequest(jp);
+            // === Demande de réinitialisation (branches de retour) ===
+            ProceedingJoinPoint pjp = org.mockito.Mockito.mock(ProceedingJoinPoint.class);
+            when(pjp.getArgs()).thenReturn(new Object[]{"reset@example.com"});
+            String maskedReset = SecurityMaskingUtils.maskEmail("reset@example.com");
 
-            assertThat(realListAppender.list).hasSizeGreaterThanOrEqualTo(10);
-            
-            // Vérifier quelques logs clés
-            assertThat(realListAppender.list).anyMatch(log -> 
-                log.getFormattedMessage().contains("BUSINESS: Tentative d'authentification"));
-            assertThat(realListAppender.list).anyMatch(log -> 
-                log.getFormattedMessage().contains("BUSINESS: Authentification réussie"));
-            assertThat(realListAppender.list).anyMatch(log -> 
-                log.getFormattedMessage().contains("Tentative de changement de mot de passe"));
-            assertThat(realListAppender.list).anyMatch(log -> 
-                log.getFormattedMessage().contains("Mot de passe changé avec succès"));
-            assertThat(realListAppender.list).anyMatch(log -> 
-                log.getFormattedMessage().contains("Demande de réinitialisation de mot de passe"));
-            assertThat(realListAppender.list).anyMatch(log -> 
-                log.getFormattedMessage().contains("Email de réinitialisation envoyé"));
+            // 1) Optional avec Member présent
+            Member member = Member.builder().memberId(UUID.randomUUID()).email("reset@example.com").build();
+            when(pjp.proceed()).thenReturn(Optional.of(member));
+            aspect.logPasswordResetRequestDetailed(pjp);
+
+            // 2) Optional.empty()
+            when(pjp.proceed()).thenReturn(Optional.empty());
+            aspect.logPasswordResetRequestDetailed(pjp);
+
+            // 3) Autre type de retour
+            when(pjp.proceed()).thenReturn("ok");
+            aspect.logPasswordResetRequestDetailed(pjp);
+
+            // 4) Exception
+            when(pjp.proceed()).thenThrow(new RuntimeException("boom"));
+            assertThatThrownBy(() -> aspect.logPasswordResetRequestDetailed(pjp))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("boom");
+
+            // === Assertions clés sur le contenu des logs ===
+            assertThat(realListAppender.list).isNotEmpty();
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("BUSINESS: auth | start"));
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("BUSINESS: auth | success"));
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("BUSINESS: auth | failed | reason=Test error"));
+
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("password_change | start") && e.getFormattedMessage().contains(maskedAdmin));
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("password_change | success") && e.getFormattedMessage().contains(maskedAdmin));
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("password_change | failed"));
+
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("password_reset_request | start") && e.getFormattedMessage().contains(maskedReset));
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("password_reset_request | processed") && e.getFormattedMessage().contains(maskedReset));
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("member_state=present"));
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("member_state=absent"));
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("returnType=String"));
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains("password_reset_request | failed") && e.getFormattedMessage().contains("boom"));
+
+            // Vérifie que le memberId est masqué dans le log debug
+            String maskedMemberId = SecurityMaskingUtils.maskId(member.getMemberId());
+            assertThat(realListAppender.list).anyMatch(e -> e.getFormattedMessage().contains(maskedMemberId));
         } finally {
             realLogger.detachAppender(realListAppender);
             realListAppender.stop();
+        }
+    }
+
+    @Test
+    @DisplayName("Devrait logger password_reset_request completed avec returnType=null")
+    void shouldLogPasswordResetRequestCompletedWithNullReturnType() throws Throwable {
+        ch.qos.logback.classic.Logger realLogger =
+                (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(BusinessOperationLoggingAspect.class);
+        ListAppender<ILoggingEvent> app = new ListAppender<>();
+        app.start();
+        realLogger.addAppender(app);
+        realLogger.setLevel(Level.DEBUG);
+
+        try {
+            BusinessOperationLoggingAspect aspect = new BusinessOperationLoggingAspect();
+            ProceedingJoinPoint pjp = org.mockito.Mockito.mock(ProceedingJoinPoint.class);
+            when(pjp.getArgs()).thenReturn(new Object[]{"user@example.com"});
+            when(pjp.proceed()).thenReturn(null);
+
+            aspect.logPasswordResetRequestDetailed(pjp);
+
+            assertThat(app.list).anyMatch(e -> e.getFormattedMessage().contains("password_reset_request | processed"));
+            assertThat(app.list).anyMatch(e -> e.getFormattedMessage().contains("returnType=null"));
+        } finally {
+            realLogger.detachAppender(app);
+            app.stop();
+        }
+    }
+
+    @Test
+    @DisplayName("Devrait couvrir les pointcuts de BusinessOperationLoggingAspect")
+    void shouldCoverBusinessPointcuts() {
+        BusinessOperationLoggingAspect aspect = new BusinessOperationLoggingAspect();
+        aspect.memberAuthentication();
+        aspect.passwordChange();
+        aspect.passwordResetRequest();
+        assertThat(aspect).isNotNull();
+    }
+
+    @Test
+    @DisplayName("password_reset_request - ne doit pas logger DEBUG quand DEBUG désactivé")
+    void shouldNotLogDebugWhenDebugDisabled() throws Throwable {
+        ch.qos.logback.classic.Logger realLogger =
+                (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(BusinessOperationLoggingAspect.class);
+        ListAppender<ILoggingEvent> app = new ListAppender<>();
+        app.start();
+        realLogger.addAppender(app);
+        realLogger.setLevel(Level.INFO); // DEBUG désactivé
+
+        try {
+            BusinessOperationLoggingAspect aspect = new BusinessOperationLoggingAspect();
+            ProceedingJoinPoint pjp = org.mockito.Mockito.mock(ProceedingJoinPoint.class);
+            when(pjp.getArgs()).thenReturn(new Object[]{"no-debug@example.com"});
+            Member member = Member.builder().memberId(UUID.randomUUID()).email("no-debug@example.com").build();
+            when(pjp.proceed()).thenReturn(Optional.of(member));
+
+            aspect.logPasswordResetRequestDetailed(pjp);
+
+            List<ILoggingEvent> logs = app.list;
+            assertThat(logs).anyMatch(e -> e.getFormattedMessage().contains("password_reset_request | start"));
+            assertThat(logs).anyMatch(e -> e.getFormattedMessage().contains("password_reset_request | processed"));
+            assertThat(logs).noneMatch(e -> e.getFormattedMessage().contains("member_state=")
+                    || e.getFormattedMessage().contains("returnType="));
+        } finally {
+            realLogger.detachAppender(app);
+            app.stop();
+        }
+    }
+
+    @Test
+    @DisplayName("Devrait logger password_change avec args null (email masqué [UNKNOWN])")
+    void shouldLogPasswordChangeWithNullArgs() {
+        ch.qos.logback.classic.Logger realLogger =
+                (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(BusinessOperationLoggingAspect.class);
+        ListAppender<ILoggingEvent> app = new ListAppender<>();
+        app.start();
+        realLogger.addAppender(app);
+
+        try {
+            BusinessOperationLoggingAspect aspect = new BusinessOperationLoggingAspect();
+            JoinPoint jp = org.mockito.Mockito.mock(JoinPoint.class);
+            when(jp.getArgs()).thenReturn(null);
+
+            aspect.logBeforePasswordChange(jp);
+            aspect.logAfterSuccessfulPasswordChange(jp);
+            aspect.logFailedPasswordChange(jp, new RuntimeException("x"));
+
+            assertThat(app.list).anyMatch(e -> e.getFormattedMessage().contains("email=[UNKNOWN]"));
+        } finally {
+            realLogger.detachAppender(app);
+            app.stop();
+        }
+    }
+
+    @Test
+    @DisplayName("Devrait logger password_reset_request avec args null (Optional.empty)")
+    void shouldLogPasswordResetRequestWithNullArgsOptionalEmpty() throws Throwable {
+        ch.qos.logback.classic.Logger realLogger =
+                (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(BusinessOperationLoggingAspect.class);
+        ListAppender<ILoggingEvent> app = new ListAppender<>();
+        app.start();
+        realLogger.addAppender(app);
+        realLogger.setLevel(Level.DEBUG);
+
+        try {
+            BusinessOperationLoggingAspect aspect = new BusinessOperationLoggingAspect();
+            ProceedingJoinPoint pjp = org.mockito.Mockito.mock(ProceedingJoinPoint.class);
+            when(pjp.getArgs()).thenReturn(null);
+            when(pjp.proceed()).thenReturn(Optional.empty());
+
+            aspect.logPasswordResetRequestDetailed(pjp);
+
+            assertThat(app.list).anyMatch(e -> e.getFormattedMessage().contains("password_reset_request | start | email=[UNKNOWN]"));
+            assertThat(app.list).anyMatch(e -> e.getFormattedMessage().contains("password_reset_request | processed | email=[UNKNOWN]"));
+            assertThat(app.list).anyMatch(e -> e.getFormattedMessage().contains("member_state=absent"));
+        } finally {
+            realLogger.detachAppender(app);
+            app.stop();
+        }
+    }
+
+    @Test
+    @DisplayName("Devrait utiliser le root cause comme reason dans le log d'échec (password_reset_request)")
+    void shouldUseRootCauseMessageOnFailure() throws Throwable {
+        ch.qos.logback.classic.Logger realLogger =
+                (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(BusinessOperationLoggingAspect.class);
+        ListAppender<ILoggingEvent> app = new ListAppender<>();
+        app.start();
+        realLogger.addAppender(app);
+
+        try {
+            BusinessOperationLoggingAspect aspect = new BusinessOperationLoggingAspect();
+            ProceedingJoinPoint pjp = org.mockito.Mockito.mock(ProceedingJoinPoint.class);
+            when(pjp.getArgs()).thenReturn(new Object[]{"root@example.com"});
+            when(pjp.proceed()).thenThrow(new RuntimeException("outer", new IllegalStateException("inner-root")));
+
+            assertThatThrownBy(() -> aspect.logPasswordResetRequestDetailed(pjp))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("outer");
+
+            assertThat(app.list).anyMatch(e -> e.getFormattedMessage().contains("password_reset_request | failed")
+                    && e.getFormattedMessage().contains("reason=inner-root"));
+        } finally {
+            realLogger.detachAppender(app);
+            app.stop();
         }
     }
 
@@ -547,5 +703,63 @@ class BusinessOperationLoggingAspectTest {
         assertThatThrownBy(() -> loggingAspect.logAnnotatedMethods(mockProceedingJoinPoint, mockLogExecution))
             .isInstanceOf(RuntimeException.class)
             .hasMessage("Execution failed");
+    }
+
+    @Test
+    @DisplayName("LoggingAspect - devrait masquer les paramètres quand includeParams=true")
+    void loggingAspect_ShouldMaskParamsWhenIncludeParamsTrue() throws Throwable {
+        com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect loggingAspect =
+                new com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect();
+
+        ProceedingJoinPoint pjp = org.mockito.Mockito.mock(ProceedingJoinPoint.class);
+        Signature sig = org.mockito.Mockito.mock(Signature.class);
+        LogExecution logExec = org.mockito.Mockito.mock(LogExecution.class);
+
+        when(pjp.getSignature()).thenReturn(sig);
+        when(pjp.getTarget()).thenReturn(this);
+        when(sig.getName()).thenReturn("annotatedMethod");
+        when(logExec.value()).thenReturn("Custom log message");
+        when(logExec.includeParams()).thenReturn(true);
+        when(logExec.includeExecutionTime()).thenReturn(false);
+        when(pjp.getArgs()).thenReturn(new Object[]{
+                "john.doe@example.com",
+                "https://api.local/path?token=abc&user=bob",
+                "Bearer abcd.efgh.ijkl",
+                "plainText"
+        });
+        when(pjp.proceed()).thenReturn("ok");
+
+        ch.qos.logback.classic.Logger aspectLogger =
+                (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(
+                        com.ecclesiaflow.springsecurity.application.logging.aspect.LoggingAspect.class);
+        ListAppender<ILoggingEvent> app = new ListAppender<>();
+        app.start();
+        aspectLogger.addAppender(app);
+        aspectLogger.setLevel(Level.INFO);
+
+        Object res = loggingAspect.logAnnotatedMethods(pjp, logExec);
+        assertThat(res).isEqualTo("ok");
+
+        List<ILoggingEvent> logs = app.list;
+        assertThat(logs).anyMatch(e -> e.getFormattedMessage().contains("Paramètres:"));
+
+        StringBuilder sb = new StringBuilder();
+        for (ILoggingEvent ev : logs) {
+            sb.append(ev.getFormattedMessage()).append('\n');
+        }
+        String messages = sb.toString();
+
+        // Doit contenir les versions masquées
+        assertThat(messages).contains("jo****@example.com");
+        assertThat(messages).contains("Bearer ****");
+        assertThat(messages).contains("user=[REDACTED]");
+
+        // Ne doit PAS contenir de valeurs brutes sensibles
+        assertThat(messages).doesNotContain("john.doe@example.com");
+        assertThat(messages).doesNotContain("token=abc");
+        assertThat(messages).doesNotContain("abcd.efgh.ijkl");
+
+        aspectLogger.detachAppender(app);
+        app.stop();
     }
 }

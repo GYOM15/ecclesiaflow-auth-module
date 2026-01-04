@@ -99,7 +99,7 @@ class GrpcClientLoggingAspectTest {
     @DisplayName("Doit logger (ERROR) les erreurs lors du shutdown du canal")
     void shouldLogChannelShutdownError() {
         // Given
-        Exception channelError = new RuntimeException("Channel error");
+        Exception channelError = new RuntimeException("failed to close http://internal:8080 and example.com:443");
 
         // When
         aspect.logChannelShutdownError(joinPoint, channelError);
@@ -110,6 +110,10 @@ class GrpcClientLoggingAspectTest {
 
         assertThat(log.getLevel()).isEqualTo(Level.ERROR);
         assertThat(log.getFormattedMessage()).contains("GRPC-CLIENT", "Error", "closing gRPC channel");
+        // Sanitization assertions
+        assertThat(log.getFormattedMessage()).doesNotContain("http://internal:8080");
+        assertThat(log.getFormattedMessage()).doesNotContain("example.com:443");
+        assertThat(log.getFormattedMessage()).contains("[URL]").contains("[HOST:PORT]");
     }
 
     @Test
@@ -313,7 +317,7 @@ class GrpcClientLoggingAspectTest {
     void shouldLogRpcCallError_Generic() {
         // Given
         when(signature.getName()).thenReturn("someMethod");
-        Exception genericException = new RuntimeException("Some error");
+        Exception genericException = new RuntimeException("connect to https://svc.local:8443 failed at host:443");
 
         // When
         aspect.logRpcCallError(joinPoint, genericException);
@@ -324,6 +328,10 @@ class GrpcClientLoggingAspectTest {
 
         assertThat(log.getLevel()).isEqualTo(Level.ERROR);
         assertThat(log.getFormattedMessage()).contains("GRPC-CLIENT", "Error during", "someMethod");
+        // Sanitization assertions
+        assertThat(log.getFormattedMessage()).doesNotContain("https://svc.local:8443");
+        assertThat(log.getFormattedMessage()).doesNotContain("host:443");
+        assertThat(log.getFormattedMessage()).contains("[URL]").contains("[HOST:PORT]");
     }
 
     @Test

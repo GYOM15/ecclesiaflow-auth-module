@@ -92,7 +92,7 @@ class GrpcServerLoggingAspectTest {
     @DisplayName("Doit logger (ERROR) les erreurs de démarrage du serveur")
     void shouldLogServerStartError() {
         // Given
-        Exception ex = new RuntimeException("Port already in use");
+        Exception ex = new RuntimeException("bind to https://server:7443 and server.local:7443 failed");
 
         // When
         aspect.logServerStartError(joinPoint, ex);
@@ -106,6 +106,10 @@ class GrpcServerLoggingAspectTest {
         // Vérifier que l'exception est bien attachée au log
         assertThat(log.getThrowableProxy()).isNotNull();
         assertThat(((ThrowableProxy) log.getThrowableProxy()).getThrowable()).isSameAs(ex);
+        // Sanitization assertions
+        assertThat(log.getFormattedMessage()).doesNotContain("https://server:7443");
+        assertThat(log.getFormattedMessage()).doesNotContain("server.local:7443");
+        assertThat(log.getFormattedMessage()).contains("[URL]").contains("[HOST:PORT]");
     }
 
     @Test
@@ -229,7 +233,7 @@ class GrpcServerLoggingAspectTest {
     void shouldLogRpcCallError_IllegalArgument() {
         // Given
         when(signature.getName()).thenReturn("generateTemporaryToken");
-        Exception illegalArgException = new IllegalArgumentException("Invalid UUID format");
+        Exception illegalArgException = new IllegalArgumentException("invalid host example.com:1234");
 
         // When
         aspect.logRpcCallError(joinPoint, illegalArgException);
@@ -240,6 +244,9 @@ class GrpcServerLoggingAspectTest {
 
         assertThat(log.getLevel()).isEqualTo(Level.WARN);
         assertThat(log.getFormattedMessage()).contains("GRPC-RPC", "Invalid argument", "generateTemporaryToken");
+        // Sanitization assertions
+        assertThat(log.getFormattedMessage()).doesNotContain("example.com:1234");
+        assertThat(log.getFormattedMessage()).contains("[HOST:PORT]");
         assertThat(log.getThrowableProxy()).isNotNull();
     }
 
@@ -248,7 +255,7 @@ class GrpcServerLoggingAspectTest {
     void shouldLogRpcCallError_InternalError() {
         // Given
         when(signature.getName()).thenReturn("generateTemporaryToken");
-        Exception internalException = new RuntimeException("Database connection failed");
+        Exception internalException = new RuntimeException("timeout at https://x:9999");
 
         // When
         aspect.logRpcCallError(joinPoint, internalException);
@@ -261,109 +268,14 @@ class GrpcServerLoggingAspectTest {
         assertThat(log.getLevel()).isEqualTo(Level.ERROR);
         assertThat(log.getFormattedMessage()).contains("GRPC-RPC", "Error in", "generateTemporaryToken");
         assertThat(log.getThrowableProxy()).isNotNull();
+        // Sanitization assertions
+        assertThat(log.getFormattedMessage()).doesNotContain("https://x:9999");
+        assertThat(log.getFormattedMessage()).contains("[URL]");
     }
 
     // ========================================================================
     // Tests - Méthodes privées utilitaires (via Réflexion)
     // ========================================================================
-
-    @DisplayName("Doit sanitizer les emails")
-    @ParameterizedTest(name = "Input: \"{0}\" -> Output: \"{1}\"")
-    @CsvSource({
-            "john.doe@example.com,   jo***e@example.com",
-            "test@example.com,     te***t@example.com",
-            "abc@test.com,         ***@test.com",
-            "ab@test.com,          ***@test.com",
-            "a@b.com,              ***@b.com"
-    })
-    void shouldSanitizeValidEmails(String input, String expected) throws Exception {
-        // Given
-        Method sanitizeEmailMethod = GrpcServerLoggingAspect.class.getDeclaredMethod("sanitizeEmail", String.class);
-        sanitizeEmailMethod.setAccessible(true);
-
-        // When
-        String result = (String) sanitizeEmailMethod.invoke(aspect, input);
-
-        // Then
-        assertThat(result).isEqualTo(expected);
-    }
-
-    @DisplayName("Doit retourner '***' pour les emails invalides ou null")
-    @ParameterizedTest
-    @ValueSource(strings = {"invalidemail", ""})
-    void shouldSanitizeInvalidOrNullEmails(String input) throws Exception {
-        // Given
-        Method sanitizeEmailMethod = GrpcServerLoggingAspect.class.getDeclaredMethod("sanitizeEmail", String.class);
-        sanitizeEmailMethod.setAccessible(true);
-
-        // When
-        String result = (String) sanitizeEmailMethod.invoke(aspect, input);
-
-        // Then
-        assertThat(result).isEqualTo("***");
-    }
-
-    @Test
-    @DisplayName("Doit sanitizer un email null")
-    void shouldSanitizeNullEmail() throws Exception {
-        // Given
-        Method sanitizeEmailMethod = GrpcServerLoggingAspect.class.getDeclaredMethod("sanitizeEmail", String.class);
-        sanitizeEmailMethod.setAccessible(true);
-
-        // When
-        String result = (String) sanitizeEmailMethod.invoke(aspect, (String) null);
-
-        // Then
-        assertThat(result).isEqualTo("***");
-    }
-
-
-    @DisplayName("Doit sanitizer les tokens")
-    @ParameterizedTest(name = "Input: \"{0}\" -> Output: \"{1}\"")
-    @CsvSource({
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0,   eyJhbG...***"
-            // Ajoutez d'autres exemples de tokens longs si nécessaire
-    })
-    void shouldSanitizeValidTokens(String input, String expected) throws Exception {
-        // Given
-        Method sanitizeTokenMethod = GrpcServerLoggingAspect.class.getDeclaredMethod("sanitizeToken", String.class);
-        sanitizeTokenMethod.setAccessible(true);
-
-        // When
-        String result = (String) sanitizeTokenMethod.invoke(aspect, input);
-
-        // Then
-        assertThat(result).isEqualTo(expected);
-    }
-
-    @DisplayName("Doit retourner '***' pour les tokens courts ou null")
-    @ParameterizedTest
-    @ValueSource(strings = {"abc", "1234567", "short", ""})
-    void shouldSanitizeShortOrNullTokens(String input) throws Exception {
-        // Given
-        Method sanitizeTokenMethod = GrpcServerLoggingAspect.class.getDeclaredMethod("sanitizeToken", String.class);
-        sanitizeTokenMethod.setAccessible(true);
-
-        // When
-        String result = (String) sanitizeTokenMethod.invoke(aspect, input);
-
-        // Then
-        assertThat(result).isEqualTo("***");
-    }
-
-    @Test
-    @DisplayName("Doit sanitizer un token null")
-    void shouldSanitizeNullToken() throws Exception {
-        // Given
-        Method sanitizeTokenMethod = GrpcServerLoggingAspect.class.getDeclaredMethod("sanitizeToken", String.class);
-        sanitizeTokenMethod.setAccessible(true);
-
-        // When
-        String result = (String) sanitizeTokenMethod.invoke(aspect, (String) null);
-
-        // Then
-        assertThat(result).isEqualTo("***");
-    }
 
     // ========================================================================
     // Tests - Pointcuts Coverage

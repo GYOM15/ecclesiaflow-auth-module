@@ -1,12 +1,11 @@
 package com.ecclesiaflow.springsecurity.application.logging.aspect;
 
+import com.ecclesiaflow.springsecurity.application.logging.SecurityMaskingUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-
-import java.util.Arrays;
 
 /**
  * Aspect AOP dédié au logging des opérations gRPC du module d'authentification.
@@ -127,7 +126,7 @@ public class GrpcServerLoggingAspect {
     public void logServerStartError(JoinPoint joinPoint, Exception exception) {
         log.error("❌ GRPC: Failed to start gRPC server - {}: {}", 
                 exception.getClass().getSimpleName(), 
-                exception.getMessage(),
+                SecurityMaskingUtils.sanitizeInfra(exception.getMessage()),
                 exception);
     }
 
@@ -138,7 +137,7 @@ public class GrpcServerLoggingAspect {
      */
     @Before("grpcServerStop()")
     public void logBeforeServerStop(JoinPoint joinPoint) {
-        log.info("🛑 GRPC: Initiating graceful shutdown of gRPC server...");
+        log.info("GRPC: Initiating graceful shutdown of gRPC server...");
     }
 
     /**
@@ -148,7 +147,7 @@ public class GrpcServerLoggingAspect {
      */
     @AfterReturning("grpcServerStop()")
     public void logAfterServerStop(JoinPoint joinPoint) {
-        log.info("✅ GRPC: gRPC server stopped successfully");
+        log.info("GRPC: gRPC server stopped successfully");
     }
 
     // ========================================================================
@@ -171,11 +170,11 @@ public class GrpcServerLoggingAspect {
         
         // Log selon le type de RPC
         if ("generateTemporaryToken".equals(methodName)) {
-            log.info("📨 GRPC-RPC: Received {} request from Members module", methodName);
+            log.info("GRPC-RPC: Received {} request from Members module", methodName);
         } else if ("validateToken".equals(methodName)) {
-            log.debug("🔍 GRPC-RPC: Received {} request", methodName);
+            log.debug("[GRPC-RPC]: Received {} request", methodName);
         } else {
-            log.debug("📡 GRPC-RPC: Received {} request", methodName);
+            log.debug("[GRPC-RPC]: Received {} request", methodName);
         }
     }
 
@@ -192,9 +191,9 @@ public class GrpcServerLoggingAspect {
         String methodName = joinPoint.getSignature().getName();
         
         if ("generateTemporaryToken".equals(methodName)) {
-            log.info("✅ GRPC-RPC: {} completed successfully", methodName);
+            log.info("GRPC-RPC: {} completed successfully", methodName);
         } else {
-            log.debug("✅ GRPC-RPC: {} completed successfully", methodName);
+            log.debug("GRPC-RPC: {} completed successfully", methodName);
         }
     }
 
@@ -214,60 +213,19 @@ public class GrpcServerLoggingAspect {
         
         // Erreurs de validation (members error)
         if (exception instanceof IllegalArgumentException) {
-            log.warn("⚠️  GRPC-RPC: Invalid argument in {} - {}", 
+            log.warn("GRPC-RPC: Invalid argument in {} - {}",
                     methodName, 
-                    exception.getMessage(),
+                    SecurityMaskingUtils.sanitizeInfra(exception.getMessage()),
                     exception);
         } 
         // Erreurs internes (server error)
         else {
-            log.error("❌ GRPC-RPC: Error in {} - {}: {}", 
+            log.error("GRPC-RPC: Error in {} - {}: {}",
                     methodName,
                     exception.getClass().getSimpleName(), 
-                    exception.getMessage(),
+                    SecurityMaskingUtils.sanitizeInfra(exception.getMessage()),
                     exception);
         }
     }
 
-    // ========================================================================
-    // Méthodes utilitaires privées
-    // ========================================================================
-
-    /**
-     * Sanitize un email pour le logging (masquage partiel pour GDPR).
-     * <p>
-     * Exemple: "john.doe@example.com" → "jo***e@example.com"
-     * </p>
-     *
-     * @param email l'email à sanitizer
-     * @return l'email partiellement masqué
-     */
-    private String sanitizeEmail(String email) {
-        if (email == null || !email.contains("@")) {
-            return "***";
-        }
-        
-        String[] parts = email.split("@");
-        String localPart = parts[0];
-        String domain = parts[1];
-        
-        String masked = localPart.length() > 3 
-                ? localPart.substring(0, 2) + "***" + localPart.substring(localPart.length() - 1)
-                : "***";
-        
-        return masked + "@" + domain;
-    }
-
-    /**
-     * Sanitize un token pour le logging (affiche seulement les 6 premiers caractères).
-     *
-     * @param token le token à sanitizer
-     * @return le token partiellement masqué
-     */
-    private String sanitizeToken(String token) {
-        if (token == null || token.length() < 10) {
-            return "***";
-        }
-        return token.substring(0, 6) + "...***";
-    }
 }

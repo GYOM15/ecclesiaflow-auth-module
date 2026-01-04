@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.application.logging.aspect;
 
+import com.ecclesiaflow.springsecurity.application.logging.SecurityMaskingUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -104,7 +105,8 @@ public class AuthenticationErrorLoggingAspect {
                 log.debug("Erreur lors du logging d'authentification: {}", e.getMessage());
             }
         } else {
-            log.debug("logAuthenticationError ignoré en raison d'arguments invalides: {}", args);
+            log.debug("logAuthenticationError ignoré en raison d'arguments invalides: {}",
+                    SecurityMaskingUtils.maskArgs(args));
         }
     }
 

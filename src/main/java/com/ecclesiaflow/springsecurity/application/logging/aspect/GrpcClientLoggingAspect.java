@@ -6,6 +6,9 @@ import org.aspectj.lang.annotation.*;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import static com.ecclesiaflow.springsecurity.application.logging.SecurityMaskingUtils.sanitizeInfra;
+
+
 /**
  * Aspect AOP dédié au logging des appels gRPC sortants du module Auth.
  * <p>
@@ -39,19 +42,19 @@ public class GrpcClientLoggingAspect {
 
     @Before("grpcChannelShutdown()")
     public void logBeforeChannelShutdown(JoinPoint joinPoint) {
-        log.info("🛑 GRPC-CLIENT: Initiating graceful shutdown of gRPC channel to Members service...");
+        log.info("GRPC-CLIENT: Initiating graceful shutdown of gRPC channel to Members service...");
     }
 
     @AfterReturning("grpcChannelShutdown()")
     public void logAfterChannelShutdown(JoinPoint joinPoint) {
-        log.info("✅ GRPC-CLIENT: gRPC channel to Members service closed successfully");
+        log.info("GRPC-CLIENT: gRPC channel to Members service closed successfully");
     }
 
     @AfterThrowing(pointcut = "grpcChannelShutdown()", throwing = "exception")
     public void logChannelShutdownError(JoinPoint joinPoint, Exception exception) {
-        log.error("❌ GRPC-CLIENT: Error while closing gRPC channel - {}: {}", 
+        log.error("GRPC-CLIENT: Error while closing gRPC channel - {}: {}",
                 exception.getClass().getSimpleName(), 
-                exception.getMessage());
+                sanitizeInfra(exception.getMessage()));
     }
 
     // ========================================================================
@@ -63,9 +66,9 @@ public class GrpcClientLoggingAspect {
         String methodName = joinPoint.getSignature().getName();
         
         if ("isEmailNotConfirmed".equals(methodName)) {
-            log.info("📤 GRPC-CLIENT: Calling Members.{} via gRPC", methodName);
+            log.info("GRPC-CLIENT: Calling Members.{} via gRPC", methodName);
         } else {
-            log.debug("📡 GRPC-CLIENT: Calling Members.{} via gRPC", methodName);
+            log.debug("GRPC-CLIENT: Calling Members.{} via gRPC", methodName);
         }
     }
 
@@ -74,9 +77,9 @@ public class GrpcClientLoggingAspect {
         String methodName = joinPoint.getSignature().getName();
         
         if ("isEmailNotConfirmed".equals(methodName)) {
-            log.info("✅ GRPC-CLIENT: Members.{} completed successfully", methodName);
+            log.info("GRPC-CLIENT: Members.{} completed successfully", methodName);
         } else {
-            log.debug("✅ GRPC-CLIENT: Members.{} completed successfully", methodName);
+            log.debug("GRPC-CLIENT: Members.{} completed successfully", methodName);
         }
     }
 
@@ -86,22 +89,22 @@ public class GrpcClientLoggingAspect {
         String exceptionType = exception.getClass().getSimpleName();
         
         if (exceptionType.contains("Unavailable") || exceptionType.contains("UNAVAILABLE")) {
-            log.error("❌ GRPC-CLIENT: Members service UNAVAILABLE during {} - {}", 
+            log.error("GRPC-CLIENT: Members service UNAVAILABLE during {} - {}",
                     methodName, 
-                    exception.getMessage());
+                    sanitizeInfra(exception.getMessage()));
         } else if (exceptionType.contains("Timeout") || exceptionType.contains("DEADLINE_EXCEEDED")) {
-            log.warn("⏱️  GRPC-CLIENT: Timeout during {} - {}", 
+            log.warn("GRPC-CLIENT: Timeout during {} - {}",
                     methodName, 
-                    exception.getMessage());
+                    sanitizeInfra(exception.getMessage()));
         } else if (exception instanceof IllegalArgumentException) {
-            log.warn("⚠️  GRPC-CLIENT: Invalid argument in {} - {}", 
+            log.warn("GRPC-CLIENT: Invalid argument in {} - {}",
                     methodName, 
-                    exception.getMessage());
+                    sanitizeInfra(exception.getMessage()));
         } else {
-            log.error("❌ GRPC-CLIENT: Error during {} - {}: {}", 
+            log.error("GRPC-CLIENT: Error during {} - {}: {}",
                     methodName,
                     exceptionType, 
-                    exception.getMessage());
+                    sanitizeInfra(exception.getMessage()));
         }
     }
 }

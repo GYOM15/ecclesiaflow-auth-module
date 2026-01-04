@@ -8,6 +8,7 @@ import com.ecclesiaflow.springsecurity.business.events.PasswordResetEvent;
 import com.ecclesiaflow.springsecurity.business.events.PasswordResetRequestedEvent;
 import com.ecclesiaflow.springsecurity.business.events.PasswordSetEvent;
 import org.aspectj.lang.ProceedingJoinPoint;
+import com.ecclesiaflow.springsecurity.application.logging.SecurityMaskingUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -76,10 +77,11 @@ class EmailEventLoggingAspectTest {
         
         List<ILoggingEvent> logsList = listAppender.list;
         assertThat(logsList).hasSize(2);
+        String masked = SecurityMaskingUtils.maskEmail(EMAIL);
         assertThat(logsList.get(0).getFormattedMessage())
-                .contains("📧", "[EMAIL]", "Sending welcome email to", EMAIL);
+                .contains("[EMAIL] welcome | start | email=" + masked);
         assertThat(logsList.get(1).getFormattedMessage())
-                .contains("✅", "[EMAIL]", "Welcome email sent successfully to", EMAIL);
+                .contains("[EMAIL] welcome | success | email=" + masked);
     }
 
     @Test
@@ -100,13 +102,15 @@ class EmailEventLoggingAspectTest {
         List<ILoggingEvent> logsList = listAppender.list;
         assertThat(logsList).hasSizeGreaterThanOrEqualTo(2);
 
+        String masked = SecurityMaskingUtils.maskEmail(EMAIL);
         // Vérifier le premier log (avant l'envoi)
         assertThat(logsList.get(0).getFormattedMessage())
-                .contains("📧", "[EMAIL]", "Sending welcome email to", EMAIL);
+                .contains("[EMAIL] welcome | start | email=" + masked);
 
         // Vérifier le dernier log (erreur)
         assertThat(logsList.getLast().getFormattedMessage())
-                .contains("❌", "[EMAIL]", "Failed to send welcome email to", EMAIL);
+                .contains("[EMAIL] welcome | failed | email=" + masked)
+                .contains("reason=Email service unavailable");
     }
 
 
@@ -130,10 +134,11 @@ class EmailEventLoggingAspectTest {
         
         List<ILoggingEvent> logsList = listAppender.list;
         assertThat(logsList).hasSize(2);
+        String masked = SecurityMaskingUtils.maskEmail(EMAIL);
         assertThat(logsList.get(0).getFormattedMessage())
-                .contains("Sending password changed notification to", EMAIL);
+                .contains("[EMAIL] password_changed | start | email=" + masked);
         assertThat(logsList.get(1).getFormattedMessage())
-                .contains("Password changed notification sent successfully to", EMAIL);
+                .contains("[EMAIL] password_changed | success | email=" + masked);
     }
 
     @Test
@@ -150,8 +155,10 @@ class EmailEventLoggingAspectTest {
                 .isEqualTo(exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
+        String masked = SecurityMaskingUtils.maskEmail(EMAIL);
         assertThat(logsList.getLast().getFormattedMessage())
-                .contains("Failed to send password changed notification to", EMAIL);
+                .contains("[EMAIL] password_changed | failed | email=" + masked)
+                .contains("reason=Email service error");
     }
 
     // ====================================================================
@@ -174,10 +181,11 @@ class EmailEventLoggingAspectTest {
         
         List<ILoggingEvent> logsList = listAppender.list;
         assertThat(logsList).hasSize(2);
+        String masked = SecurityMaskingUtils.maskEmail(EMAIL);
         assertThat(logsList.get(0).getFormattedMessage())
-                .contains("Sending password reset email to", EMAIL);
+                .contains("[EMAIL] password_reset | start | email=" + masked);
         assertThat(logsList.get(1).getFormattedMessage())
-                .contains("Password reset email sent successfully to", EMAIL);
+                .contains("[EMAIL] password_reset | success | email=" + masked);
     }
 
     @Test
@@ -194,8 +202,10 @@ class EmailEventLoggingAspectTest {
                 .isEqualTo(exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
+        String masked = SecurityMaskingUtils.maskEmail(EMAIL);
         assertThat(logsList.getLast().getFormattedMessage())
-                .contains("Failed to send password reset email to", EMAIL);
+                .contains("[EMAIL] password_reset | failed | email=" + masked)
+                .contains("reason=Service unavailable");
     }
 
     // ====================================================================
@@ -218,10 +228,11 @@ class EmailEventLoggingAspectTest {
         
         List<ILoggingEvent> logsList = listAppender.list;
         assertThat(logsList).hasSize(2);
+        String masked = SecurityMaskingUtils.maskEmail(EMAIL);
         assertThat(logsList.get(0).getFormattedMessage())
-                .contains("Sending password reset confirmation to", EMAIL);
+                .contains("[EMAIL] password_reset_confirmation | start | email=" + masked);
         assertThat(logsList.get(1).getFormattedMessage())
-                .contains("Password reset confirmation sent successfully to", EMAIL);
+                .contains("[EMAIL] password_reset_confirmation | success | email=" + masked);
     }
 
     @Test
@@ -238,7 +249,44 @@ class EmailEventLoggingAspectTest {
                 .isEqualTo(exception);
 
         List<ILoggingEvent> logsList = listAppender.list;
+        String masked = SecurityMaskingUtils.maskEmail(EMAIL);
         assertThat(logsList.getLast().getFormattedMessage())
-                .contains("Failed to send password reset confirmation to", EMAIL);
+                .contains("[EMAIL] password_reset_confirmation | failed | email=" + masked)
+                .contains("reason=Email error");
+    }
+
+    @Test
+    @DisplayName("Devrait masquer [UNKNOWN] quand l'email est null (welcome)")
+    void shouldMaskUnknownWhenEmailNull_Welcome() throws Throwable {
+        PasswordSetEvent event = new PasswordSetEvent(this, null);
+        when(joinPoint.getArgs()).thenReturn(new Object[]{event});
+        when(joinPoint.proceed()).thenReturn(null);
+
+        loggingAspect.logWelcomeEmail(joinPoint);
+
+        List<ILoggingEvent> logsList = listAppender.list;
+        assertThat(logsList).hasSize(2);
+        assertThat(logsList.get(0).getFormattedMessage())
+                .contains("[EMAIL] welcome | start | email=[UNKNOWN]");
+        assertThat(logsList.get(1).getFormattedMessage())
+                .contains("[EMAIL] welcome | success | email=[UNKNOWN]");
+    }
+
+    @Test
+    @DisplayName("Devrait utiliser le root cause comme raison d'échec (cause imbriquée)")
+    void shouldUseRootCauseMessage_WhenNested() throws Throwable {
+        PasswordChangedEvent event = new PasswordChangedEvent(this, EMAIL);
+        RuntimeException nested = new RuntimeException("outer", new IllegalStateException("inner-cause"));
+        when(joinPoint.getArgs()).thenReturn(new Object[]{event});
+        when(joinPoint.proceed()).thenThrow(nested);
+
+        assertThatThrownBy(() -> loggingAspect.logPasswordChangedNotification(joinPoint))
+                .isEqualTo(nested);
+
+        List<ILoggingEvent> logsList = listAppender.list;
+        String masked = SecurityMaskingUtils.maskEmail(EMAIL);
+        assertThat(logsList.getLast().getFormattedMessage())
+                .contains("[EMAIL] password_changed | failed | email=" + masked)
+                .contains("reason=inner-cause");
     }
 }
