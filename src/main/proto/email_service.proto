@@ -6,19 +6,16 @@ option java_multiple_files = true;
 option java_package = "com.ecclesiaflow.grpc.email";
 option java_outer_classname = "EmailServiceProto";
 
-// Email Service - High-performance inter-service communication
 service EmailService {
-  // Send a single email
   rpc SendEmail(SendEmailRequest) returns (SendEmailResponse);
 }
 
-// Email template types - Single Source of Truth for all modules
 enum EmailTemplateType {
   EMAIL_TEMPLATE_UNSPECIFIED = 0;
-  EMAIL_TEMPLATE_PASSWORD_RESET = 1;         // Auth: Password reset request
-  EMAIL_TEMPLATE_PASSWORD_CHANGED = 2;       // Auth: Password change confirmation
-  EMAIL_TEMPLATE_WELCOME = 3;                // Auth + Members: Welcome new user
-  EMAIL_TEMPLATE_EMAIL_CONFIRMATION = 4;     // Members: Email verification
+  EMAIL_TEMPLATE_PASSWORD_RESET = 1;
+  EMAIL_TEMPLATE_PASSWORD_CHANGED = 2;
+  EMAIL_TEMPLATE_WELCOME = 3;
+  EMAIL_TEMPLATE_EMAIL_CONFIRMATION = 4;
 }
 
 /**
@@ -36,28 +33,28 @@ enum Priority {
  */
 enum Status {
   STATUS_UNSPECIFIED = 0;
-  STATUS_QUEUED = 1;                         // Queued in RabbitMQ
-  STATUS_SENT = 2;                           // Sent to SMTP/API
-  STATUS_DELIVERED = 3;                      // Delivered to recipient
-  STATUS_FAILED = 4;                         // Failed to send
+  STATUS_QUEUED = 1;
+  STATUS_SENT = 2;
+  STATUS_DELIVERED = 3;
+  STATUS_FAILED = 4;
 }
 
 /**
  * Request to send a transactional email
  */
 message SendEmailRequest {
-  repeated string to = 1;                    // Recipient email(s) - REQUIRED
-  string subject = 2;                        // Email subject - REQUIRED
-  EmailTemplateType template_type = 3;       // Template to use - REQUIRED
-  map<string, string> variables = 4;         // Template variables (firstName, link, etc.) - REQUIRED
-  Priority priority = 5;                     // Email priority - REQUIRED
+  repeated string to = 1;
+  string subject = 3;
+  EmailTemplateType template_type = 4;
+  map<string, string> variables = 5;
+  Priority priority = 6;
 }
 
 /**
  * Response after queueing an email for sending
  */
 message SendEmailResponse {
-  string email_id = 1;                       // Unique email identifier (UUID)
-  Status status = 2;                         // Current status - REQUIRED
-  optional string message = 3;               // Human-readable message (optional)
+  string email_id = 1;
+  Status status = 2;
+  optional string message = 3;
 }
