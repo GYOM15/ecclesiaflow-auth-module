@@ -47,10 +47,25 @@ public class GrpcCommunicationException extends RuntimeException {
     
     @Override
     public String getMessage() {
+        String safe = sanitizeInfra(super.getMessage());
         return String.format("gRPC error [%s] calling %s.%s: %s", 
             grpcStatusCode != null ? grpcStatusCode.name() : "UNKNOWN", 
             targetService, 
             operation, 
-            super.getMessage());
+            safe);
+    }
+
+    /**
+     * Sanitize basique côté couche business pour éviter toute fuite d'infos d'infrastructure
+     * (URLs, host:port) dans les messages d'exception, sans dépendre de la couche application.
+     */
+    private static String sanitizeInfra(String msg) {
+        if (msg == null || msg.isBlank()) return msg;
+        String s = msg;
+        // URLs http/https -> [URL]
+        s = s.replaceAll("https?://[^\\s]+", "[URL]");
+        // host:port patterns -> [HOST:PORT]
+        s = s.replaceAll("[a-zA-Z0-9._-]+:\\d{2,5}", "[HOST:PORT]");
+        return s;
     }
 }
