@@ -198,7 +198,7 @@ public class PasswordManagementDelegate {
         ValidatedTokenData tokenData = validateAndExtractTemporaryTokenData(temporaryToken, "password_reset");
         
         if (!tokenData.member().isEnabled()) {
-            throw new InvalidRequestException(Messages.INVALID_OR_EXPIRED_LINK);
+            throw new InvalidRequestException(Messages.PASSWORD_SETUP_ERROR);
         }
         
         Member updatedMember = passwordService.resetPasswordWithToken(
@@ -279,8 +279,6 @@ public class PasswordManagementDelegate {
     private ValidatedTokenData validatePasswordSetupToken(String temporaryToken, String email) {
         UUID memberId = jwt.extractMemberId(temporaryToken);
         
-        // Vérifier si le membre existe déjà et a déjà un mot de passe défini
-        // Note: getMemberByEmail lance MemberNotFoundException si le membre n'existe pas (normal pour password_setup)
         try {
             Member existingMember = authenticationService.getMemberByEmail(email);
             if (existingMember.isEnabled()) {

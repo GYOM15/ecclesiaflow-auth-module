@@ -921,7 +921,7 @@ class PasswordManagementDelegateTest {
         // FIX: Expect PASSWORD_SETUP_ERROR not PASSWORD_RESET_ERROR
         assertThatThrownBy(() -> passwordManagementDelegate.resetPassword(authHeader, setPasswordRequest))
                 .isInstanceOf(InvalidRequestException.class)
-                .hasMessageContaining(Messages.PASSWORD_RESET_ERROR); // Changed message
+                .hasMessageContaining(Messages.PASSWORD_SETUP_ERROR);
 
         verify(passwordService, never()).resetPasswordWithToken(anyString(), anyString());
     }
