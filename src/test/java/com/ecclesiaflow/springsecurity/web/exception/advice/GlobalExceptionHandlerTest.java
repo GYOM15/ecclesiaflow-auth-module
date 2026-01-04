@@ -46,6 +46,77 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("handle406 -> 406 NOT ACCEPTABLE")
+    void handle406_shouldReturn406() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+        HttpServletRequest req = mockRequest("/api");
+
+        org.springframework.web.HttpMediaTypeNotAcceptableException ex =
+                new org.springframework.web.HttpMediaTypeNotAcceptableException("no acceptable");
+
+        ResponseEntity<com.ecclesiaflow.springsecurity.web.exception.model.ApiErrorResponse> resp =
+                handler.handle406(ex, req);
+
+        assertThat(resp.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().message()).contains("Media type non supporté");
+    }
+
+    @Test
+    @DisplayName("handleHttpMethodNotSupported -> branch with supported methods list")
+    void handleHttpMethodNotSupported_withSupportedList() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+        HttpServletRequest req = mockRequest("/api/resource");
+
+        java.util.Set<String> supported = java.util.Set.of("GET", "POST");
+        org.springframework.web.HttpRequestMethodNotSupportedException ex =
+                new org.springframework.web.HttpRequestMethodNotSupportedException("PUT", supported);
+
+        ResponseEntity<com.ecclesiaflow.springsecurity.web.exception.model.ApiErrorResponse> resp =
+                handler.handleHttpMethodNotSupported(ex, req);
+
+        assertThat(resp.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().message()).contains("Méthode HTTP non supportée");
+        assertThat(resp.getBody().message()).contains("autorisées");
+    }
+
+    @Test
+    @DisplayName("handleHttpMethodNotSupported -> branch without supported methods")
+    void handleHttpMethodNotSupported_withoutSupportedList() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+        HttpServletRequest req = mockRequest("/api/resource");
+
+        java.util.Set<String> supported = java.util.Collections.emptySet();
+        org.springframework.web.HttpRequestMethodNotSupportedException ex =
+                new org.springframework.web.HttpRequestMethodNotSupportedException("PATCH", supported);
+
+        ResponseEntity<com.ecclesiaflow.springsecurity.web.exception.model.ApiErrorResponse> resp =
+                handler.handleHttpMethodNotSupported(ex, req);
+
+        assertThat(resp.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().message()).isEqualTo("Méthode HTTP non supportée");
+    }
+
+    @Test
+    @DisplayName("handleHttpMethodNotSupported -> branch with supported methods = null")
+    void handleHttpMethodNotSupported_withNullSupportedList() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+        HttpServletRequest req = mockRequest("/api/resource");
+
+        org.springframework.web.HttpRequestMethodNotSupportedException ex =
+                new org.springframework.web.HttpRequestMethodNotSupportedException("DELETE", (java.util.Collection<String>) null);
+
+        ResponseEntity<com.ecclesiaflow.springsecurity.web.exception.model.ApiErrorResponse> resp =
+                handler.handleHttpMethodNotSupported(ex, req);
+
+        assertThat(resp.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().message()).isEqualTo("Méthode HTTP non supportée");
+    }
+
+    @Test
     @DisplayName("handleMemberNotFound -> 404 NOT FOUND")
     void handleMemberNotFound_shouldReturn404() {
         GlobalExceptionHandler handler = new GlobalExceptionHandler();
