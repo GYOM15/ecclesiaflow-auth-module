@@ -1,0 +1,165 @@
+{
+  "realm": "ecclesiaflow",
+  "enabled": true,
+  "displayName": "EcclesiaFlow",
+  "displayNameHtml": "<strong>EcclesiaFlow</strong>",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "roles": {
+    "realm": [
+      {
+        "name": "SUPER_ADMIN",
+        "description": "Platform administrator with full system access",
+        "composite": false
+      },
+      {
+        "name": "SUPPORT",
+        "description": "Support staff with read access for troubleshooting",
+        "composite": false
+      },
+      {
+        "name": "USER",
+        "description": "Authenticated user with verified account (not church member)",
+        "composite": false
+      }
+    ]
+  },
+  "defaultRoles": ["USER"],
+  "clients": [
+    {
+      "clientId": "ecclesiaflow-backend",
+      "name": "EcclesiaFlow Backend Services",
+      "description": "Confidential client for backend microservices",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_BACKEND_CLIENT_SECRET}",
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "access.token.lifespan": "300",
+        "client.session.idle.timeout": "1800",
+        "client.session.max.lifespan": "36000"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "ecclesiaflow-admin-service",
+      "name": "EcclesiaFlow Admin Service",
+      "description": "Service account used by Auth Module to call Keycloak Admin API",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET}"
+    },
+    {
+      "clientId": "ecclesiaflow-frontend",
+      "name": "EcclesiaFlow Frontend Application",
+      "description": "Public client for frontend SPA with PKCE",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "${FRONTEND_REDIRECT_URI_1:http://localhost:3000/*}",
+        "${FRONTEND_REDIRECT_URI_2:http://localhost:4200/*}",
+        "${FRONTEND_REDIRECT_URI_3:http://localhost:5173/*}"
+      ],
+      "webOrigins": [
+        "${FRONTEND_ORIGIN_1:http://localhost:3000}",
+        "${FRONTEND_ORIGIN_2:http://localhost:4200}",
+        "${FRONTEND_ORIGIN_3:http://localhost:5173}"
+      ],
+      "attributes": {
+        "access.token.lifespan": "300",
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "email-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "email",
+            "user.attribute": "email",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ],
+  "accessTokenLifespan": 300,
+  "accessTokenLifespanForImplicitFlow": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanUserAction": 300,
+  "accessCodeLifespanLogin": 1800,
+  "actionTokenGeneratedByAdminLifespan": 43200,
+  "actionTokenGeneratedByUserLifespan": 300,
+  "oauth2DeviceCodeLifespan": 600,
+  "oauth2DevicePollingInterval": 5,
+  "smtpServer": {},
+  "internationalizationEnabled": true,
+  "supportedLocales": ["en", "fr"],
+  "defaultLocale": "en"
+}
