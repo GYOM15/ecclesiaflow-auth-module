@@ -275,18 +275,6 @@ components:
         type: string
         example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-    ResetTokenHeader:
-      name: X-Reset-Token
-      in: header
-      required: true
-      description: |
-        Temporary token for password reset (purpose="password_reset", TTL=15min).
-        Received via email link after forgot password request.
-        
-        Signed one-time token (JWT-like or opaque), validated server-side.
-      schema:
-        type: string
-        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
   schemas:
     # ==========================================
@@ -373,33 +361,8 @@ components:
         type:
           type: string
     # ==========================================
-    # Inter-Module Communication Schemas
+    # Capabilities Schemas
     # ==========================================
-
-    MemberConfirmationStatusResponse:
-      type: object
-      description: |
-        Member confirmation status response from Members Module.
-        
-        **Used by:** MembersClientImpl (WebClient fallback)
-      required:
-        - confirmed
-      properties:
-        confirmed:
-          type: boolean
-          description: Indicates if the member has confirmed their account via email
-          example: true
-
-    ForgotPasswordRequest:
-      type: object
-      required:
-        - email
-      properties:
-        email:
-          type: string
-          format: email
-          description: Email address of the account to reset password for
-          example: user@ecclesiaflow.com
 
     AllCapabilitiesResponse:
       type: object
