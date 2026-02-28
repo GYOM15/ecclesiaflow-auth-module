@@ -158,7 +158,18 @@
   "actionTokenGeneratedByUserLifespan": 300,
   "oauth2DeviceCodeLifespan": 600,
   "oauth2DevicePollingInterval": 5,
-  "smtpServer": {},
+  "smtpServer": {
+    "host": "smtp.gmail.com",
+    "port": "587",
+    "from": "__KEYCLOAK_SMTP_FROM__",
+    "fromDisplayName": "EcclesiaFlow",
+    "replyTo": "__KEYCLOAK_SMTP_FROM__",
+    "auth": "true",
+    "user": "__KEYCLOAK_SMTP_USER__",
+    "password": "__KEYCLOAK_SMTP_PASSWORD__",
+    "starttls": "true",
+    "ssl": "false"
+  },
   "internationalizationEnabled": true,
   "supportedLocales": ["en", "fr"],
   "defaultLocale": "en"

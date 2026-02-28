@@ -27,6 +27,11 @@ services:
       KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET}
       KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET: ${KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET}
 
+      # SMTP (consumed by init-realm.sh for Keycloak email features)
+      KEYCLOAK_SMTP_FROM: ${KEYCLOAK_SMTP_FROM:-noreply@ecclesiaflow.com}
+      KEYCLOAK_SMTP_USER: ${KEYCLOAK_SMTP_USER}
+      KEYCLOAK_SMTP_PASSWORD: ${KEYCLOAK_SMTP_PASSWORD}
+
       # Frontend URIs (optional — defaults applied by init-realm.sh)
       FRONTEND_REDIRECT_URI_1: ${FRONTEND_REDIRECT_URI_1:-http://localhost:3000/*}
       FRONTEND_REDIRECT_URI_2: ${FRONTEND_REDIRECT_URI_2:-http://localhost:4200/*}

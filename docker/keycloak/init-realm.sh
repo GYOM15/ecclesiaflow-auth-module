@@ -26,6 +26,7 @@ fi
 MISSING=""
 [ -z "${KEYCLOAK_BACKEND_CLIENT_SECRET:-}" ]      && MISSING="$MISSING KEYCLOAK_BACKEND_CLIENT_SECRET"
 [ -z "${KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET:-}" ] && MISSING="$MISSING KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET"
+[ -z "${KEYCLOAK_SMTP_PASSWORD:-}" ]               && MISSING="$MISSING KEYCLOAK_SMTP_PASSWORD"
 
 if [ -n "$MISSING" ]; then
   echo "[init-realm] ERROR: Missing required environment variables:$MISSING" >&2
@@ -47,6 +48,9 @@ sed \
   -e "s|__FRONTEND_ORIGIN_1__|${FRONTEND_ORIGIN_1:-http://localhost:3000}|g" \
   -e "s|__FRONTEND_ORIGIN_2__|${FRONTEND_ORIGIN_2:-http://localhost:4200}|g" \
   -e "s|__FRONTEND_ORIGIN_3__|${FRONTEND_ORIGIN_3:-http://localhost:5173}|g" \
+  -e "s|__KEYCLOAK_SMTP_FROM__|${KEYCLOAK_SMTP_FROM:-noreply@ecclesiaflow.com}|g" \
+  -e "s|__KEYCLOAK_SMTP_USER__|${KEYCLOAK_SMTP_USER:-noreply@ecclesiaflow.com}|g" \
+  -e "s|__KEYCLOAK_SMTP_PASSWORD__|${KEYCLOAK_SMTP_PASSWORD}|g" \
   "$TEMPLATE" > "$OUTPUT"
 
 # Verify no unresolved placeholders remain
