@@ -1,8 +1,6 @@
 package com.ecclesiaflow.springsecurity.io.grpc.members;
 
-import com.ecclesiaflow.grpc.members.ConfirmationStatusRequest;
-import com.ecclesiaflow.grpc.members.ConfirmationStatusResponse;
-import com.ecclesiaflow.grpc.members.MembersServiceGrpc;
+import com.ecclesiaflow.grpc.members.*;
 import com.ecclesiaflow.springsecurity.io.members.MembersGrpcClient;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -15,6 +13,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -87,6 +87,29 @@ class MembersGrpcClientIntegrationTest {
                 } else {
                     responseObserver.onError(new StatusRuntimeException(
                             Status.UNKNOWN.withDescription("Unknown error")));
+                }
+            }
+
+            @Override
+            public void notifyAccountActivated(AccountActivatedRequest request,
+                                               StreamObserver<AccountActivatedResponse> responseObserver) {
+                String keycloakUserId = request.getKeycloakUserId();
+                
+                if (keycloakUserId.equals("error-member")) {
+                    responseObserver.onNext(AccountActivatedResponse.newBuilder()
+                            .setSuccess(false)
+                            .setMessage("Member not found")
+                            .build());
+                    responseObserver.onCompleted();
+                } else if (keycloakUserId.equals("unavailable-member")) {
+                    responseObserver.onError(new StatusRuntimeException(
+                            Status.UNAVAILABLE.withDescription("Service unavailable")));
+                } else {
+                    responseObserver.onNext(AccountActivatedResponse.newBuilder()
+                            .setSuccess(true)
+                            .setMessage("Account activated successfully")
+                            .build());
+                    responseObserver.onCompleted();
                 }
             }
         };
@@ -267,5 +290,44 @@ class MembersGrpcClientIntegrationTest {
 
         // Then - Should still block because memberExists=false
         assertTrue(result, "Should return true when member doesn't exist, regardless of isConfirmed value");
+    }
+
+    @Test
+    @DisplayName("notifyAccountActivated - Should return true when activation succeeds")
+    void notifyAccountActivated_Success_ReturnsTrue() {
+        UUID memberId = UUID.randomUUID();
+        String keycloakUserId = "keycloak-123";
+
+        boolean result = client.notifyAccountActivated(memberId, keycloakUserId);
+
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("notifyAccountActivated - Should throw exception when response.success is false")
+    void notifyAccountActivated_ResponseFailure_ThrowsException() {
+        UUID memberId = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        String keycloakUserId = "error-member";
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            client.notifyAccountActivated(memberId, keycloakUserId);
+        });
+
+        assertTrue(exception.getMessage().contains("Members module rejected activation"));
+        assertTrue(exception.getMessage().contains("Member not found"));
+    }
+
+    @Test
+    @DisplayName("notifyAccountActivated - Should throw MembersServiceUnavailableException when service unavailable")
+    void notifyAccountActivated_ServiceUnavailable_ThrowsException() {
+        UUID memberId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        String keycloakUserId = "unavailable-member";
+
+        MembersGrpcClient.MembersServiceUnavailableException exception = assertThrows(
+                MembersGrpcClient.MembersServiceUnavailableException.class,
+                () -> client.notifyAccountActivated(memberId, keycloakUserId)
+        );
+
+        assertTrue(exception.getMessage().contains("unavailable"));
     }
 }

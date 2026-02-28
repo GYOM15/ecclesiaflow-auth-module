@@ -6,28 +6,8 @@ option java_outer_classname = "AuthServiceProto";
 
 package ecclesiaflow.auth;
 
-/**
- * Service d'authentification EcclesiaFlow pour communication inter-modules.
- * 
- * Ce service gRPC permet la génération de tokens temporaires sécurisés
- * utilisés lors du processus de confirmation de compte et définition
- * du mot de passe initial.
- *
- * Architecture: Communication synchrone entre Members Module et Auth Module
- * Sécurité: JWT dans metadata pour authentification inter-services
- */
+
 service AuthService {
-  /**
-   * Génère un token temporaire JWT pour permettre la définition du mot de passe.
-   * 
-   * Flow:
-   * 1. Members module confirme un compte email
-   * 2. Members appelle Auth via gRPC pour obtenir un token temporaire
-   * 3. Token temporaire renvoyé à l'utilisateur (expire en 15min)
-   * 4. Utilisateur utilise ce token pour définir son mot de passe
-   *
-   * Sécurité: Requires service-to-service authentication
-   */
   rpc GenerateTemporaryToken(TemporaryTokenRequest) returns (TemporaryTokenResponse);
 }
 
@@ -43,24 +23,14 @@ service AuthService {
  * Body: { email, memberId }
  */
 message TemporaryTokenRequest {
-  // Email du membre confirmé (requis)
   string email = 1;
-  
-  // UUID du membre dans le système (requis)
   string member_id = 2;
 }
 
-/**
- * Réponse contenant le token temporaire généré.
- * 
- * Correspondance avec REST API:
- * Response: { temporaryToken, expiresIn, message }
- */
+
 message TemporaryTokenResponse {
-  // Token JWT temporaire encodé
   string temporary_token = 1;
-  
-  // Durée de validité en secondes (ex: 900 = 15 minutes)
   int32 expires_in_seconds = 2;
+  string password_endpoint = 3;
 }
 

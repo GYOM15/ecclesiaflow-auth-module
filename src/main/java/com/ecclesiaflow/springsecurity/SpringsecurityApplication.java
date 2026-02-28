@@ -1,19 +1,12 @@
 package com.ecclesiaflow.springsecurity;
 
-import com.ecclesiaflow.springsecurity.business.domain.member.Member;
-import com.ecclesiaflow.springsecurity.business.domain.member.Role;
-import com.ecclesiaflow.springsecurity.business.domain.member.MemberRepository;
-import com.ecclesiaflow.springsecurity.business.encryption.PasswordEncoderUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
+@EnableFeignClients
 public class SpringsecurityApplication implements CommandLineRunner {
 
 //	@Autowired

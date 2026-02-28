@@ -36,12 +36,15 @@ build/
 # Variables d'environnement (contiennent des secrets)
 .env
 .env.local
+.env.dev
+.env.test
+.env.prod
 .env.production
 .env.staging
 
-# Fichiers de configuration avec secrets
-application-*.properties
-application.properties
+# Fichiers de configuration avec secrets (les profils Spring sont maintenant versionnés)
+# IMPORTANT: Les application-*.properties sont maintenant versionnés car ils utilisent des variables d'environnement
+# Ne PAS exclure application*.properties
 
 # Certificats SSL
 *.p12

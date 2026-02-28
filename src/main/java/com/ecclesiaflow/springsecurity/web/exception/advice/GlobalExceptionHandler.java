@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.exception.advice;
 
-import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
+import com.ecclesiaflow.springsecurity.business.exceptions.CompensationFailedException;
 import com.ecclesiaflow.springsecurity.web.exception.*;
 import com.ecclesiaflow.springsecurity.web.exception.model.ApiErrorResponse;
 import com.ecclesiaflow.springsecurity.web.exception.model.ValidationError;
@@ -11,8 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -40,11 +38,6 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MemberNotFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleMemberNotFound(MemberNotFoundException ex, HttpServletRequest request) {
-        return buildSimpleErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
-    }
-
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
         return buildUnauthorizedErrorResponse("Token invalide ou expiré", request.getRequestURI());
@@ -53,11 +46,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidRequestException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidRequest(InvalidRequestException ex, HttpServletRequest request) {
         return buildBadRequestErrorResponse(ex.getMessage(), request.getRequestURI());
-    }
-
-    @ExceptionHandler(JwtProcessingException.class)
-    public ResponseEntity<ApiErrorResponse> handleJwtProcessing(JwtProcessingException ex, HttpServletRequest request) {
-        return buildUnauthorizedErrorResponse("Erreur de traitement du token", request.getRequestURI());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -143,21 +131,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<ApiErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex, HttpServletRequest request) {
-        return buildUnauthorizedErrorResponse("Identifiants invalides", request.getRequestURI());
-    }
-
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiErrorResponse> handleAuthentication(AuthenticationException ex, HttpServletRequest request) {
-        return buildUnauthorizedErrorResponse("Erreur d'authentification", request.getRequestURI());
-    }
-
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
-        return buildUnauthorizedErrorResponse("Identifiants invalides", request.getRequestURI());
-    }
-
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ApiErrorResponse> handleMissingRequestHeader(MissingRequestHeaderException ex, HttpServletRequest request) {
         String error = "En-tête requis manquant: " + ex.getHeaderName();
@@ -190,9 +163,14 @@ public class GlobalExceptionHandler {
         return buildBadRequestErrorResponse(ex.getMessage(), request.getRequestURI());
     }
 
+    @ExceptionHandler(CompensationFailedException.class)
+    public ResponseEntity<ApiErrorResponse> handleCompensationFailed(CompensationFailedException ex, HttpServletRequest request) {
+        return buildSimpleErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An internal error occurred", request.getRequestURI());
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponse> handleRuntimeException(RuntimeException ex, HttpServletRequest request) {
-        return buildSimpleErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Une erreur interne est survenue", request.getRequestURI());
+        return buildSimpleErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An internal error occurred", request.getRequestURI());
     }
 
     @ExceptionHandler(Exception.class)

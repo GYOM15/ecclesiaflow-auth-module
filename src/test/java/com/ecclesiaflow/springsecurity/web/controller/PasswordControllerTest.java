@@ -1,25 +1,25 @@
 package com.ecclesiaflow.springsecurity.web.controller;
 
+import com.ecclesiaflow.springsecurity.business.domain.password.PasswordManagement;
 import com.ecclesiaflow.springsecurity.web.delegate.PasswordManagementDelegate;
-import com.ecclesiaflow.springsecurity.web.model.ChangePasswordRequest;
-import com.ecclesiaflow.springsecurity.web.model.ForgotPasswordRequest;
-import com.ecclesiaflow.springsecurity.web.model.ForgotPasswordResponse;
 import com.ecclesiaflow.springsecurity.web.model.PasswordManagementResponse;
-import com.ecclesiaflow.springsecurity.web.model.SetPasswordRequest;
-import org.junit.jupiter.api.AfterEach;
+import com.ecclesiaflow.springsecurity.web.model.SetupPasswordRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-@DisplayName("PasswordController - Tests avec pattern Delegate")
+@ExtendWith(MockitoExtension.class)
+@DisplayName("PasswordController - Tests Unitaires")
 class PasswordControllerTest {
 
     @Mock
@@ -28,138 +28,241 @@ class PasswordControllerTest {
     @InjectMocks
     private PasswordController passwordController;
 
-    private SetPasswordRequest setPasswordRequest;
-    private ChangePasswordRequest changePasswordRequest;
+    private static final String SETUP_TOKEN = "setup-token-abc123";
+    private static final String PASSWORD = "StrongPassword123!";
+
+    private SetupPasswordRequest setupPasswordRequest;
     private PasswordManagementResponse passwordManagementResponse;
-    private AutoCloseable closeable;
 
     @BeforeEach
     void setUp() {
-        closeable = MockitoAnnotations.openMocks(this);
+        setupPasswordRequest = new SetupPasswordRequest();
+        setupPasswordRequest.setPassword(PASSWORD);
 
-        // Setup SetPasswordRequest
-        setPasswordRequest = new SetPasswordRequest();
-        setPasswordRequest.setPassword("NewStrongPassword1!");
-
-        // Setup ChangePasswordRequest
-        changePasswordRequest = new ChangePasswordRequest();
-        changePasswordRequest.setCurrentPassword("oldPass");
-        changePasswordRequest.setNewPassword("newPass");
-
-        // Setup PasswordManagementResponse
         passwordManagementResponse = new PasswordManagementResponse()
-                .message("Mot de passe défini avec succès")
-                .accessToken("access-token")
-                .refreshToken("refresh-token")
-                .expiresIn(60);
+                .message("Mot de passe défini avec succès");
     }
 
-    @AfterEach
-    void tearDown() throws Exception {
-        if (closeable != null) {
-            closeable.close();
+    @Nested
+    @DisplayName("_authSetInitialPassword - Success scenarios")
+    class SetInitialPasswordSuccessTests {
+
+        @Test
+        @DisplayName("Should setup initial password successfully")
+        void shouldSetupInitialPasswordSuccessfully() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            ResponseEntity<PasswordManagementResponse> response = 
+                    passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getMessage()).contains("succès");
+            
+            verify(passwordManagementDelegate).setupPassword(SETUP_TOKEN, PASSWORD);
+        }
+
+        @Test
+        @DisplayName("Should delegate to PasswordManagementDelegate")
+        void shouldDelegateToPasswordManagementDelegate() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
+
+            verify(passwordManagementDelegate).setupPassword(SETUP_TOKEN, PASSWORD);
+        }
+
+        @Test
+        @DisplayName("Should create PasswordManagement domain object")
+        void shouldCreatePasswordManagementDomainObject() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
+
+            verify(passwordManagementDelegate).setupPassword(eq(SETUP_TOKEN), eq(PASSWORD));
+        }
+
+        @Test
+        @DisplayName("Should extract password from request")
+        void shouldExtractPasswordFromRequest() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
+
+            verify(passwordManagementDelegate).setupPassword(anyString(), eq(PASSWORD));
         }
     }
 
-    // ====================================================================
-    // Tests setPassword - Cas de succès
-    // ====================================================================
+    @Nested
+    @DisplayName("_authSetInitialPassword - Request mapping")
+    class SetInitialPasswordRequestMappingTests {
 
-    @Test
-    @DisplayName("setPassword - Devrait déléguer au PasswordManagementDelegate")
-    void setPassword_ShouldDelegateToPasswordManagementDelegate() {
-        // Given
-        String authHeader = "Bearer temporary-token-123";
-        when(passwordManagementDelegate.setPassword(authHeader, setPasswordRequest))
-                .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+        @Test
+        @DisplayName("Should map SetupPasswordRequest to domain parameters")
+        void shouldMapRequestToDomainParameters() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
 
-        // When
-        ResponseEntity<PasswordManagementResponse> response = passwordController._authSetInitialPassword(authHeader, setPasswordRequest);
+            passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
 
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("access-token", response.getBody().getAccessToken());
-        assertEquals("refresh-token", response.getBody().getRefreshToken());
-        
-        verify(passwordManagementDelegate).setPassword(authHeader, setPasswordRequest);
+            verify(passwordManagementDelegate).setupPassword(SETUP_TOKEN, PASSWORD);
+        }
+
+        @Test
+        @DisplayName("Should pass token from header")
+        void shouldPassTokenFromHeader() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
+
+            verify(passwordManagementDelegate).setupPassword(eq(SETUP_TOKEN), anyString());
+        }
+
+        @Test
+        @DisplayName("Should pass password from request body")
+        void shouldPassPasswordFromRequestBody() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
+
+            verify(passwordManagementDelegate).setupPassword(anyString(), eq(PASSWORD));
+        }
     }
 
-    // ====================================================================
-    // Tests changePassword
-    // ====================================================================
+    @Nested
+    @DisplayName("_authSetInitialPassword - Response handling")
+    class SetInitialPasswordResponseTests {
 
-    @Test
-    @DisplayName("changePassword - Devrait déléguer au PasswordManagementDelegate")
-    void changePassword_ShouldDelegateToPasswordManagementDelegate() {
-        // Given
-        when(passwordManagementDelegate.changePassword(changePasswordRequest))
-                .thenReturn(ResponseEntity.ok(new PasswordManagementResponse().message("Mot de passe changé avec succès")));
+        @Test
+        @DisplayName("Should return response from delegate")
+        void shouldReturnResponseFromDelegate() {
+            ResponseEntity<PasswordManagementResponse> expectedResponse = 
+                    ResponseEntity.ok(passwordManagementResponse);
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(expectedResponse);
 
-        // When
-        ResponseEntity<PasswordManagementResponse> response = passwordController._authChangePassword(changePasswordRequest);
+            ResponseEntity<PasswordManagementResponse> actualResponse = 
+                    passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
 
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Mot de passe changé avec succès", response.getBody().getMessage());
-        
-        verify(passwordManagementDelegate).changePassword(changePasswordRequest);
+            assertThat(actualResponse).isEqualTo(expectedResponse);
+        }
+
+        @Test
+        @DisplayName("Should propagate status code from delegate")
+        void shouldPropagateStatusCodeFromDelegate() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            ResponseEntity<PasswordManagementResponse> response = 
+                    passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("Should propagate response body from delegate")
+        void shouldPropagateResponseBodyFromDelegate() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            ResponseEntity<PasswordManagementResponse> response = 
+                    passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
+
+            assertThat(response.getBody()).isEqualTo(passwordManagementResponse);
+        }
     }
 
-    // ====================================================================
-    // Tests requestPasswordReset
-    // ====================================================================
+    @Nested
+    @DisplayName("_authSetInitialPassword - Edge cases")
+    class SetInitialPasswordEdgeCasesTests {
 
-    @Test
-    @DisplayName("requestPasswordReset - Devrait déléguer au PasswordManagementDelegate")
-    void requestPasswordReset_ShouldDelegateToPasswordManagementDelegate() {
-        // Given
-        ForgotPasswordRequest forgotPasswordRequest = new ForgotPasswordRequest();
-        forgotPasswordRequest.setEmail("user@example.com");
-        
-        ForgotPasswordResponse forgotPasswordResponse = new ForgotPasswordResponse()
-                .message("Si un compte existe avec cet email, un lien de réinitialisation a été envoyé");
-        
-        when(passwordManagementDelegate.requestPasswordReset(forgotPasswordRequest))
-                .thenReturn(ResponseEntity.ok(forgotPasswordResponse));
+        @Test
+        @DisplayName("Should handle different password formats")
+        void shouldHandleDifferentPasswordFormats() {
+            String complexPassword = "C0mpl3x!P@ssw0rd#123";
+            setupPasswordRequest.setPassword(complexPassword);
+            
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, complexPassword))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
 
-        // When
-        ResponseEntity<ForgotPasswordResponse> response = passwordController._authRequestPasswordReset(forgotPasswordRequest);
+            ResponseEntity<PasswordManagementResponse> response = 
+                    passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
 
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Si un compte existe avec cet email, un lien de réinitialisation a été envoyé", response.getBody().getMessage());
-        
-        verify(passwordManagementDelegate).requestPasswordReset(forgotPasswordRequest);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            verify(passwordManagementDelegate).setupPassword(SETUP_TOKEN, complexPassword);
+        }
+
+        @Test
+        @DisplayName("Should handle long tokens")
+        void shouldHandleLongTokens() {
+            String longToken = "a".repeat(500);
+            when(passwordManagementDelegate.setupPassword(longToken, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            ResponseEntity<PasswordManagementResponse> response = 
+                    passwordController._authSetInitialPassword(longToken, setupPasswordRequest);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            verify(passwordManagementDelegate).setupPassword(longToken, PASSWORD);
+        }
+
+        @Test
+        @DisplayName("Should handle tokens with special characters")
+        void shouldHandleTokensWithSpecialCharacters() {
+            String tokenWithSpecialChars = "token-with_special.chars+123";
+            when(passwordManagementDelegate.setupPassword(tokenWithSpecialChars, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            ResponseEntity<PasswordManagementResponse> response = 
+                    passwordController._authSetInitialPassword(tokenWithSpecialChars, setupPasswordRequest);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            verify(passwordManagementDelegate).setupPassword(tokenWithSpecialChars, PASSWORD);
+        }
     }
 
-    // ====================================================================
-    // Tests resetPassword
-    // ====================================================================
+    @Nested
+    @DisplayName("_authSetInitialPassword - Integration with delegate")
+    class SetInitialPasswordIntegrationTests {
 
-    @Test
-    @DisplayName("resetPassword - Devrait déléguer au PasswordManagementDelegate")
-    void resetPassword_ShouldDelegateToPasswordManagementDelegate() {
-        // Given
-        String authHeader = "Bearer reset-token-456";
-        when(passwordManagementDelegate.resetPassword(authHeader, setPasswordRequest))
-                .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+        @Test
+        @DisplayName("Should call delegate exactly once")
+        void shouldCallDelegateExactlyOnce() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
 
-        // When
-        ResponseEntity<PasswordManagementResponse> response = passwordController._authResetPassword(authHeader, setPasswordRequest);
+            passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
 
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("access-token", response.getBody().getAccessToken());
-        assertEquals("refresh-token", response.getBody().getRefreshToken());
-        
-        verify(passwordManagementDelegate).resetPassword(authHeader, setPasswordRequest);
+            verify(passwordManagementDelegate, times(1)).setupPassword(SETUP_TOKEN, PASSWORD);
+        }
+
+        @Test
+        @DisplayName("Should not modify request data before delegation")
+        void shouldNotModifyRequestDataBeforeDelegation() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
+
+            verify(passwordManagementDelegate).setupPassword(SETUP_TOKEN, PASSWORD);
+            assertThat(setupPasswordRequest.getPassword()).isEqualTo(PASSWORD);
+        }
+
+        @Test
+        @DisplayName("Should pass through all parameters unchanged")
+        void shouldPassThroughAllParametersUnchanged() {
+            when(passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD))
+                    .thenReturn(ResponseEntity.ok(passwordManagementResponse));
+
+            passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
+
+            verify(passwordManagementDelegate).setupPassword(SETUP_TOKEN, PASSWORD);
+        }
     }
 }

@@ -117,4 +117,38 @@ class MembersGrpcClientTest {
         assertEquals(message, exception.getMessage());
         assertEquals(cause, exception.getCause());
     }
+
+    @Test
+    @DisplayName("Parsing des réponses Protobuf - notifyAccountActivated success")
+    void shouldParseAccountActivatedSuccess() {
+        // Given
+        AccountActivatedResponse response = AccountActivatedResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage("Account activated")
+                .build();
+
+        // When
+        boolean success = response.getSuccess();
+
+        // Then
+        assertTrue(success, "La réponse devrait indiquer un succès");
+        assertEquals("Account activated", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Parsing des réponses Protobuf - notifyAccountActivated failure")
+    void shouldParseAccountActivatedFailure() {
+        // Given
+        AccountActivatedResponse response = AccountActivatedResponse.newBuilder()
+                .setSuccess(false)
+                .setMessage("Member not found")
+                .build();
+
+        // When
+        boolean success = response.getSuccess();
+
+        // Then
+        assertFalse(success, "La réponse devrait indiquer un échec");
+        assertEquals("Member not found", response.getMessage());
+    }
 }

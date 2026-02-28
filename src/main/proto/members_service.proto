@@ -16,18 +16,8 @@ package ecclesiaflow.members;
  * Sécurité: JWT dans metadata pour authentification inter-services
  */
 service MembersService {
-  /**
-   * Récupère le statut de confirmation d'un membre par son email.
-   * 
-   * Flow:
-   * 1. Auth module reçoit une tentative de connexion
-   * 2. Auth appelle Members via gRPC pour vérifier si email est confirmé
-   * 3. Members retourne le statut (confirmé ou non)
-   * 4. Auth autorise ou bloque la connexion selon le statut
-   *
-   * Sécurité: Requires service-to-service authentication
-   */
   rpc GetMemberConfirmationStatus(ConfirmationStatusRequest) returns (ConfirmationStatusResponse);
+  rpc NotifyAccountActivated(AccountActivatedRequest) returns (AccountActivatedResponse);
 }
 
 // ============================================================================
@@ -42,13 +32,31 @@ message ConfirmationStatusRequest {
   string email = 1;
 }
 
-/**
- * Réponse contenant le statut de confirmation.
- */
 message ConfirmationStatusResponse {
-  // Indique si le membre existe dans le système
   bool member_exists = 1;
   
   // Indique si l'email du membre a été confirmé
   bool is_confirmed = 2;
+}
+
+/**
+ * Request to notify that a member account has been activated.
+ */
+message AccountActivatedRequest {
+  // Member ID (UUID string)
+  string member_id = 1;
+  
+  // Keycloak user ID assigned to this member
+  string keycloak_user_id = 2;
+}
+
+/**
+ * Response confirming account activation notification.
+ */
+message AccountActivatedResponse {
+  // Whether the notification was processed successfully
+  bool success = 1;
+  
+  // Optional message (error details if success=false)
+  string message = 2;
 }

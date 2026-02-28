@@ -7,34 +7,29 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * Client gRPC pour communiquer avec le module Members.
+ * gRPC adapter for communicating with the Members module.
  * <p>
- * Cette classe implémente un members gRPC qui permet au module Auth
- * d'appeler les services du module Members via gRPC au lieu de REST/WebClient.
- * Elle encapsule la complexité des appels gRPC et fournit une API simple
- * et type-safe pour les services métier.
+ * Implements the {@link MembersClient} port using gRPC transport.
+ * Encapsulates gRPC complexity and provides a type-safe API for business services.
  * </p>
  *
- * <p><strong>Rôle architectural :</strong> Adapter - gRPC Client to Business Logic</p>
+ * <p><strong>Architectural role:</strong> Adapter - gRPC Client implementing domain port</p>
  *
- * <p><strong>Responsabilités :</strong></p>
+ * <p><strong>Responsibilities:</strong></p>
  * <ul>
- *   <li>Création et gestion des stubs gRPC (blocking)</li>
- *   <li>Appels RPC vers le module Members (GetMemberConfirmationStatus)</li>
- *   <li>Conversion des réponses Protobuf vers types Java métier</li>
- *   <li>Gestion des erreurs gRPC et mapping vers exceptions métier</li>
- *   <li>Configuration des timeouts par appel</li>
+ *   <li>gRPC stub creation and lifecycle management</li>
+ *   <li>RPC calls to Members module</li>
+ *   <li>Protobuf to Java type conversion</li>
+ *   <li>gRPC error handling and mapping to business exceptions</li>
+ *   <li>Per-call timeout configuration</li>
  * </ul>
- *
- * <p><strong>Clean Architecture :</strong></p>
- * <pre>
- * Business Layer → MembersGrpcClient (Adapter) → gRPC Channel → Members Module
- * </pre>
  *
  * @author EcclesiaFlow Team
  * @since 1.0.0
@@ -47,48 +42,21 @@ public class MembersGrpcClient implements MembersClient {
 
     private final ManagedChannel membersGrpcChannel;
 
-    // Timeout par défaut pour les appels gRPC
     private static final int DEFAULT_TIMEOUT_SECONDS = 5;
 
-    /**
-     * Vérifie si l'email d'un membre n'est PAS confirmé.
-     * <p>
-     * Cette méthode est appelée par le module Auth lors d'une tentative de connexion
-     * pour vérifier que le membre a bien confirmé son email.
-     * </p>
-     *
-     * <p><strong>Flow de communication :</strong></p>
-     * <pre>
-     * 1. Auth: Tentative de connexion avec email/password
-     * 2. Auth → Members (gRPC): GetMemberConfirmationStatus(email)
-     * 3. Members: Recherche membre et vérifie statut
-     * 4. Members → Auth (gRPC): ConfirmationStatusResponse
-     * 5. Auth: Autorise ou bloque connexion
-     * </pre>
-     *
-     * @param email l'email du membre à vérifier (requis, validé côté serveur)
-     * @return true si l'email n'est PAS confirmé (ou membre n'existe pas), false si confirmé
-     * @throws MembersServiceUnavailableException si le service Members est indisponible
-     * @throws RuntimeException si erreur inattendue
-     */
     @Override
     public boolean isEmailNotConfirmed(String email) {
-        // Création du stub avec timeout
         MembersServiceGrpc.MembersServiceBlockingStub stub = MembersServiceGrpc
                 .newBlockingStub(membersGrpcChannel)
                 .withDeadlineAfter(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
         try {
-            // Construction de la requête Protobuf
             ConfirmationStatusRequest request = ConfirmationStatusRequest.newBuilder()
                     .setEmail(email)
                     .build();
 
-            // Appel RPC synchrone
             ConfirmationStatusResponse response = stub.getMemberConfirmationStatus(request);
 
-            // Si le membre n'existe pas OU n'est pas confirmé → true (bloque connexion)
-            // Si le membre existe ET est confirmé → false (autorise connexion)
             return !response.getMemberExists() || !response.getIsConfirmed();
 
         } catch (StatusRuntimeException e) {
@@ -96,16 +64,39 @@ public class MembersGrpcClient implements MembersClient {
         }
     }
 
-    // ========================================================================
-    // Gestion des erreurs gRPC
-    // ========================================================================
+    @Override
+    @Retryable(
+            retryFor = StatusRuntimeException.class,
+            noRetryFor = IllegalArgumentException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
+    public boolean notifyAccountActivated(java.util.UUID memberId, String keycloakUserId) {
+        MembersServiceGrpc.MembersServiceBlockingStub stub = MembersServiceGrpc
+                .newBlockingStub(membersGrpcChannel)
+                .withDeadlineAfter(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+        try {
+            AccountActivatedRequest request = AccountActivatedRequest.newBuilder()
+                    .setMemberId(memberId.toString())
+                    .setKeycloakUserId(keycloakUserId)
+                    .build();
+
+            AccountActivatedResponse response = stub.notifyAccountActivated(request);
+
+            if (!response.getSuccess()) {
+                throw new RuntimeException("Members module rejected activation: " + response.getMessage());
+            }
+
+            return true;
+
+        } catch (StatusRuntimeException e) {
+            throw handleGrpcException(e, "notifyAccountActivated");
+        }
+    }
 
     /**
-     * Convertit les exceptions gRPC en exceptions métier appropriées.
-     *
-     * @param e l'exception gRPC interceptée
-     * @param methodName le nom de la méthode pour contexte d'erreur
-     * @return l'exception métier appropriée
+     * Maps gRPC exceptions to appropriate business exceptions.
      */
     private RuntimeException handleGrpcException(StatusRuntimeException e, String methodName) {
         Status.Code code = e.getStatus().getCode();
@@ -133,7 +124,7 @@ public class MembersGrpcClient implements MembersClient {
     }
 
     /**
-     * Exception personnalisée pour indiquer que le service Members est indisponible.
+     * Custom exception indicating the Members service is unavailable.
      */
     public static class MembersServiceUnavailableException extends RuntimeException {
         public MembersServiceUnavailableException(String message, Throwable cause) {

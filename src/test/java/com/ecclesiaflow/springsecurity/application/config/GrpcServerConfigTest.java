@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.application.config;
 
-import com.ecclesiaflow.springsecurity.io.grpc.server.JwtGrpcServiceImpl;
+import com.ecclesiaflow.springsecurity.io.grpc.server.AuthGrpcServiceImpl;
 import io.grpc.Server;
 import io.grpc.protobuf.services.HealthStatusManager;
 import org.junit.jupiter.api.AfterEach;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 class GrpcServerConfigTest {
 
     @Mock
-    private JwtGrpcServiceImpl jwtGrpcService;
+    private AuthGrpcServiceImpl jwtGrpcService;
 
     @Mock
     private Server mockServer;

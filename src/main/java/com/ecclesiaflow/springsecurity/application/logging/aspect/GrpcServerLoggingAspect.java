@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
  *   <li>Spring AOP - Framework de programmation orientée aspect</li>
  *   <li>SLF4J/Logback - Framework de logging</li>
  *   <li>GrpcServerConfig - Configuration du serveur gRPC</li>
- *   <li>JwtGrpcServiceImpl - Implémentation des services gRPC JWT</li>
+ *   <li>AuthGrpcServiceImpl - Implémentation des services gRPC JWT</li>
  * </ul>
  *
  * <p><strong>Responsabilités principales :</strong></p>
@@ -85,11 +85,11 @@ public class GrpcServerLoggingAspect {
     /**
      * Pointcut pour tous les appels RPC du service JWT.
      * <p>
-     * Intercepte toutes les méthodes publiques de {@code JwtGrpcServiceImpl}
+     * Intercepte toutes les méthodes publiques de {@code AuthGrpcServiceImpl}
      * pour auditer les communications gRPC entrantes.
      * </p>
      */
-    @Pointcut("execution(* com.ecclesiaflow.springsecurity.io.grpc.server.JwtGrpcServiceImpl.*(..))")
+    @Pointcut("execution(* com.ecclesiaflow.springsecurity.io.grpc.server.AuthGrpcServiceImpl.*(..))")
     public void grpcServiceCalls() {}
 
     // ========================================================================

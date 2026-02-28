@@ -1,6 +1,6 @@
 package com.ecclesiaflow.springsecurity.application.config;
 
-import com.ecclesiaflow.springsecurity.io.grpc.server.JwtGrpcServiceImpl;
+import com.ecclesiaflow.springsecurity.io.grpc.server.AuthGrpcServiceImpl;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.protobuf.services.HealthStatusManager;
@@ -52,14 +52,14 @@ import java.util.concurrent.TimeUnit;
  *
  * @author EcclesiaFlow Team
  * @since 1.0.0
- * @see JwtGrpcServiceImpl
+ * @see AuthGrpcServiceImpl
  */
 @Configuration
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "grpc.enabled", havingValue = "true", matchIfMissing = false)
 public class GrpcServerConfig {
 
-    private final JwtGrpcServiceImpl jwtGrpcService;
+    private final AuthGrpcServiceImpl jwtGrpcService;
 
     @Value("${grpc.server.port:9090}")
     private int grpcServerPort;

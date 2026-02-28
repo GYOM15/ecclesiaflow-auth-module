@@ -1,0 +1,205 @@
+package com.ecclesiaflow.springsecurity.io.keycloak;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Client for Keycloak Admin REST API using Feign.
+ * Creates and manages users in Keycloak realm.
+ */
+@Service
+@RequiredArgsConstructor
+public class KeycloakAdminClient {
+
+    private final KeycloakTokenFeignClient tokenClient;
+    private final KeycloakAdminFeignClient adminClient;
+
+    @Value("${keycloak.admin.realm}")
+    private String realm;
+
+    @Value("${keycloak.admin.service.client-id}")
+    private String adminClientId;
+
+    @Value("${keycloak.admin.service.client-secret}")
+    private String adminClientSecret;
+
+    private volatile String cachedAccessToken;
+    private volatile long tokenExpiresAt = 0;
+
+    /**
+     * Creates a user in Keycloak with the specified email and password.
+     *
+     * @param email    user email (also used as username)
+     * @param password user password
+     * @return Keycloak user ID
+     * @throws KeycloakException if user creation fails
+     * @deprecated Use {@link #createUser(String, String, boolean)} instead
+     */
+    @Deprecated
+    public String createUser(String email, String password) {
+        return createUser(email, password, true);
+    }
+
+    /**
+     * Creates a user in Keycloak with the specified email, password and email verification status.
+     *
+     * @param email         user email (also used as username)
+     * @param password      user password
+     * @param emailVerified whether email is verified
+     * @return Keycloak user ID
+     * @throws KeycloakException if user creation fails
+     */
+    public String createUser(String email, String password, boolean emailVerified) {
+        String accessToken = getAdminAccessToken();
+
+        KeycloakUserRepresentation user = KeycloakUserRepresentation.builder()
+                .username(email)
+                .email(email)
+                .emailVerified(emailVerified)
+                .enabled(true)
+                .credentials(List.of(KeycloakCredential.builder()
+                        .type("password")
+                        .value(password)
+                        .temporary(false)
+                        .build()))
+                .build();
+
+        ResponseEntity<Void> response = adminClient.createUser(
+                "Bearer " + accessToken, realm, user);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            String locationHeader = response.getHeaders().getFirst("Location");
+            if (locationHeader != null) {
+                return locationHeader.substring(locationHeader.lastIndexOf('/') + 1);
+            }
+        }
+
+        throw new KeycloakException("Failed to create user in Keycloak: " + response.getStatusCode());
+    }
+
+    /**
+     * Updates user password in Keycloak.
+     *
+     * @param keycloakUserId Keycloak user ID
+     * @param newPassword    new password
+     * @throws KeycloakException if password update fails
+     */
+    public void updatePassword(String keycloakUserId, String newPassword) {
+        String accessToken = getAdminAccessToken();
+
+        KeycloakCredential credential = KeycloakCredential.builder()
+                .type("password")
+                .value(newPassword)
+                .temporary(false)
+                .build();
+
+        adminClient.resetPassword("Bearer " + accessToken, realm, keycloakUserId, credential);
+    }
+
+    /**
+     * Finds a user by email in Keycloak.
+     *
+     * @param email user email
+     * @return Keycloak user ID or null if not found
+     */
+    public String findUserByEmail(String email) {
+        String accessToken = getAdminAccessToken();
+
+        List<Map<String, Object>> users = adminClient.findUsersByEmail(
+                "Bearer " + accessToken, realm, email, true);
+
+        if (users != null && !users.isEmpty()) {
+            return (String) users.getFirst().get("id");
+        }
+
+        return null;
+    }
+
+    /**
+     * Finds a user by username in Keycloak (preferred over email search).
+     * Since username=email in our setup, this is more precise.
+     *
+     * @param username user username (email)
+     * @return Keycloak user ID or null if not found
+     */
+    public String findUserByUsername(String username) {
+        String accessToken = getAdminAccessToken();
+
+        List<Map<String, Object>> users = adminClient.findUsersByUsername(
+                "Bearer " + accessToken, realm, username, true);
+
+        if (users != null && !users.isEmpty()) {
+            return (String) users.getFirst().get("id");
+        }
+
+        return null;
+    }
+
+    /**
+     * Gets admin access token with caching.
+     * Reuses cached token if not expired, otherwise fetches new one.
+     *
+     * @return valid admin access token
+     * @throws KeycloakException if token acquisition fails
+     */
+    private String getAdminAccessToken() {
+        long now = System.currentTimeMillis();
+
+        if (cachedAccessToken != null && now < (tokenExpiresAt - 30000)) {
+            return cachedAccessToken;
+        }
+
+        synchronized (this) {
+            if (cachedAccessToken != null && now < (tokenExpiresAt - 30000)) {
+                return cachedAccessToken;
+            }
+
+            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+            form.add("grant_type", "client_credentials");
+            form.add("client_id", adminClientId);
+            form.add("client_secret", adminClientSecret);
+
+            Map<String, Object> response = tokenClient.getToken(realm, form);
+
+            if (response != null && response.containsKey("access_token")) {
+                cachedAccessToken = (String) response.get("access_token");
+                int expiresIn = response.containsKey("expires_in")
+                        ? ((Number) response.get("expires_in")).intValue()
+                        : 300;
+                tokenExpiresAt = now + (expiresIn * 1000L);
+                return cachedAccessToken;
+            }
+
+            throw new KeycloakException("Failed to obtain admin access token");
+        }
+    }
+
+    /**
+     * Deletes a user from Keycloak. Used for compensation when downstream
+     * operations fail after user creation.
+     *
+     * @param keycloakUserId Keycloak user ID to delete
+     * @throws KeycloakException if deletion fails
+     */
+    public void deleteUser(String keycloakUserId) {
+        String accessToken = getAdminAccessToken();
+        adminClient.deleteUser("Bearer " + accessToken, realm, keycloakUserId);
+    }
+
+    public static class KeycloakException extends RuntimeException {
+        public KeycloakException(String message) {
+            super(message);
+        }
+
+        public KeycloakException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+}

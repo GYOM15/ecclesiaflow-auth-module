@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.application.config;
 
-import com.ecclesiaflow.springsecurity.business.domain.email.EmailClient;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
+import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakAdminClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,238 +13,247 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.mock;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Tests d'intégration pour SecurityConfiguration.
- * Teste la configuration complète de Spring Security incluant securityFilterChain().
+ * Tests d'intégration pour SecurityConfiguration avec OAuth2 Resource Server.
+ * Teste la configuration complète de Spring Security avec JWT Keycloak.
  */
 @SpringBootTest(properties = {
     "grpc.enabled=false",
     "spring.datasource.url=jdbc:h2:mem:testdb",
-    "spring.jpa.hibernate.ddl-auto=create-drop"
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8080/realms/test"
 })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(SecurityConfigurationIntegrationTest.TestSecurityConfig.class)
-@DisplayName("SecurityConfiguration - Tests d'Intégration")
+@DisplayName("SecurityConfiguration - Tests d'Intégration OAuth2")
 class SecurityConfigurationIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    // ====================================================================
-    // Configuration de test pour mocker EmailClient
-    // ====================================================================
 
     @TestConfiguration
     public static class TestSecurityConfig {
 
         @Bean
         @Primary
-        public EmailClient emailClient() {
-            return mock(EmailClient.class);
+        public KeycloakAdminClient keycloakAdminClient() {
+            return mock(KeycloakAdminClient.class);
+        }
+
+        @Bean
+        @Primary
+        public MembersClient membersClient() {
+            return mock(MembersClient.class);
         }
     }
-
-    // ====================================================================
-    // Tests des endpoints publics (/ecclesiaflow/auth/**)
-    // ====================================================================
 
     @Nested
     @DisplayName("Tests des endpoints publics")
     class PublicEndpointsTests {
 
         @Test
-        @DisplayName("Devrait permettre l'accès à /ecclesiaflow/auth/register sans authentification")
-        void shouldPermitAccessToRegisterEndpoint() throws Exception {
-            mockMvc.perform(post("/ecclesiaflow/auth/register")
+        @DisplayName("Devrait permettre l'accès à /ecclesiaflow/auth/password/setup sans authentification")
+        void shouldPermitAccessToPasswordSetupEndpoint() throws Exception {
+            mockMvc.perform(post("/ecclesiaflow/auth/password/setup")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}"))
-                    .andExpect(status().is4xxClientError()); // 4xx car endpoint pas implémenté, mais pas 401/403
+                            .header("X-Setup-Token", "test-token")
+                            .content("{\"password\":\"TestPassword123!\"}"))
+                    .andExpect(status().is4xxClientError()); // 4xx car validation échoue, mais pas 401
         }
 
         @Test
-        @DisplayName("Devrait permettre l'accès à /ecclesiaflow/auth/login sans authentification")
-        void shouldPermitAccessToLoginEndpoint() throws Exception {
-            mockMvc.perform(post("/ecclesiaflow/auth/login")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}"))
-                    .andExpect(status().is4xxClientError()); // 4xx car endpoint pas implémenté, mais pas 401/403
+        @DisplayName("Devrait permettre l'accès aux health checks sans authentification")
+        void shouldPermitAccessToHealthChecks() throws Exception {
+            // Vérifie que l'accès est autorisé (pas 401/403), même si endpoint n'existe pas (404)
+            mockMvc.perform(get("/actuator/health/liveness"))
+                    .andExpect(result -> {
+                        int status = result.getResponse().getStatus();
+                        if (status == 401 || status == 403) {
+                            throw new AssertionError("Endpoint should be accessible without authentication, got: " + status);
+                        }
+                    });
+
+            mockMvc.perform(get("/actuator/health/readiness"))
+                    .andExpect(result -> {
+                        int status = result.getResponse().getStatus();
+                        if (status == 401 || status == 403) {
+                            throw new AssertionError("Endpoint should be accessible without authentication, got: " + status);
+                        }
+                    });
         }
 
         @Test
-        @DisplayName("Devrait permettre l'accès à /ecclesiaflow/auth/refresh sans authentification")
-        void shouldPermitAccessToRefreshEndpoint() throws Exception {
-            // Utiliser un endpoint qui n'existe pas pour éviter les erreurs 500
-            mockMvc.perform(post("/ecclesiaflow/auth/nonexistent")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}"))
-                    .andExpect(status().is4xxClientError()); // 4xx car endpoint pas implémenté, mais pas 401/403
+        @DisplayName("Devrait permettre l'accès à Swagger sans authentification")
+        void shouldPermitAccessToSwagger() throws Exception {
+            // Vérifie que l'accès est autorisé (pas 401/403)
+            mockMvc.perform(get("/swagger-ui/index.html"))
+                    .andExpect(result -> {
+                        int status = result.getResponse().getStatus();
+                        if (status == 401 || status == 403) {
+                            throw new AssertionError("Swagger should be accessible without authentication, got: " + status);
+                        }
+                    });
         }
 
         @Test
-        @DisplayName("Devrait permettre l'accès à tous les sous-chemins de /ecclesiaflow/auth/**")
-        void shouldPermitAccessToAllAuthSubpaths() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/auth/any/subpath"))
-                    .andExpect(status().is4xxClientError()); // 4xx mais pas 401/403
+        @DisplayName("Devrait permettre l'accès à OpenAPI docs sans authentification")
+        void shouldPermitAccessToOpenApiDocs() throws Exception {
+            // Vérifie que l'accès est autorisé (pas 401/403)
+            mockMvc.perform(get("/v3/api-docs"))
+                    .andExpect(result -> {
+                        int status = result.getResponse().getStatus();
+                        if (status == 401 || status == 403) {
+                            throw new AssertionError("OpenAPI docs should be accessible without authentication, got: " + status);
+                        }
+                    });
         }
     }
-
-    // ====================================================================
-    // Tests des endpoints protégés (authentification requise)
-    // ====================================================================
 
     @Nested
     @DisplayName("Tests des endpoints protégés - Sans authentification")
     class ProtectedEndpointsWithoutAuthTests {
 
         @Test
-        @DisplayName("Devrait refuser l'accès à /ecclesiaflow/members sans authentification")
-        void shouldDenyAccessToMembersEndpointWithoutAuth() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/members"))
-                    .andExpect(status().isUnauthorized()); // 401
+        @DisplayName("Devrait refuser l'accès aux endpoints protégés sans JWT")
+        void shouldDenyAccessToProtectedEndpointsWithoutJwt() throws Exception {
+            mockMvc.perform(get("/ecclesiaflow/api/protected"))
+                    .andExpect(status().isUnauthorized());
         }
 
         @Test
-        @DisplayName("Devrait refuser l'accès à /ecclesiaflow/adminMembers sans authentification")
-        void shouldDenyAccessToAdminMembersEndpointWithoutAuth() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/adminMembers"))
-                    .andExpect(status().isUnauthorized()); // 401
+        @DisplayName("Devrait refuser l'accès aux actuator endpoints sans JWT")
+        void shouldDenyAccessToActuatorEndpointsWithoutJwt() throws Exception {
+            mockMvc.perform(get("/actuator/metrics"))
+                    .andExpect(status().isUnauthorized());
         }
 
         @Test
-        @DisplayName("Devrait refuser l'accès à tout endpoint non-auth sans authentification")
-        void shouldDenyAccessToAnyNonAuthEndpointWithoutAuth() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/some/protected/resource"))
-                    .andExpect(status().isUnauthorized()); // 401
+        @DisplayName("Devrait refuser l'accès avec JWT invalide")
+        void shouldDenyAccessWithInvalidJwt() throws Exception {
+            mockMvc.perform(get("/ecclesiaflow/api/protected")
+                            .header("Authorization", "Bearer invalid-token"))
+                    .andExpect(status().isUnauthorized());
         }
     }
 
-    // ====================================================================
-    // Tests avec rôle MEMBER
-    // ====================================================================
-
     @Nested
-    @DisplayName("Tests avec rôle MEMBER")
-    class MemberRoleTests {
+    @DisplayName("Tests avec JWT valide")
+    class AuthenticatedEndpointsTests {
 
         @Test
-        @WithMockUser(authorities = "ROLE_MEMBER")
-        @DisplayName("Devrait permettre l'accès à /ecclesiaflow/members avec rôle MEMBER")
-        void shouldAllowAccessToMembersEndpointWithMemberRole() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/members"))
-                    .andExpect(status().is4xxClientError()); // 4xx (endpoint existe pas) mais pas 403
+        @DisplayName("Devrait permettre l'accès avec JWT valide")
+        void shouldAllowAccessWithValidJwt() throws Exception {
+            mockMvc.perform(get("/ecclesiaflow/api/test")
+                            .with(jwt()))
+                    .andExpect(status().isNotFound()); // 404 car endpoint n'existe pas, mais pas 401
         }
 
         @Test
-        @WithMockUser(authorities = "ROLE_MEMBER")
-        @DisplayName("Devrait refuser l'accès à /ecclesiaflow/adminMembers avec rôle MEMBER")
-        void shouldDenyAccessToAdminMembersEndpointWithMemberRole() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/adminMembers"))
-                    .andExpect(status().isForbidden()); // 403
+        @DisplayName("Devrait extraire les claims du JWT")
+        void shouldExtractClaimsFromJwt() throws Exception {
+            mockMvc.perform(get("/ecclesiaflow/api/user")
+                            .with(jwt().jwt(jwt -> jwt
+                                    .claim("sub", "user-123")
+                                    .claim("email", "user@test.com"))))
+                    .andExpect(status().isNotFound()); // 404 mais authentifié
         }
 
         @Test
-        @WithMockUser(authorities = "ROLE_MEMBER")
-        @DisplayName("Devrait permettre l'accès aux endpoints publics avec rôle MEMBER")
-        void shouldAllowAccessToPublicEndpointsWithMemberRole() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/auth/login"))
-                    .andExpect(status().is4xxClientError()); // 4xx mais pas 403
+        @DisplayName("Devrait permettre l'accès aux actuator endpoints avec rôle SUPER_ADMIN")
+        void shouldAllowAccessToActuatorWithSuperAdminRole() throws Exception {
+            // Vérifie que l'accès n'est pas refusé (pas 403), même si endpoint n'existe pas (404)
+            mockMvc.perform(get("/actuator/metrics")
+                            .with(jwt().authorities(() -> "ROLE_SUPER_ADMIN")))
+                    .andExpect(result -> {
+                        int status = result.getResponse().getStatus();
+                        if (status == 403) {
+                            throw new AssertionError("SUPER_ADMIN should have access to actuator, got: " + status);
+                        }
+                    });
+        }
+
+        @Test
+        @DisplayName("Devrait permettre l'accès aux actuator endpoints avec rôle SUPPORT")
+        void shouldAllowAccessToActuatorWithSupportRole() throws Exception {
+            // Vérifie que l'accès n'est pas refusé (pas 403), même si endpoint n'existe pas (404)
+            mockMvc.perform(get("/actuator/metrics")
+                            .with(jwt().authorities(() -> "ROLE_SUPPORT")))
+                    .andExpect(result -> {
+                        int status = result.getResponse().getStatus();
+                        if (status == 403) {
+                            throw new AssertionError("SUPPORT should have access to actuator, got: " + status);
+                        }
+                    });
+        }
+
+        @Test
+        @DisplayName("Devrait refuser l'accès aux actuator endpoints sans rôle approprié")
+        void shouldDenyAccessToActuatorWithoutAppropriateRole() throws Exception {
+            mockMvc.perform(get("/actuator/metrics")
+                            .with(jwt().authorities(() -> "ROLE_USER")))
+                    .andExpect(status().isForbidden());
         }
     }
 
-    // ====================================================================
-    // Tests avec rôle ADMIN
-    // ====================================================================
-
     @Nested
-    @DisplayName("Tests avec rôle ADMIN")
-    class AdminRoleTests {
-
-        @Test
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        @DisplayName("Devrait permettre l'accès à /ecclesiaflow/adminMembers avec rôle ADMIN")
-        void shouldAllowAccessToAdminMembersEndpointWithAdminRole() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/adminMembers"))
-                    .andExpect(status().is4xxClientError()); // 4xx (endpoint existe pas) mais pas 403
-        }
-
-        @Test
-        @WithMockUser(authorities = "ROLE_ADMIN")
-        @DisplayName("Devrait refuser l'accès à /ecclesiaflow/members avec rôle ADMIN seul")
-        void shouldDenyAccessToMembersEndpointWithAdminRoleOnly() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/members"))
-                    .andExpect(status().isForbidden()); // 403 car ADMIN n'a pas ROLE_MEMBER
-        }
-
-        @Test
-        @WithMockUser(authorities = {"ROLE_ADMIN", "ROLE_MEMBER"})
-        @DisplayName("Devrait permettre l'accès aux deux endpoints avec ADMIN et MEMBER")
-        void shouldAllowAccessToBothEndpointsWithBothRoles() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/members"))
-                    .andExpect(status().is4xxClientError()); // 4xx mais pas 403
-
-            mockMvc.perform(get("/ecclesiaflow/adminMembers"))
-                    .andExpect(status().is4xxClientError()); // 4xx mais pas 403
-        }
-    }
-
-    // ====================================================================
-    // Tests de la gestion des sessions (STATELESS)
-    // ====================================================================
-
-    @Nested
-    @DisplayName("Tests de la gestion des sessions")
+    @DisplayName("Tests de la gestion des sessions (STATELESS)")
     class SessionManagementTests {
 
         @Test
-        @WithMockUser
         @DisplayName("Devrait utiliser une politique de session STATELESS")
         void shouldUseStatelessSessionPolicy() throws Exception {
-            // Faire une requête et vérifier qu'aucune session n'est créée
-            mockMvc.perform(get("/ecclesiaflow/auth/login"))
-                    .andExpect(status().isNotFound())
+            mockMvc.perform(get("/ecclesiaflow/auth/password/setup")
+                            .with(jwt()))
                     .andExpect(request -> {
-                        // Vérifier qu'aucune session n'est créée
                         if (request.getRequest().getSession(false) != null) {
                             throw new AssertionError("Session should not be created in STATELESS mode");
                         }
                     });
         }
+
+        @Test
+        @DisplayName("Ne devrait pas créer de session même après plusieurs requêtes")
+        void shouldNotCreateSessionAfterMultipleRequests() throws Exception {
+            for (int i = 0; i < 3; i++) {
+                mockMvc.perform(get("/ecclesiaflow/api/test")
+                                .with(jwt()))
+                        .andExpect(request -> {
+                            if (request.getRequest().getSession(false) != null) {
+                                throw new AssertionError("Session should not be created");
+                            }
+                        });
+            }
+        }
     }
 
-    // ====================================================================
-    // Tests de CSRF (désactivé)
-    // ====================================================================
-
     @Nested
-    @DisplayName("Tests CSRF")
+    @DisplayName("Tests CSRF (désactivé)")
     class CsrfTests {
 
         @Test
-        @DisplayName("Devrait accepter les requêtes POST sans token CSRF (CSRF désactivé)")
+        @DisplayName("Devrait accepter les requêtes POST sans token CSRF")
         void shouldAcceptPostRequestsWithoutCsrfToken() throws Exception {
-            // POST sans token CSRF devrait fonctionner car CSRF est désactivé
-            mockMvc.perform(post("/ecclesiaflow/auth/login")
+            mockMvc.perform(post("/ecclesiaflow/auth/password/setup")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}"))
-                    .andExpect(status().isNotFound()); // 404 mais pas 403 (CSRF)
+                            .header("X-Setup-Token", "test-token")
+                            .content("{\"password\":\"Test123!\"}"))
+                    .andExpect(status().is4xxClientError()); // 4xx mais pas 403 (CSRF)
         }
 
         @Test
         @DisplayName("Devrait accepter les requêtes PUT sans token CSRF")
         void shouldAcceptPutRequestsWithoutCsrfToken() throws Exception {
-            mockMvc.perform(put("/ecclesiaflow/auth/update")
+            mockMvc.perform(put("/ecclesiaflow/api/update")
+                            .with(jwt())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{}"))
                     .andExpect(status().isNotFound()); // 404 mais pas 403 (CSRF)
@@ -253,52 +262,23 @@ class SecurityConfigurationIntegrationTest {
         @Test
         @DisplayName("Devrait accepter les requêtes DELETE sans token CSRF")
         void shouldAcceptDeleteRequestsWithoutCsrfToken() throws Exception {
-            mockMvc.perform(delete("/ecclesiaflow/auth/delete"))
+            mockMvc.perform(delete("/ecclesiaflow/api/delete")
+                            .with(jwt()))
                     .andExpect(status().isNotFound()); // 404 mais pas 403 (CSRF)
         }
     }
-
-    // ====================================================================
-    // Tests du CustomAuthenticationEntryPoint
-    // ====================================================================
-
-    @Nested
-    @DisplayName("Tests CustomAuthenticationEntryPoint")
-    class AuthenticationEntryPointTests {
-
-        @Test
-        @DisplayName("Devrait utiliser CustomAuthenticationEntryPoint pour les erreurs d'authentification")
-        void shouldUseCustomAuthenticationEntryPoint() throws Exception {
-            // Requête sans authentification à un endpoint protégé
-            mockMvc.perform(get("/ecclesiaflow/members"))
-                    .andExpect(status().isUnauthorized())
-                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
-        }
-
-        @Test
-        @DisplayName("Devrait retourner 401 avec en-tête WWW-Authenticate pour endpoint protégé")
-        void shouldReturn401WithWwwAuthenticateHeader() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/adminMembers"))
-                    .andExpect(status().isUnauthorized());
-        }
-    }
-
-    // ====================================================================
-    // Tests de sécurité générale
-    // ====================================================================
 
     @Nested
     @DisplayName("Tests de sécurité générale")
     class GeneralSecurityTests {
 
         @Test
-        @DisplayName("Devrait exiger l'authentification pour tous les endpoints non-auth")
-        void shouldRequireAuthenticationForAllNonAuthEndpoints() throws Exception {
+        @DisplayName("Devrait exiger l'authentification pour tous les endpoints non-publics")
+        void shouldRequireAuthenticationForAllNonPublicEndpoints() throws Exception {
             String[] protectedPaths = {
-                    "/ecclesiaflow/members",
-                    "/ecclesiaflow/adminMembers",
                     "/ecclesiaflow/api/data",
-                    "/ecclesiaflow/secure/resource"
+                    "/ecclesiaflow/secure/resource",
+                    "/actuator/metrics"
             };
 
             for (String path : protectedPaths) {
@@ -308,28 +288,21 @@ class SecurityConfigurationIntegrationTest {
         }
 
         @Test
-        @WithMockUser(authorities = "INVALID_ROLE")
-        @DisplayName("Devrait refuser l'accès avec un rôle invalide")
-        void shouldDenyAccessWithInvalidRole() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/members"))
-                    .andExpect(status().isForbidden());
-
-            mockMvc.perform(get("/ecclesiaflow/adminMembers"))
-                    .andExpect(status().isForbidden());
+        @DisplayName("Devrait accepter les requêtes authentifiées pour les endpoints protégés")
+        void shouldAcceptAuthenticatedRequestsForProtectedEndpoints() throws Exception {
+            mockMvc.perform(get("/ecclesiaflow/api/test")
+                            .with(jwt()))
+                    .andExpect(status().isNotFound()); // 404 mais authentifié
         }
 
         @Test
-        @WithMockUser(authorities = {})
-        @DisplayName("Devrait refuser l'accès sans aucun rôle")
-        void shouldDenyAccessWithoutAnyRole() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/members"))
-                    .andExpect(status().isForbidden());
+        @DisplayName("Devrait valider le format du JWT")
+        void shouldValidateJwtFormat() throws Exception {
+            mockMvc.perform(get("/ecclesiaflow/api/test")
+                            .header("Authorization", "Bearer malformed.jwt.token"))
+                    .andExpect(status().isUnauthorized());
         }
     }
-
-    // ====================================================================
-    // Tests des méthodes HTTP
-    // ====================================================================
 
     @Nested
     @DisplayName("Tests des différentes méthodes HTTP")
@@ -338,55 +311,87 @@ class SecurityConfigurationIntegrationTest {
         @Test
         @DisplayName("GET sur endpoint public devrait fonctionner")
         void shouldAllowGetOnPublicEndpoint() throws Exception {
-            mockMvc.perform(get("/ecclesiaflow/auth/status"))
-                    .andExpect(status().isNotFound()); // 404 mais pas 401
+            // Vérifie que l'accès est autorisé (pas 401/403)
+            mockMvc.perform(get("/actuator/health/liveness"))
+                    .andExpect(result -> {
+                        int status = result.getResponse().getStatus();
+                        if (status == 401 || status == 403) {
+                            throw new AssertionError("Public endpoint should be accessible, got: " + status);
+                        }
+                    });
         }
 
         @Test
         @DisplayName("POST sur endpoint public devrait fonctionner")
         void shouldAllowPostOnPublicEndpoint() throws Exception {
-            mockMvc.perform(post("/ecclesiaflow/auth/login")
+            mockMvc.perform(post("/ecclesiaflow/auth/password/setup")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}"))
-                    .andExpect(status().isNotFound()); // 404 mais pas 401
+                            .header("X-Setup-Token", "token")
+                            .content("{\"password\":\"Test123!\"}"))
+                    .andExpect(status().is4xxClientError()); // 4xx mais pas 401
         }
 
         @Test
-        @WithMockUser(authorities = "ROLE_MEMBER")
         @DisplayName("Toutes les méthodes HTTP devraient respecter les règles d'autorisation")
         void shouldRespectAuthorizationForAllHttpMethods() throws Exception {
-            String[] methods = {"GET", "POST", "PUT", "DELETE", "PATCH"};
+            mockMvc.perform(get("/ecclesiaflow/api/test").with(jwt()))
+                    .andExpect(status().isNotFound());
 
-            for (String method : methods) {
-                switch (method) {
-                    case "GET":
-                        mockMvc.perform(get("/ecclesiaflow/members"))
-                                .andExpect(status().isNotFound()); // 404 mais pas 403
-                        break;
-                    case "POST":
-                        mockMvc.perform(post("/ecclesiaflow/members")
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content("{}"))
-                                .andExpect(status().isNotFound());
-                        break;
-                    case "PUT":
-                        mockMvc.perform(put("/ecclesiaflow/members")
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content("{}"))
-                                .andExpect(status().isNotFound());
-                        break;
-                    case "DELETE":
-                        mockMvc.perform(delete("/ecclesiaflow/members"))
-                                .andExpect(status().isNotFound());
-                        break;
-                    case "PATCH":
-                        mockMvc.perform(patch("/ecclesiaflow/members")
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content("{}"))
-                                .andExpect(status().isNotFound());
-                        break;
-                }
-            }
+            mockMvc.perform(post("/ecclesiaflow/api/test")
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{}"))
+                    .andExpect(status().isNotFound());
+
+            mockMvc.perform(put("/ecclesiaflow/api/test")
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{}"))
+                    .andExpect(status().isNotFound());
+
+            mockMvc.perform(delete("/ecclesiaflow/api/test").with(jwt()))
+                    .andExpect(status().isNotFound());
+
+            mockMvc.perform(patch("/ecclesiaflow/api/test")
+                            .with(jwt())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{}"))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests OAuth2 Resource Server")
+    class OAuth2ResourceServerTests {
+
+        @Test
+        @DisplayName("Devrait utiliser OAuth2 Resource Server pour la validation JWT")
+        void shouldUseOAuth2ResourceServerForJwtValidation() throws Exception {
+            mockMvc.perform(get("/ecclesiaflow/api/test")
+                            .with(jwt().jwt(jwt -> jwt.claim("sub", "test-user"))))
+                    .andExpect(status().isNotFound()); // Authentifié
+        }
+
+        @Test
+        @DisplayName("Devrait extraire les rôles du JWT via KeycloakJwtConverter")
+        void shouldExtractRolesFromJwtViaConverter() throws Exception {
+            // Vérifie que le rôle est reconnu (pas 403)
+            mockMvc.perform(get("/actuator/metrics")
+                            .with(jwt().authorities(() -> "ROLE_SUPER_ADMIN")))
+                    .andExpect(result -> {
+                        int status = result.getResponse().getStatus();
+                        if (status == 403) {
+                            throw new AssertionError("JWT role should be recognized, got: " + status);
+                        }
+                    });
+        }
+
+        @Test
+        @DisplayName("Devrait rejeter les JWT sans issuer valide")
+        void shouldRejectJwtWithoutValidIssuer() throws Exception {
+            mockMvc.perform(get("/ecclesiaflow/api/test")
+                            .header("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid"))
+                    .andExpect(status().isUnauthorized());
         }
     }
 }

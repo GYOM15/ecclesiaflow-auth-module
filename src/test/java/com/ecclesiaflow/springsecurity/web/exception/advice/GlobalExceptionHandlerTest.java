@@ -1,6 +1,5 @@
 package com.ecclesiaflow.springsecurity.web.exception.advice;
 
-import com.ecclesiaflow.springsecurity.business.exceptions.MemberNotFoundException;
 import com.ecclesiaflow.springsecurity.web.exception.*;
 import com.ecclesiaflow.springsecurity.web.exception.model.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,8 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -117,21 +114,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleMemberNotFound -> 404 NOT FOUND")
-    void handleMemberNotFound_shouldReturn404() {
-        GlobalExceptionHandler handler = new GlobalExceptionHandler();
-        HttpServletRequest req = mockRequest("/api/members/123");
-
-        ResponseEntity<ApiErrorResponse> resp = handler.handleMemberNotFound(
-                new MemberNotFoundException("Member not found"), req);
-
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(resp.getBody()).isNotNull();
-        assertThat(resp.getBody().message()).isEqualTo("Member not found");
-        assertThat(resp.getBody().path()).isEqualTo("/api/members/123");
-    }
-
-    @Test
     @DisplayName("handleInvalidToken -> 401 UNAUTHORIZED")
     void handleInvalidToken_shouldReturn401() {
         GlobalExceptionHandler handler = new GlobalExceptionHandler();
@@ -164,48 +146,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleInvalidCredentials(InvalidCredentialsException) -> 401 UNAUTHORIZED")
-    void handleInvalidCredentials_custom_shouldReturn401() {
-        GlobalExceptionHandler handler = new GlobalExceptionHandler();
-        HttpServletRequest req = mockRequest("/api/auth/login");
-
-        ResponseEntity<ApiErrorResponse> resp = handler.handleInvalidCredentials(
-                new InvalidCredentialsException("bad creds"), req);
-
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(resp.getBody()).isNotNull();
-        assertThat(resp.getBody().message()).contains("Identifiants invalides");
-    }
-
-    @Test
-    @DisplayName("handleBadCredentials(BadCredentialsException) -> 401 UNAUTHORIZED")
-    void handleBadCredentials_shouldReturn401() {
-        GlobalExceptionHandler handler = new GlobalExceptionHandler();
-        HttpServletRequest req = mockRequest("/api/auth/login");
-
-        ResponseEntity<ApiErrorResponse> resp = handler.handleBadCredentials(
-                new BadCredentialsException("bad creds"), req);
-
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(resp.getBody()).isNotNull();
-        assertThat(resp.getBody().message()).contains("Identifiants invalides");
-    }
-
-    @Test
-    @DisplayName("handleAuthentication(AuthenticationException) -> 401 UNAUTHORIZED")
-    void handleAuthentication_shouldReturn401() {
-        GlobalExceptionHandler handler = new GlobalExceptionHandler();
-        HttpServletRequest req = mockRequest("/api/auth/any");
-
-        ResponseEntity<ApiErrorResponse> resp = handler.handleAuthentication(
-                new AuthenticationCredentialsNotFoundException("missing"), req);
-
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(resp.getBody()).isNotNull();
-        assertThat(resp.getBody().message()).contains("Erreur d'authentification");
-    }
-
-    @Test
     @DisplayName("handleInvalidRequest -> 400 BAD REQUEST")
     void handleInvalidRequest_shouldReturn400() {
         GlobalExceptionHandler handler = new GlobalExceptionHandler();
@@ -217,19 +157,6 @@ class GlobalExceptionHandlerTest {
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(resp.getBody()).isNotNull();
         assertThat(resp.getBody().message()).isEqualTo("Bad payload");
-    }
-
-    @Test
-    @DisplayName("handleJwtProcessing -> 401 UNAUTHORIZED")
-    void handleJwtProcessing_shouldReturn401() {
-        GlobalExceptionHandler handler = new GlobalExceptionHandler();
-        HttpServletRequest req = mockRequest("/api/auth");
-
-        ResponseEntity<ApiErrorResponse> resp = handler.handleJwtProcessing(
-                new JwtProcessingException("error"), req);
-
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(resp.getBody()).isNotNull();
     }
 
     @Test
@@ -385,19 +312,6 @@ class GlobalExceptionHandlerTest {
     // ====================================================================
     // Tests simples d'instanciation des exceptions du package web.exception
     // ====================================================================
-
-    @Test
-    @DisplayName("InvalidCredentialsException conserve message et cause")
-    void invalidCredentialsException_creation() {
-        Throwable cause = new IllegalArgumentException("root");
-        InvalidCredentialsException ex1 = new InvalidCredentialsException("bad creds");
-        InvalidCredentialsException ex2 = new InvalidCredentialsException("bad creds", cause);
-
-        assertThat(ex1).hasMessage("bad creds");
-        assertThat(ex2).hasMessage("bad creds");
-        assertThat(ex2.getCause()).isSameAs(cause);
-    }
-
     @Test
     @DisplayName("InvalidRequestException conserve le message")
     void invalidRequestException_creation() {
@@ -410,12 +324,5 @@ class GlobalExceptionHandlerTest {
     void invalidTokenException_creation() {
         InvalidTokenException ex = new InvalidTokenException("invalid token");
         assertThat(ex).hasMessage("invalid token");
-    }
-
-    @Test
-    @DisplayName("JwtProcessingException conserve le message")
-    void jwtProcessingException_creation() {
-        JwtProcessingException ex = new JwtProcessingException("jwt error");
-        assertThat(ex).hasMessage("jwt error");
     }
 }

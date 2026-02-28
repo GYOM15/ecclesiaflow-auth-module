@@ -30,5 +30,5 @@ package com.ecclesiaflow.springsecurity.business.domain.password;
  * @author EcclesiaFlow Team
  * @since 1.0.0
  */
-public record PasswordManagement(String password, String temporaryToken) {
+public record PasswordManagement(String password, String xSetupToken) {
 }

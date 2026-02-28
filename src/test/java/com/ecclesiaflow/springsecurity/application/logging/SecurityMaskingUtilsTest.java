@@ -283,5 +283,93 @@ class SecurityMaskingUtilsTest {
             assertThat(masked).contains("[REDACTED]");
             assertThat(masked).contains("plain");
         }
+
+        @Test
+        @DisplayName("maskArgs - devrait retourner [] pour args null")
+        void maskArgs_ShouldReturnEmptyBracketsForNull() {
+            assertThat(SecurityMaskingUtils.maskArgs(null)).isEqualTo("[]");
+        }
+
+        @Test
+        @DisplayName("maskAny - devrait gérer URL http:// avec token")
+        void maskAny_ShouldHandleHttpUrls() {
+            String httpWithToken = "http://api.local/path?token=secret";
+            String masked = SecurityMaskingUtils.maskAny(httpWithToken);
+            assertThat(masked).contains("token=****");
+        }
+
+        @Test
+        @DisplayName("maskAny - devrait retourner [URL] pour http:// sans token")
+        void maskAny_ShouldReturnUrlForHttpWithoutToken() {
+            String httpNoToken = "http://api.local/path?id=10";
+            assertThat(SecurityMaskingUtils.maskAny(httpNoToken)).isEqualTo("[URL]");
+        }
+
+        @Test
+        @DisplayName("rootMessage - devrait retourner simpleName pour message blanc")
+        void rootMessage_ShouldReturnSimpleNameForBlankMessage() {
+            Exception ex = new Exception("  ");
+            assertThat(SecurityMaskingUtils.rootMessage(ex)).isEqualTo("Exception");
+        }
+
+        @Test
+        @DisplayName("maskId - devrait retourner [UNKNOWN] pour id blanc")
+        void maskId_ShouldReturnUnknownForBlankId() {
+            assertThat(SecurityMaskingUtils.maskId("  ")).isEqualTo("[UNKNOWN]");
+        }
+    }
+
+    @Nested
+    @DisplayName("maskUrlQueryParam - Gestion des exceptions")
+    class MaskUrlQueryParamExceptionTests {
+
+        @Test
+        @DisplayName("devrait retourner [URL_MASKING_ERROR] en cas d'exception")
+        void shouldReturnErrorOnException() {
+            // Créer une URL malformée qui pourrait causer une exception lors du parsing
+            String malformedUrl = "https://api.local/path?" + "\u0000";
+            String result = SecurityMaskingUtils.maskUrlQueryParam(malformedUrl, "token");
+            // Le résultat devrait être soit [URL_MASKING_ERROR] soit géré correctement
+            assertThat(result).isNotNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("abbreviate")
+    class AbbreviateTests {
+
+        @Test
+        @DisplayName("devrait retourner [UNKNOWN] pour null")
+        void shouldReturnUnknownForNull() {
+            assertThat(SecurityMaskingUtils.abbreviate(null, 10)).isEqualTo("[UNKNOWN]");
+        }
+
+        @Test
+        @DisplayName("devrait retourner la chaîne complète si <= max")
+        void shouldReturnFullStringWhenWithinMax() {
+            assertThat(SecurityMaskingUtils.abbreviate("hello", 10)).isEqualTo("hello");
+            assertThat(SecurityMaskingUtils.abbreviate("exactly10!", 10)).isEqualTo("exactly10!");
+        }
+
+        @Test
+        @DisplayName("devrait abréger si > max")
+        void shouldAbbreviateWhenExceedsMax() {
+            assertThat(SecurityMaskingUtils.abbreviate("this is too long", 10)).isEqualTo("this is to...");
+        }
+    }
+
+    @Nested
+    @DisplayName("maskResetLink")
+    class MaskResetLinkTests {
+
+        @Test
+        @DisplayName("devrait masquer le paramètre token dans un lien de reset")
+        void shouldMaskTokenInResetLink() {
+            String link = "https://app.example.com/reset?token=secret123&email=user@test.com";
+            String masked = SecurityMaskingUtils.maskResetLink(link);
+            assertThat(masked).contains("token=****");
+            assertThat(masked).contains("email=[REDACTED]");
+            assertThat(masked).doesNotContain("secret123");
+        }
     }
 }

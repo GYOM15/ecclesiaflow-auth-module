@@ -24,7 +24,7 @@ class PasswordManagementTest {
         // Then
         assertThat(passwordManagement).isNotNull();
         assertThat(passwordManagement.password()).isEqualTo(password);
-        assertThat(passwordManagement.temporaryToken()).isEqualTo(temporaryToken);
+        assertThat(passwordManagement.xSetupToken()).isEqualTo(temporaryToken);
     }
 
     @Test
@@ -36,7 +36,7 @@ class PasswordManagementTest {
         // Then
         assertThat(passwordManagement).isNotNull();
         assertThat(passwordManagement.password()).isNull();
-        assertThat(passwordManagement.temporaryToken()).isNull();
+        assertThat(passwordManagement.xSetupToken()).isNull();
     }
 
     @Test
@@ -104,6 +104,6 @@ class PasswordManagementTest {
 
         // When & Then
         assertThat(passwordManagement.password()).isEqualTo(expectedPassword);
-        assertThat(passwordManagement.temporaryToken()).isEqualTo(expectedToken);
+        assertThat(passwordManagement.xSetupToken()).isEqualTo(expectedToken);
     }
 }

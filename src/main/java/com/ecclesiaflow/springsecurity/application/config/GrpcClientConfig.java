@@ -64,9 +64,9 @@ public class GrpcClientConfig {
                 // TODO PRODUCTION: Remplacer par .useTransportSecurity() + certificats
                 .usePlaintext()
                 .maxInboundMessageSize(4 * 1024 * 1024)
-                .keepAliveTime(30, TimeUnit.SECONDS)
-                .keepAliveTimeout(10, TimeUnit.SECONDS)
-                .keepAliveWithoutCalls(true)
+                .keepAliveTime(120, TimeUnit.SECONDS)
+                .keepAliveTimeout(20, TimeUnit.SECONDS)
+                .keepAliveWithoutCalls(false)
                 .idleTimeout(5, TimeUnit.MINUTES)
                 .build();
 
