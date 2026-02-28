@@ -25,12 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Integration tests for SecurityConfiguration with OAuth2 Resource Server.
  * Tests the complete Spring Security configuration with JWT Keycloak.
  */
-@SpringBootTest(properties = {
-    "grpc.enabled=false",
-    "spring.datasource.url=jdbc:h2:mem:testdb",
-    "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8080/realms/test"
-})
+@SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(SecurityConfigurationIntegrationTest.TestSecurityConfig.class)
