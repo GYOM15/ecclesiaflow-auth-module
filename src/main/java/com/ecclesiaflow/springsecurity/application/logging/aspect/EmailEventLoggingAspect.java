@@ -1,9 +1,6 @@
 package com.ecclesiaflow.springsecurity.application.logging.aspect;
 
 import com.ecclesiaflow.springsecurity.application.logging.SecurityMaskingUtils;
-import com.ecclesiaflow.springsecurity.business.events.PasswordChangedEvent;
-import com.ecclesiaflow.springsecurity.business.events.PasswordResetEvent;
-import com.ecclesiaflow.springsecurity.business.events.PasswordResetRequestedEvent;
 import com.ecclesiaflow.springsecurity.business.events.PasswordSetEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -49,66 +46,6 @@ public class EmailEventLoggingAspect {
             return result;
         } catch (Exception e) {
             log.error("[EMAIL] welcome | failed | email={} | reason={}", maskedEmail, SecurityMaskingUtils.rootMessage(e), e);
-            throw e;
-        }
-    }
-
-    /**
-     * Log l'envoi d'une notification de changement de mot de passe.
-     */
-    @Around("execution(* com.ecclesiaflow.springsecurity.application.handlers.PasswordEventHandler.handlePasswordChanged(..))")
-    public Object logPasswordChangedNotification(ProceedingJoinPoint joinPoint) throws Throwable {
-        PasswordChangedEvent event = (PasswordChangedEvent) joinPoint.getArgs()[0];
-        String maskedEmail = SecurityMaskingUtils.maskEmail(event.getEmail());
-
-        log.info("[EMAIL] password_changed | start | email={}", maskedEmail);
-
-        try {
-            Object result = joinPoint.proceed();
-            log.info("[EMAIL] password_changed | success | email={}", maskedEmail);
-            return result;
-        } catch (Exception e) {
-            log.error("[EMAIL] password_changed | failed | email={} | reason={}", maskedEmail, SecurityMaskingUtils.rootMessage(e), e);
-            throw e;
-        }
-    }
-
-    /**
-     * Log l'envoi d'un email de réinitialisation de mot de passe.
-     */
-    @Around("execution(* com.ecclesiaflow.springsecurity.application.handlers.PasswordEventHandler.handlePasswordResetRequested(..))")
-    public Object logPasswordResetEmail(ProceedingJoinPoint joinPoint) throws Throwable {
-        PasswordResetRequestedEvent event = (PasswordResetRequestedEvent) joinPoint.getArgs()[0];
-        String maskedEmail = SecurityMaskingUtils.maskEmail(event.getEmail());
-
-        log.info("[EMAIL] password_reset | start | email={}", maskedEmail);
-
-        try {
-            Object result = joinPoint.proceed();
-            log.info("[EMAIL] password_reset | success | email={}", maskedEmail);
-            return result;
-        } catch (Exception e) {
-            log.error("[EMAIL] password_reset | failed | email={} | reason={}", maskedEmail, SecurityMaskingUtils.rootMessage(e), e);
-            throw e;
-        }
-    }
-
-    /**
-     * Log l'envoi d'une notification après réinitialisation de mot de passe.
-     */
-    @Around("execution(* com.ecclesiaflow.springsecurity.application.handlers.PasswordEventHandler.handlePasswordReset(..))")
-    public Object logPasswordResetNotification(ProceedingJoinPoint joinPoint) throws Throwable {
-        PasswordResetEvent event = (PasswordResetEvent) joinPoint.getArgs()[0];
-        String maskedEmail = SecurityMaskingUtils.maskEmail(event.getEmail());
-
-        log.info("[EMAIL] password_reset_confirmation | start | email={}", maskedEmail);
-
-        try {
-            Object result = joinPoint.proceed();
-            log.info("[EMAIL] password_reset_confirmation | success | email={}", maskedEmail);
-            return result;
-        } catch (Exception e) {
-            log.error("[EMAIL] password_reset_confirmation | failed | email={} | reason={}", maskedEmail, SecurityMaskingUtils.rootMessage(e), e);
             throw e;
         }
     }

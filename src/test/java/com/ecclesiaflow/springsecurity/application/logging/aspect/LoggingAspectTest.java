@@ -5,8 +5,6 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.ecclesiaflow.springsecurity.application.logging.annotation.LogExecution;
-import com.ecclesiaflow.springsecurity.business.exceptions.EmailServiceException;
-import com.ecclesiaflow.springsecurity.business.exceptions.GrpcCommunicationException;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
@@ -316,7 +314,7 @@ class LoggingAspectTest {
         ILoggingEvent errorLog = logs.getFirst();
         assertThat(errorLog.getLevel()).isEqualTo(Level.ERROR);
         assertThat(errorLog.getFormattedMessage())
-                .contains("Exception non gérée dans TestService.problematicMethod")
+                .contains("Unhandled exception in TestService.problematicMethod")
                 .contains("RuntimeException")
                 .contains("Unhandled error");
     }
@@ -343,146 +341,4 @@ class LoggingAspectTest {
                 .contains("Null value");
     }
 
-    @Test
-    @DisplayName("Devrait logger EmailServiceException avec détails gRPC")
-    void shouldLogEmailServiceException_WithGrpcDetails() {
-        // Given
-        JoinPoint joinPoint = mock(JoinPoint.class);
-        Signature signature = mock(Signature.class);
-        when(signature.getName()).thenReturn("sendEmail");
-        when(joinPoint.getTarget()).thenReturn(new TestService());
-        when(joinPoint.getSignature()).thenReturn(signature);
-
-        GrpcCommunicationException grpcEx = new GrpcCommunicationException(
-                "EmailService",
-                "sendEmail",
-                io.grpc.Status.Code.UNAVAILABLE,
-                "Service temporarily unavailable",
-                new RuntimeException("Connection refused")
-        );
-        
-        EmailServiceException emailEx = new EmailServiceException(
-                "Failed to send password reset email",
-                "user@example.com",
-                com.ecclesiaflow.springsecurity.business.exceptions.EmailServiceException.EmailOperation.PASSWORD_RESET,
-                grpcEx
-        );
-
-        // When
-        loggingAspect.logUnhandledException(joinPoint, emailEx);
-
-        // Then
-        List<ILoggingEvent> logs = listAppender.list;
-        assertThat(logs).isNotEmpty();
-        
-        // Vérifier les logs EMAIL SERVICE ERROR
-        boolean hasEmailServiceLog = logs.stream()
-                .anyMatch(log -> log.getFormattedMessage().contains("=== EMAIL SERVICE ERROR ==="));
-        assertThat(hasEmailServiceLog).isTrue();
-        
-        boolean hasEmailOperation = logs.stream()
-                .anyMatch(log -> log.getFormattedMessage().contains("Email Operation"));
-        assertThat(hasEmailOperation).isTrue();
-        
-        boolean hasGrpcDetails = logs.stream()
-                .anyMatch(log -> log.getFormattedMessage().contains("--- gRPC Details ---"));
-        assertThat(hasGrpcDetails).isTrue();
-        
-        boolean hasStatusCode = logs.stream()
-                .anyMatch(log -> log.getFormattedMessage().contains("UNAVAILABLE"));
-        assertThat(hasStatusCode).isTrue();
-        
-        boolean hasRootCause = logs.stream()
-                .anyMatch(log -> log.getFormattedMessage().contains("Root Cause"));
-        assertThat(hasRootCause).isTrue();
-    }
-
-    @Test
-    @DisplayName("Devrait logger EmailServiceException sans cause gRPC")
-    void shouldLogEmailServiceException_WithoutGrpcCause() {
-        // Given
-        JoinPoint joinPoint = mock(JoinPoint.class);
-        Signature signature = mock(Signature.class);
-        when(signature.getName()).thenReturn("sendEmail");
-        when(joinPoint.getTarget()).thenReturn(new TestService());
-        when(joinPoint.getSignature()).thenReturn(signature);
-
-        EmailServiceException emailEx = new EmailServiceException(
-                "Failed to send welcome email",
-                "user@example.com",
-                com.ecclesiaflow.springsecurity.business.exceptions.EmailServiceException.EmailOperation.WELCOME,
-                null  // Pas de cause gRPC
-        );
-
-        // When
-        loggingAspect.logUnhandledException(joinPoint, emailEx);
-
-        // Then
-        List<ILoggingEvent> logs = listAppender.list;
-        assertThat(logs).isNotEmpty();
-        
-        boolean hasEmailServiceLog = logs.stream()
-                .anyMatch(log -> log.getFormattedMessage().contains("=== EMAIL SERVICE ERROR ==="));
-        assertThat(hasEmailServiceLog).isTrue();
-        
-        boolean hasEmailOperation = logs.stream()
-                .anyMatch(log -> log.getFormattedMessage().contains("Email Operation"));
-        assertThat(hasEmailOperation).isTrue();
-        
-        // Ne devrait PAS avoir de détails gRPC
-        boolean hasGrpcDetails = logs.stream()
-                .anyMatch(log -> log.getFormattedMessage().contains("--- gRPC Details ---"));
-        assertThat(hasGrpcDetails).isFalse();
-    }
-
-    @Test
-    @DisplayName("Devrait logger GrpcCommunicationException sans root cause")
-    void shouldLogGrpcException_WithoutRootCause() {
-        // Given
-        JoinPoint joinPoint = mock(JoinPoint.class);
-        Signature signature = mock(Signature.class);
-        when(signature.getName()).thenReturn("sendEmail");
-        when(joinPoint.getTarget()).thenReturn(new TestService());
-        when(joinPoint.getSignature()).thenReturn(signature);
-
-        EmailServiceException emailEx = getEmailServiceException();
-
-        // When
-        loggingAspect.logUnhandledException(joinPoint, emailEx);
-
-        // Then
-        List<ILoggingEvent> logs = listAppender.list;
-        assertThat(logs).isNotEmpty();
-        
-        boolean hasGrpcDetails = logs.stream()
-                .anyMatch(log -> log.getFormattedMessage().contains("--- gRPC Details ---"));
-        assertThat(hasGrpcDetails).isTrue();
-        
-        boolean hasStatusCode = logs.stream()
-                .anyMatch(log -> log.getFormattedMessage().contains("DEADLINE_EXCEEDED"));
-        assertThat(hasStatusCode).isTrue();
-        
-        // Ne devrait PAS avoir de Root Cause
-        long rootCauseCount = logs.stream()
-                .filter(log -> log.getFormattedMessage().contains("Root Cause"))
-                .count();
-        assertThat(rootCauseCount).isZero();
-    }
-
-    private static EmailServiceException getEmailServiceException() {
-        GrpcCommunicationException grpcEx = new GrpcCommunicationException(
-                "EmailService",
-                "sendEmail",
-                io.grpc.Status.Code.DEADLINE_EXCEEDED,
-                "Request timeout",
-                null  // Pas de root cause
-        );
-
-        return new EmailServiceException(
-                "Failed to send email",
-                "user@example.com",
-                EmailServiceException.EmailOperation.PASSWORD_CHANGED,
-                grpcEx
-        );
-    }
 }
