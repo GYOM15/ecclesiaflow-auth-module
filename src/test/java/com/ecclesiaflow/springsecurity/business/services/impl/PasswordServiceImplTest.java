@@ -1,7 +1,6 @@
 package com.ecclesiaflow.springsecurity.business.services.impl;
 
 import com.ecclesiaflow.springsecurity.business.domain.token.SetupToken;
-import com.ecclesiaflow.springsecurity.business.events.PasswordSetEvent;
 import com.ecclesiaflow.springsecurity.business.services.SetupTokenService;
 import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakAdminClient;
 import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
@@ -14,16 +13,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
@@ -39,9 +35,6 @@ class PasswordServiceImplTest {
     
     @Mock
     private MembersClient membersClient;
-    
-    @Mock
-    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private PasswordServiceImpl passwordService;
@@ -87,10 +80,6 @@ class PasswordServiceImplTest {
             verify(keycloakAdminClient).createUser(EMAIL, PASSWORD, true);
             verify(membersClient).notifyAccountActivated(MEMBER_ID, KEYCLOAK_USER_ID);
             verify(setupTokenService).deleteToken(validToken);
-            
-            ArgumentCaptor<PasswordSetEvent> eventCaptor = ArgumentCaptor.forClass(PasswordSetEvent.class);
-            verify(eventPublisher).publishEvent(eventCaptor.capture());
-            assertThat(eventCaptor.getValue().getEmail()).isEqualTo(EMAIL);
         }
 
         @Test
@@ -106,22 +95,6 @@ class PasswordServiceImplTest {
             verify(setupTokenService).deleteToken(validToken);
         }
 
-        @Test
-        @DisplayName("Should publish PasswordSetEvent after successful setup")
-        void shouldPublishPasswordSetEvent() {
-            when(setupTokenService.validate(SETUP_TOKEN, SetupToken.TokenPurpose.PASSWORD_SETUP))
-                    .thenReturn(validToken);
-            when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
-            when(keycloakAdminClient.createUser(EMAIL, PASSWORD, true)).thenReturn(KEYCLOAK_USER_ID);
-
-            passwordService.setupPassword(SETUP_TOKEN, PASSWORD);
-
-            ArgumentCaptor<PasswordSetEvent> eventCaptor = ArgumentCaptor.forClass(PasswordSetEvent.class);
-            verify(eventPublisher).publishEvent(eventCaptor.capture());
-            
-            PasswordSetEvent event = eventCaptor.getValue();
-            assertThat(event.getEmail()).isEqualTo(EMAIL);
-        }
     }
 
     @Nested
@@ -141,7 +114,6 @@ class PasswordServiceImplTest {
             verify(keycloakAdminClient, never()).createUser(anyString(), anyString(), anyBoolean());
             verify(membersClient, never()).notifyAccountActivated(any(), anyString());
             verify(setupTokenService, never()).deleteToken(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -175,7 +147,6 @@ class PasswordServiceImplTest {
 
             verify(keycloakAdminClient, never()).createUser(anyString(), anyString(), anyBoolean());
             verify(setupTokenService, never()).deleteToken(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -211,7 +182,6 @@ class PasswordServiceImplTest {
 
             verify(membersClient, never()).notifyAccountActivated(any(), anyString());
             verify(setupTokenService, never()).deleteToken(any());
-            verify(eventPublisher, never()).publishEvent(any());
         }
 
         @Test
@@ -245,29 +215,14 @@ class PasswordServiceImplTest {
 
             passwordService.setupPassword(SETUP_TOKEN, PASSWORD);
 
-            var inOrder = inOrder(setupTokenService, membersClient, keycloakAdminClient, setupTokenService, eventPublisher);
+            var inOrder = inOrder(setupTokenService, membersClient, keycloakAdminClient, setupTokenService);
             inOrder.verify(setupTokenService).validate(SETUP_TOKEN, SetupToken.TokenPurpose.PASSWORD_SETUP);
             inOrder.verify(membersClient).isEmailNotConfirmed(EMAIL);
             inOrder.verify(keycloakAdminClient).createUser(EMAIL, PASSWORD, true);
             inOrder.verify(membersClient).notifyAccountActivated(MEMBER_ID, KEYCLOAK_USER_ID);
             inOrder.verify(setupTokenService).deleteToken(validToken);
-            inOrder.verify(eventPublisher).publishEvent(any(PasswordSetEvent.class));
         }
 
-        @Test
-        @DisplayName("Should delete token before publishing event")
-        void shouldDeleteTokenBeforePublishingEvent() {
-            when(setupTokenService.validate(SETUP_TOKEN, SetupToken.TokenPurpose.PASSWORD_SETUP))
-                    .thenReturn(validToken);
-            when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
-            when(keycloakAdminClient.createUser(EMAIL, PASSWORD, true)).thenReturn(KEYCLOAK_USER_ID);
-
-            passwordService.setupPassword(SETUP_TOKEN, PASSWORD);
-
-            var inOrder = inOrder(setupTokenService, eventPublisher);
-            inOrder.verify(setupTokenService).deleteToken(validToken);
-            inOrder.verify(eventPublisher).publishEvent(any(PasswordSetEvent.class));
-        }
     }
 
     @Nested

@@ -13,7 +13,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("SetupTokenPersistenceMapperImpl - Tests Unitaires Générés")
+@DisplayName("SetupTokenPersistenceMapperImpl - Generated Unit Tests")
 class SetupTokenPersistenceMapperImplTest {
 
     private SetupTokenPersistenceMapperImpl mapper;
@@ -24,18 +24,18 @@ class SetupTokenPersistenceMapperImplTest {
     }
 
     @Nested
-    @DisplayName("toDomain - Tests de conversion Entity vers Domain")
+    @DisplayName("toDomain - Tests for Entity to Domain conversion")
     class ToDomainTests {
 
         @Test
-        @DisplayName("Devrait retourner null quand entity est null")
+        @DisplayName("Should return null when entity is null")
         void shouldReturnNullWhenEntityIsNull() {
             SetupToken result = mapper.toDomain(null);
             assertThat(result).isNull();
         }
 
         @Test
-        @DisplayName("Devrait convertir entity complète vers domain")
+        @DisplayName("Should convert complete entity to domain")
         void shouldConvertCompleteEntityToDomain() {
             SetupTokenEntity entity = SetupTokenEntity.builder()
                     .id(UUID.randomUUID())
@@ -62,7 +62,7 @@ class SetupTokenPersistenceMapperImplTest {
         }
 
         @Test
-        @DisplayName("Devrait convertir tous les statuts entity vers domain")
+        @DisplayName("Should convert tous les statuts entity vers domain")
         void shouldConvertAllEntityStatusesToDomain() {
             SetupTokenEntity entityIssued = createEntityWithStatus(SetupToken.TokenStatus.ISSUED);
             SetupTokenEntity entityExpired = createEntityWithStatus(SetupToken.TokenStatus.EXPIRED);
@@ -74,7 +74,7 @@ class SetupTokenPersistenceMapperImplTest {
         }
 
         @Test
-        @DisplayName("Devrait gérer purpose null dans entity")
+        @DisplayName("Should handle purpose null dans entity")
         void shouldHandleNullPurposeInEntity() {
             SetupTokenEntity entity = SetupTokenEntity.builder()
                     .id(UUID.randomUUID())
@@ -93,7 +93,7 @@ class SetupTokenPersistenceMapperImplTest {
         }
 
         @Test
-        @DisplayName("Devrait gérer status null dans entity")
+        @DisplayName("Should handle status null dans entity")
         void shouldHandleNullStatusInEntity() {
             SetupTokenEntity entity = SetupTokenEntity.builder()
                     .id(UUID.randomUUID())
@@ -113,18 +113,18 @@ class SetupTokenPersistenceMapperImplTest {
     }
 
     @Nested
-    @DisplayName("toEntity - Tests de conversion Domain vers Entity")
+    @DisplayName("toEntity - Tests for conversion Domain vers Entity")
     class ToEntityTests {
 
         @Test
-        @DisplayName("Devrait retourner null quand domain est null")
+        @DisplayName("Should return null quand domain est null")
         void shouldReturnNullWhenDomainIsNull() {
             SetupTokenEntity result = mapper.toEntity(null);
             assertThat(result).isNull();
         }
 
         @Test
-        @DisplayName("Devrait convertir domain complet vers entity")
+        @DisplayName("Should convert domain complet vers entity")
         void shouldConvertCompleteDomainToEntity() {
             SetupToken domain = SetupToken.builder()
                     .id(UUID.randomUUID())
@@ -151,7 +151,7 @@ class SetupTokenPersistenceMapperImplTest {
         }
 
         @Test
-        @DisplayName("Devrait convertir tous les statuts domain vers entity")
+        @DisplayName("Should convert tous les statuts domain vers entity")
         void shouldConvertAllDomainStatusesToEntity() {
             SetupToken domainIssued = createDomainWithStatus(SetupToken.TokenStatus.ISSUED);
             SetupToken domainExpired = createDomainWithStatus(SetupToken.TokenStatus.EXPIRED);
@@ -163,7 +163,7 @@ class SetupTokenPersistenceMapperImplTest {
         }
 
         @Test
-        @DisplayName("Devrait gérer purpose null dans domain")
+        @DisplayName("Should handle purpose null dans domain")
         void shouldHandleNullPurposeInDomain() {
             SetupToken domain = SetupToken.builder()
                     .id(UUID.randomUUID())
@@ -182,7 +182,7 @@ class SetupTokenPersistenceMapperImplTest {
         }
 
         @Test
-        @DisplayName("Devrait gérer status null dans domain")
+        @DisplayName("Should handle status null dans domain")
         void shouldHandleNullStatusInDomain() {
             SetupToken domain = SetupToken.builder()
                     .id(UUID.randomUUID())
@@ -202,11 +202,11 @@ class SetupTokenPersistenceMapperImplTest {
     }
 
     @Nested
-    @DisplayName("Bidirectionnalité - Tests de conversion aller-retour")
+    @DisplayName("Bidirectionality - Tests for round-trip conversion")
     class BidirectionalityTests {
 
         @Test
-        @DisplayName("Devrait maintenir les données lors d'une conversion entity->domain->entity")
+        @DisplayName("Should maintain data during conversion entity->domain->entity")
         void shouldMaintainDataDuringEntityToDomainToEntity() {
             SetupTokenEntity original = SetupTokenEntity.builder()
                     .id(UUID.randomUUID())
@@ -233,7 +233,7 @@ class SetupTokenPersistenceMapperImplTest {
         }
 
         @Test
-        @DisplayName("Devrait maintenir les données lors d'une conversion domain->entity->domain")
+        @DisplayName("Should maintain data during conversion domain->entity->domain")
         void shouldMaintainDataDuringDomainToEntityToDomain() {
             SetupToken original = SetupToken.builder()
                     .id(UUID.randomUUID())

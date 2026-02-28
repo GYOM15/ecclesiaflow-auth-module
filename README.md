@@ -202,7 +202,7 @@ curl -X POST http://localhost:8081/ecclesiaflow/auth/password/setup \
 
 ```json
 {
-  "message": "Votre mot de passe a été défini avec succès. Vous êtes maintenant connecté."
+  "message": "Your password has been successfully set. You are now signed in."
 }
 ```
 

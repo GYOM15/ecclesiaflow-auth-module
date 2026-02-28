@@ -24,10 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Gestionnaire global d'exceptions pour l'API REST EcclesiaFlow Auth Module.
+ * Global exception handler for the EcclesiaFlow Auth Module REST API.
  * <p>
- * Cette classe centralise la gestion de toutes les exceptions levées par les contrôleurs
- * d'authentification et les transforme en réponses HTTP standardisées avec le format {@link ApiErrorResponse}.
+ * This class centralizes the handling of all exceptions thrown by authentication controllers
+ * and transforms them into standardized HTTP responses using the {@link ApiErrorResponse} format.
  * </p>
  * 
  * @author EcclesiaFlow Team
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
-        return buildUnauthorizedErrorResponse("Token invalide ou expiré", request.getRequestURI());
+        return buildUnauthorizedErrorResponse("Invalid or expired token", request.getRequestURI());
     }
 
     @ExceptionHandler(InvalidRequestException.class)
@@ -52,11 +52,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleInvalidJson(HttpMessageNotReadableException ex, HttpServletRequest request) {
         List<ValidationError> errors = new ArrayList<>();
         errors.add(new ValidationError(
-            "Requête JSON mal formée",
+            "Malformed JSON request",
             "request",
             "parsing",
             "MalformedJson",
-            "Requête JSON mal formée",
+            "Malformed JSON request",
             "MalformedJson",
             null,
             null
@@ -65,7 +65,7 @@ public class GlobalExceptionHandler {
         ApiErrorResponse errorResponse = ApiErrorResponse.builder()
             .status(HttpStatus.BAD_REQUEST.value())
             .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-            .message("Requête JSON mal formée")
+            .message("Malformed JSON request")
             .path(request.getRequestURI())
             .errors(errors)
             .build();
@@ -94,7 +94,7 @@ public class GlobalExceptionHandler {
         ApiErrorResponse errorResponse = ApiErrorResponse.builder()
             .status(HttpStatus.BAD_REQUEST.value())
             .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-            .message("Erreur de validation des données d'authentification")
+            .message("Authentication data validation error")
             .path(request.getRequestURI())
             .errors(errors)
             .build();
@@ -123,7 +123,7 @@ public class GlobalExceptionHandler {
         ApiErrorResponse errorResponse = ApiErrorResponse.builder()
             .status(HttpStatus.BAD_REQUEST.value())
             .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-            .message("Erreur de validation des contraintes")
+            .message("Constraint validation error")
             .path(request.getRequestURI())
             .errors(errors)
             .build();
@@ -133,15 +133,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ApiErrorResponse> handleMissingRequestHeader(MissingRequestHeaderException ex, HttpServletRequest request) {
-        String error = "En-tête requis manquant: " + ex.getHeaderName();
+        String error = "Missing required header: " + ex.getHeaderName();
         return buildBadRequestErrorResponse(error, request.getRequestURI());
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiErrorResponse> handleHttpMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
-        StringBuilder message = new StringBuilder("Méthode HTTP non supportée");
+        StringBuilder message = new StringBuilder("HTTP method not supported");
         if (ex.getSupportedHttpMethods() != null && !ex.getSupportedHttpMethods().isEmpty()) {
-            message.append(": autorisées → ")
+            message.append(": allowed → ")
                     .append(ex.getSupportedHttpMethods());
         }
 
@@ -150,12 +150,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNoResourceFound(NoResourceFoundException ex, HttpServletRequest request) {
-        return buildSimpleErrorResponse(HttpStatus.NOT_FOUND, "Ressource non trouvée", request.getRequestURI());
+        return buildSimpleErrorResponse(HttpStatus.NOT_FOUND, "Resource not found", request.getRequestURI());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
-        return buildSimpleErrorResponse(HttpStatus.FORBIDDEN, "Accès refusé", request.getRequestURI());
+        return buildSimpleErrorResponse(HttpStatus.FORBIDDEN, "Access denied", request.getRequestURI());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -175,7 +175,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleAll(Exception ex, HttpServletRequest request) {
-        return buildSimpleErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Une erreur interne est survenue", request.getRequestURI());
+        return buildSimpleErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An internal error occurred", request.getRequestURI());
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)
@@ -185,7 +185,7 @@ public class GlobalExceptionHandler {
         HttpStatus status = HttpStatus.NOT_FOUND;
 
         ValidationError error = new ValidationError(
-                "La ressource demandée est introuvable",
+                "The requested resource was not found",
                 "resource",
                 "routing",
                 "NOT_FOUND",
@@ -198,7 +198,7 @@ public class GlobalExceptionHandler {
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .status(status.value())
                 .error(status.getReasonPhrase())
-                .message("Ressource non trouvée")
+                .message("Resource not found")
                 .path(request.getRequestURI())
                 .errors(List.of(error))
                 .build();
@@ -211,14 +211,14 @@ public class GlobalExceptionHandler {
                                                       HttpServletRequest request) {
         return buildSimpleErrorResponse(
                 HttpStatus.NOT_ACCEPTABLE,
-                "Media type non supporté. Vérifiez le header Accept.",
+                "Unsupported media type. Check the Accept header.",
                 request.getRequestURI()
         );
     }
 
 
     /**
-     * Construit une réponse d'erreur 400 Bad Request avec des erreurs de validation.
+     * Builds a 400 Bad Request error response with validation errors.
      */
     private ResponseEntity<ApiErrorResponse> buildBadRequestErrorResponse(String message, String path) {
         List<ValidationError> errors = new ArrayList<>();
@@ -245,7 +245,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Construit une réponse d'erreur 401 Unauthorized pour les erreurs d'authentification.
+     * Builds a 401 Unauthorized error response for authentication errors.
      */
     private ResponseEntity<ApiErrorResponse> buildUnauthorizedErrorResponse(String message, String path) {
         List<ValidationError> errors = new ArrayList<>();

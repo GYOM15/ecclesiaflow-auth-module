@@ -13,17 +13,17 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests unitaires pour GrpcClientLoggingAspect.
- * Version refactorisée sans boucles inutiles - Tests professionnels.
+ * Unit tests for GrpcClientLoggingAspect.
+ * Refactored version without unnecessary loops - Professional tests.
  */
-@DisplayName("GrpcClientLoggingAspect - Tests unitaires")
+@DisplayName("GrpcClientLoggingAspect - Unit tests")
 class GrpcClientLoggingAspectTest {
 
     private ListAppender<ILoggingEvent> listAppender;
     private Logger logger;
     private GrpcClientLoggingAspect aspect;
 
-    // Mocks réutilisables
+    // Reusable mocks
     private JoinPoint joinPoint;
     private Signature signature;
 
@@ -37,7 +37,7 @@ class GrpcClientLoggingAspectTest {
 
         aspect = new GrpcClientLoggingAspect();
 
-        // Initialiser les mocks
+        // Initialize mocks
         joinPoint = mock(JoinPoint.class);
         signature = mock(Signature.class);
         when(joinPoint.getSignature()).thenReturn(signature);
@@ -49,17 +49,17 @@ class GrpcClientLoggingAspectTest {
     }
 
     // ========================================================================
-    // Tests des Pointcuts
+    // Tests for Pointcuts
     // ========================================================================
 
     @Test
-    @DisplayName("Doit couvrir les pointcuts")
+    @DisplayName("Should cover pointcuts")
     void shouldCoverPointcuts() {
-        // Test des pointcuts (appels directs pour couverture)
+        // Test pointcuts (direct calls for coverage)
         aspect.grpcChannelShutdown();
         aspect.grpcClientCalls();
 
-        // Coverage only - pas de boucles inutiles
+        // Coverage only - no unnecessary loops
         assertThat(true).isTrue();
     }
 
@@ -68,7 +68,7 @@ class GrpcClientLoggingAspectTest {
     // ========================================================================
 
     @Test
-    @DisplayName("Doit logger (INFO) avant le shutdown du canal gRPC")
+    @DisplayName("Should log (INFO) before gRPC channel shutdown")
     void shouldLogBeforeChannelShutdown() {
         // When
         aspect.logBeforeChannelShutdown(joinPoint);
@@ -82,7 +82,7 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (INFO) après le shutdown réussi du canal gRPC")
+    @DisplayName("Should log (INFO) after successful shutdown of the gRPC channel")
     void shouldLogAfterChannelShutdown() {
         // When
         aspect.logAfterChannelShutdown(joinPoint);
@@ -96,7 +96,7 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (ERROR) les erreurs lors du shutdown du canal")
+    @DisplayName("Should log (ERROR) errors during channel shutdown")
     void shouldLogChannelShutdownError() {
         // Given
         Exception channelError = new RuntimeException("failed to close http://internal:8080 and example.com:443");
@@ -117,12 +117,12 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit gérer différents types d'erreurs de shutdown")
+    @DisplayName("Should handle different shutdown error types")
     void shouldHandleDifferentShutdownErrors() {
-        // Test avec IllegalStateException
+        // Test with IllegalStateException
         aspect.logChannelShutdownError(joinPoint, new IllegalStateException("Invalid state"));
 
-        // Test avec InterruptedException
+        // Test with InterruptedException
         aspect.logChannelShutdownError(joinPoint, new InterruptedException("Interrupted"));
 
         assertThat(listAppender.list).hasSize(2);
@@ -135,7 +135,7 @@ class GrpcClientLoggingAspectTest {
     // ========================================================================
 
     @Test
-    @DisplayName("Doit logger (INFO) avant un appel RPC 'isEmailNotConfirmed'")
+    @DisplayName("Should log (INFO) before an RPC call 'isEmailNotConfirmed'")
     void shouldLogBeforeRpcCall_IsEmailNotConfirmed() {
         // Given
         when(signature.getName()).thenReturn("isEmailNotConfirmed");
@@ -152,7 +152,7 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (DEBUG) avant un appel RPC générique")
+    @DisplayName("Should log (DEBUG) before an RPC call generic")
     void shouldLogBeforeRpcCall_OtherMethod() {
         // Given
         when(signature.getName()).thenReturn("someOtherMethod");
@@ -168,7 +168,7 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (INFO) après un appel RPC réussi 'isEmailNotConfirmed'")
+    @DisplayName("Should log (INFO) after a successful RPC call 'isEmailNotConfirmed'")
     void shouldLogAfterSuccessfulRpcCall_IsEmailNotConfirmed() {
         // Given
         when(signature.getName()).thenReturn("isEmailNotConfirmed");
@@ -185,7 +185,7 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (DEBUG) après un appel RPC réussi générique")
+    @DisplayName("Should log (DEBUG) after a successful RPC call generic")
     void shouldLogAfterSuccessfulRpcCall_OtherMethod() {
         // Given
         when(signature.getName()).thenReturn("anotherMethod");
@@ -205,7 +205,7 @@ class GrpcClientLoggingAspectTest {
     // ========================================================================
 
     @Test
-    @DisplayName("Doit logger (ERROR) une erreur UNAVAILABLE")
+    @DisplayName("Should log (ERROR) an UNAVAILABLE error")
     void shouldLogRpcCallError_Unavailable() {
         // Given
         when(signature.getName()).thenReturn("isEmailNotConfirmed");
@@ -229,7 +229,7 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (ERROR) une erreur avec UNAVAILABLE en majuscules dans le nom de classe")
+    @DisplayName("Should log (ERROR) an error with UNAVAILABLE in uppercase in class name")
     void shouldLogRpcCallError_UnavailableUpperCase() {
         // Given
         when(signature.getName()).thenReturn("getMemberByEmail");
@@ -253,7 +253,7 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (WARN) un Timeout")
+    @DisplayName("Should log (WARN) a Timeout")
     void shouldLogRpcCallError_Timeout() {
         // Given
         when(signature.getName()).thenReturn("checkStatus");
@@ -271,7 +271,7 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (WARN) un DEADLINE_EXCEEDED")
+    @DisplayName("Should log (WARN) a DEADLINE_EXCEEDED")
     void shouldLogRpcCallError_DeadlineExceeded() {
         // Given
         when(signature.getName()).thenReturn("checkStatus");
@@ -295,7 +295,7 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (WARN) une IllegalArgumentException")
+    @DisplayName("Should log (WARN) an IllegalArgumentException")
     void shouldLogRpcCallError_IllegalArgument() {
         // Given
         when(signature.getName()).thenReturn("validateEmail");
@@ -313,7 +313,7 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (ERROR) une erreur générique")
+    @DisplayName("Should log (ERROR) a generic error")
     void shouldLogRpcCallError_Generic() {
         // Given
         when(signature.getName()).thenReturn("someMethod");
@@ -335,18 +335,18 @@ class GrpcClientLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit couvrir tous les cas d'erreur")
+    @DisplayName("Should cover all error cases")
     void shouldCoverAllErrorCases() {
         // Given
         when(signature.getName()).thenReturn("testMethod");
 
-        // Test différents types d'erreurs (pas de boucles inutiles)
+        // Test different error types (no unnecessary loops)
         aspect.logRpcCallError(joinPoint, new RuntimeException("UNAVAILABLE error"));
         aspect.logRpcCallError(joinPoint, new RuntimeException("Timeout occurred"));
         aspect.logRpcCallError(joinPoint, new IllegalArgumentException("Bad arg"));
         aspect.logRpcCallError(joinPoint, new NullPointerException("Null value"));
 
-        // Then - Vérifier qu'il y a 4 logs
+        // Then - Tests that there are 4 logs
         assertThat(listAppender.list).hasSize(4);
     }
 }

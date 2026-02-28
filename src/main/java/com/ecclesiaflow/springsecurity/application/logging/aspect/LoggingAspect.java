@@ -9,39 +9,38 @@ import org.aspectj.lang.annotation.*;
 import org.springframework.stereotype.Component;
 
 /**
- * Aspect AOP responsable du logging automatique des opérations critiques EcclesiaFlow.
+ * AOP aspect responsible for automatic logging of critical EcclesiaFlow operations.
  * <p>
- * Cette classe implémente la programmation orientée aspect pour capturer automatiquement
- * les appels de méthodes dans les services et contrôleurs, et générer des logs détaillés
- * pour le monitoring, le debugging et l'audit des opérations système.
+ * This class implements aspect-oriented programming to automatically capture
+ * method calls in services and controllers, and generate detailed logs
+ * for monitoring, debugging, and auditing system operations.
  * </p>
  * 
- * <p><strong>Rôle architectural :</strong> Aspect transversal - Logging automatique</p>
- * 
- * <p><strong>Dépendances critiques :</strong></p>
+ *
+ * <p><strong>Critical dependencies:</strong></p>
  * <ul>
- *   <li>Spring AOP - Framework de programmation orientée aspect</li>
- *   <li>SLF4J/Logback - Framework de logging</li>
- *   <li>Annotation {@link LogExecution} - Marquage des méthodes à logger</li>
+ *   <li>Spring AOP - Aspect-oriented programming framework</li>
+ *   <li>SLF4J/Logback - Logging framework</li>
+ *   <li>Annotation {@link LogExecution} - Method logging marker</li>
  * </ul>
  * 
- * <p><strong>Responsabilités principales :</strong></p>
+ * <p><strong>Main responsibilities:</strong></p>
  * <ul>
- *   <li>Logging automatique des entrées/sorties de méthodes</li>
- *   <li>Capture des exceptions et erreurs système</li>
- *   <li>Mesure des temps d'exécution pour le monitoring</li>
- *   <li>Logging configurable via annotation @LogExecution</li>
+ *   <li>Automatic logging of method entry/exit</li>
+ *   <li>Exception and system error capture</li>
+ *   <li>Execution time measurement for monitoring</li>
+ *   <li>Configurable logging via @LogExecution annotation</li>
  * </ul>
  * 
- * <p><strong>Cas d'utilisation typiques :</strong></p>
+ * <p><strong>Typical use cases:</strong></p>
  * <ul>
- *   <li>Debugging des flux d'authentification</li>
- *   <li>Monitoring des performances des services</li>
- *   <li>Audit des opérations sensibles (inscription, connexion)</li>
- *   <li>Traçabilité des erreurs en production</li>
+ *   <li>Debugging authentication flows</li>
+ *   <li>Monitoring service performance</li>
+ *   <li>Auditing sensitive operations (registration, login)</li>
+ *   <li>Error traceability in production</li>
  * </ul>
  * 
- * <p><strong>Garanties :</strong> Thread-safe, impact minimal sur les performances, logging asynchrone.</p>
+ * <p><strong>Guarantees:</strong> Thread-safe, minimal performance impact, asynchronous logging.</p>
  * 
  * @author EcclesiaFlow Team
  * @since 1.0.0
@@ -52,25 +51,25 @@ import org.springframework.stereotype.Component;
 public class LoggingAspect {
 
     /**
-     * Pointcut pour toutes les méthodes des services
+     * Pointcut for all service methods.
      */
     @Pointcut("execution(* com.ecclesiaflow.springsecurity.business.services..*(..))")
     public void serviceMethods() {}
 
     /**
-     * Pointcut pour toutes les méthodes des contrôleurs
+     * Pointcut for all controller methods.
      */
     @Pointcut("execution(* com.ecclesiaflow.springsecurity.web.controller..*(..))")
     public void controllerMethods() {}
 
     /**
-     * Pointcut pour les méthodes annotées avec @LogExecution
+     * Pointcut for methods annotated with @LogExecution.
      */
     @Pointcut("@annotation(com.ecclesiaflow.springsecurity.application.logging.annotation.LogExecution)")
     public void logExecutionAnnotatedMethods() {}
 
     /**
-     * Log générique pour les méthodes de service avec gestion des performances
+     * Generic logging for service methods with performance tracking.
      */
     @Around("serviceMethods()")
     public Object logServiceMethods(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -78,7 +77,7 @@ public class LoggingAspect {
     }
 
     /**
-     * Log pour les méthodes annotées avec @LogExecution (configuration flexible)
+     * Logging for methods annotated with @LogExecution (flexible configuration).
      */
     @Around("logExecutionAnnotatedMethods() && @annotation(logExecution)")
     public Object logAnnotatedMethods(ProceedingJoinPoint joinPoint, LogExecution logExecution) throws Throwable {
@@ -89,12 +88,12 @@ public class LoggingAspect {
         String message = logExecution.value().isEmpty() ? 
             String.format("%s.%s", className, methodName) : logExecution.value();
         
-        // Log des paramètres si demandé
+        // Log parameters if requested
         if (logExecution.includeParams()) {
             Object[] args = joinPoint.getArgs();
-            log.info("Début: {} - Paramètres: {}", message, SecurityMaskingUtils.maskArgs(args));
+            log.info("Start: {} - Params: {}", message, SecurityMaskingUtils.maskArgs(args));
         } else {
-            log.info("Début: {}", message);
+            log.info("Start: {}", message);
         }
         
         try {
@@ -102,21 +101,21 @@ public class LoggingAspect {
             
             if (logExecution.includeExecutionTime()) {
                 long executionTime = System.currentTimeMillis() - startTime;
-                log.info("Succès: {} ({}ms)", message, executionTime);
+                log.info("Success: {} ({}ms)", message, executionTime);
             } else {
-                log.info("Succès: {}", message);
+                log.info("Success: {}", message);
             }
             
             return result;
         } catch (Exception e) {
             long executionTime = System.currentTimeMillis() - startTime;
-            log.error("Échec: {} ({}ms) - {}", message, executionTime, e.getMessage());
+            log.error("Failure: {} ({}ms) - {}", message, executionTime, e.getMessage());
             throw e;
         }
     }
 
     /**
-     * Log des appels aux contrôleurs (niveau DEBUG pour éviter le spam)
+     * Log controller calls (DEBUG level to avoid spam).
      */
     @Before("controllerMethods()")
     public void logControllerAccess(JoinPoint joinPoint) {
@@ -126,35 +125,35 @@ public class LoggingAspect {
     }
 
     /**
-     * Méthode utilitaire pour le logging générique des méthodes
+     * Utility method for generic method logging.
      */
     private Object logMethodExecution(ProceedingJoinPoint joinPoint) throws Throwable {
         String className = joinPoint.getTarget().getClass().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
         long startTime = System.currentTimeMillis();
         
-        log.debug("{}: Début {}.{}", "SERVICE", className, methodName);
+        log.debug("{}: Start {}.{}", "SERVICE", className, methodName);
         
         try {
             Object result = joinPoint.proceed();
             long executionTime = System.currentTimeMillis() - startTime;
             
-            if (executionTime > 1000) { // Log si > 1 seconde
-                log.warn("{}: {}.{} - Exécution lente ({}ms)", "SERVICE", className, methodName, executionTime);
+            if (executionTime > 1000) { // Log if > 1 second
+                log.warn("{}: {}.{} - Slow execution ({}ms)", "SERVICE", className, methodName, executionTime);
             } else {
-                log.debug("{}: {}.{} - Succès ({}ms)", "SERVICE", className, methodName, executionTime);
+                log.debug("{}: {}.{} - Success ({}ms)", "SERVICE", className, methodName, executionTime);
             }
             
             return result;
         } catch (Exception e) {
             long executionTime = System.currentTimeMillis() - startTime;
-            log.error("{}: {}.{} - Échec ({}ms): {}", "SERVICE", className, methodName, executionTime, e.getMessage());
+            log.error("{}: {}.{} - Failure ({}ms): {}", "SERVICE", className, methodName, executionTime, e.getMessage());
             throw e;
         }
     }
 
     /**
-     * Log des exceptions non gérées dans les services et contrôleurs
+     * Log unhandled exceptions in services and controllers.
      */
     @AfterThrowing(pointcut = "serviceMethods() || controllerMethods()", throwing = "exception")
     public void logUnhandledException(JoinPoint joinPoint, Throwable exception) {

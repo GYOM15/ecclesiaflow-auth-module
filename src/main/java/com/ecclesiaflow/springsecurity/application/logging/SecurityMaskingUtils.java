@@ -153,8 +153,8 @@ public final class SecurityMaskingUtils {
     // SANITIZATION (infra)
     // ------------------------------------------------------------------
     /**
-     * Remplace les fragments sensibles d'infra dans un message (URLs, host:port, domaines).
-     * Sanitation simple et conservative pour éviter les fuites en prod.
+     * Replaces sensitive infrastructure fragments in a message (URLs, host:port, domains).
+     * Simple and conservative sanitization to prevent leaks in production.
      */
     public static String sanitizeInfra(String msg) {
         if (msg == null || msg.isBlank()) return msg;

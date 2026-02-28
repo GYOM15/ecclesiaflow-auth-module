@@ -40,7 +40,7 @@ class PasswordControllerTest {
         setupPasswordRequest.setPassword(PASSWORD);
 
         passwordManagementResponse = new PasswordManagementResponse()
-                .message("Mot de passe défini avec succès");
+                .message("Your password has been successfully set. You are now signed in.");
     }
 
     @Nested
@@ -58,7 +58,7 @@ class PasswordControllerTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().getMessage()).contains("succès");
+            assertThat(response.getBody().getMessage()).contains("successfully");
             
             verify(passwordManagementDelegate).setupPassword(SETUP_TOKEN, PASSWORD);
         }

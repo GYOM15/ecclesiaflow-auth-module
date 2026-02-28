@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests unitaires pour ValidationError.
- * Vérifie la construction, la sérialisation JSON et l'immutabilité du record.
+ * Unit tests for ValidationError.
+ * Tests construction, JSON serialization and record immutability.
  */
-@DisplayName("ValidationError - Tests Unitaires")
+@DisplayName("ValidationError - Unit Tests")
 class ValidationErrorTest {
 
     private ObjectMapper objectMapper;
@@ -22,17 +22,17 @@ class ValidationErrorTest {
         objectMapper = new ObjectMapper();
     }
 
-    // === TESTS DE CONSTRUCTION ===
+    // === CONSTRUCTION TESTS ===
 
     @Test
-    @DisplayName("Devrait créer un ValidationError avec tous les paramètres")
+    @DisplayName("Should create a ValidationError with all parameters")
     void constructor_WithAllParameters_ShouldCreateValidError() {
         // When
         ValidationError error = new ValidationError(
-                "Le champ est obligatoire",
+                "Field is required",
                 "user.firstName",
                 "validation",
-                "string non vide",
+                "non-empty string",
                 "null",
                 "REQUIRED_FIELD",
                 5,
@@ -40,10 +40,10 @@ class ValidationErrorTest {
         );
 
         // Then
-        assertThat(error.message()).isEqualTo("Le champ est obligatoire");
+        assertThat(error.message()).isEqualTo("Field is required");
         assertThat(error.path()).isEqualTo("user.firstName");
         assertThat(error.type()).isEqualTo("validation");
-        assertThat(error.expected()).isEqualTo("string non vide");
+        assertThat(error.expected()).isEqualTo("non-empty string");
         assertThat(error.received()).isEqualTo("null");
         assertThat(error.code()).isEqualTo("REQUIRED_FIELD");
         assertThat(error.line()).isEqualTo(5);
@@ -51,11 +51,11 @@ class ValidationErrorTest {
     }
 
     @Test
-    @DisplayName("Devrait créer un ValidationError avec des valeurs null")
+    @DisplayName("Should create a ValidationError with null values")
     void constructor_WithNullValues_ShouldCreateValidError() {
         // When
         ValidationError error = new ValidationError(
-                "Erreur de type",
+                "Type error",
                 "field",
                 "type",
                 null,
@@ -66,7 +66,7 @@ class ValidationErrorTest {
         );
 
         // Then
-        assertThat(error.message()).isEqualTo("Erreur de type");
+        assertThat(error.message()).isEqualTo("Type error");
         assertThat(error.path()).isEqualTo("field");
         assertThat(error.type()).isEqualTo("type");
         assertThat(error.expected()).isNull();
@@ -76,14 +76,14 @@ class ValidationErrorTest {
         assertThat(error.column()).isNull();
     }
 
-    // === TESTS DE SÉRIALISATION JSON ===
+    // === JSON SERIALIZATION TESTS ===
 
     @Test
-    @DisplayName("Devrait sérialiser correctement en JSON")
+    @DisplayName("Should serialize correctly to JSON")
     void serialization_ShouldProduceValidJson() throws JsonProcessingException {
         // Given
         ValidationError error = new ValidationError(
-                "La taille doit être entre 2 et 50 caractères",
+                "Size must be between 2 and 50 characters",
                 "user.lastName",
                 "validation",
                 "string[2-50]",
@@ -98,7 +98,7 @@ class ValidationErrorTest {
 
         // Then
         assertThat(json).isNotNull();
-        assertThat(json).contains("\"message\":\"La taille doit être entre 2 et 50 caractères\"");
+        assertThat(json).contains("\"message\":\"Size must be between 2 and 50 characters\"");
         assertThat(json).contains("\"path\":\"user.lastName\"");
         assertThat(json).contains("\"type\":\"validation\"");
         assertThat(json).contains("\"expected\":\"string[2-50]\"");
@@ -109,12 +109,12 @@ class ValidationErrorTest {
     }
 
     @Test
-    @DisplayName("Devrait désérialiser correctement depuis JSON")
+    @DisplayName("Should deserialize correctly from JSON")
     void deserialization_ShouldProduceValidObject() throws JsonProcessingException {
         // Given
         String json = """
             {
-                "message": "Format d'email invalide",
+                "message": "Invalid email format",
                 "path": "user.email",
                 "type": "format",
                 "expected": "email format",
@@ -129,7 +129,7 @@ class ValidationErrorTest {
         ValidationError error = objectMapper.readValue(json, ValidationError.class);
 
         // Then
-        assertThat(error.message()).isEqualTo("Format d'email invalide");
+        assertThat(error.message()).isEqualTo("Invalid email format");
         assertThat(error.path()).isEqualTo("user.email");
         assertThat(error.type()).isEqualTo("format");
         assertThat(error.expected()).isEqualTo("email format");
@@ -140,12 +140,12 @@ class ValidationErrorTest {
     }
 
     @Test
-    @DisplayName("Devrait gérer les valeurs null lors de la désérialisation")
+    @DisplayName("Should handle null values during deserialization")
     void deserialization_WithNullValues_ShouldHandleCorrectly() throws JsonProcessingException {
         // Given
         String json = """
             {
-                "message": "Erreur simple",
+                "message": "Simple error",
                 "path": "field",
                 "type": "simple",
                 "expected": null,
@@ -160,7 +160,7 @@ class ValidationErrorTest {
         ValidationError error = objectMapper.readValue(json, ValidationError.class);
 
         // Then
-        assertThat(error.message()).isEqualTo("Erreur simple");
+        assertThat(error.message()).isEqualTo("Simple error");
         assertThat(error.path()).isEqualTo("field");
         assertThat(error.type()).isEqualTo("simple");
         assertThat(error.expected()).isNull();
@@ -170,10 +170,10 @@ class ValidationErrorTest {
         assertThat(error.column()).isNull();
     }
 
-    // === TESTS D'ÉGALITÉ ET HASHCODE ===
+    // === EQUALS AND HASHCODE TESTS ===
 
     @Test
-    @DisplayName("Devrait implémenter equals correctement")
+    @DisplayName("Should implement equals correctly")
     void equals_WithSameContent_ShouldReturnTrue() {
         // Given
         ValidationError error1 = new ValidationError(
@@ -189,7 +189,7 @@ class ValidationErrorTest {
     }
 
     @Test
-    @DisplayName("Devrait implémenter equals correctement pour des contenus différents")
+    @DisplayName("Should implement equals correctly for different contents")
     void equals_WithDifferentContent_ShouldReturnFalse() {
         // Given
         ValidationError error1 = new ValidationError(
@@ -203,10 +203,10 @@ class ValidationErrorTest {
         assertThat(error1).isNotEqualTo(error2);
     }
 
-    // === TESTS DE toString ===
+    // === toString TESTS ===
 
     @Test
-    @DisplayName("Devrait produire une représentation string lisible")
+    @DisplayName("Should produce a readable string representation")
     void toString_ShouldProduceReadableString() {
         // Given
         ValidationError error = new ValidationError(
@@ -224,14 +224,14 @@ class ValidationErrorTest {
         assertThat(stringRepresentation).contains("TEST_CODE");
     }
 
-    // === TESTS DE CAS D'UTILISATION SPÉCIFIQUES ===
+    // === SPECIFIC USE CASE TESTS ===
 
     @Test
-    @DisplayName("Devrait supporter les chemins de champs imbriqués")
+    @DisplayName("Should support nested field paths")
     void nestedFieldPaths_ShouldBeSupported() {
         // Given
         ValidationError error = new ValidationError(
-                "Adresse invalide",
+                "Invalid address",
                 "user.address.street.number",
                 "validation",
                 "number",
@@ -243,11 +243,11 @@ class ValidationErrorTest {
 
         // When & Then
         assertThat(error.path()).isEqualTo("user.address.street.number");
-        assertThat(error.message()).isEqualTo("Adresse invalide");
+        assertThat(error.message()).isEqualTo("Invalid address");
     }
 
     @Test
-    @DisplayName("Devrait supporter différents types d'erreur")
+    @DisplayName("Should support different error types")
     void differentErrorTypes_ShouldBeSupported() {
         // Given
         ValidationError validationError = new ValidationError(
@@ -257,7 +257,7 @@ class ValidationErrorTest {
                 "Type mismatch", "field", "type", "string", "number", "TYPE_MISMATCH", null, null
         );
         ValidationError formatError = new ValidationError(
-                "Format invalid", "field", "format", "yyyy-MM-dd", "invalid-date", "FORMAT", null, null
+                "Invalid format", "field", "format", "yyyy-MM-dd", "invalid-date", "FORMAT", null, null
         );
 
         // When & Then
@@ -267,7 +267,7 @@ class ValidationErrorTest {
     }
 
     @Test
-    @DisplayName("Devrait supporter les informations de position pour le debugging")
+    @DisplayName("Should support position information for debugging")
     void positionInformation_ShouldSupportDebugging() {
         // Given
         ValidationError errorWithPosition = new ValidationError(

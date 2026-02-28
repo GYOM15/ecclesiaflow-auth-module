@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.web.exception;
 
 /**
- * Exception levée lors d'une requête avec des paramètres invalides
+ * Exception thrown when a request contains invalid parameters.
  */
 public class InvalidRequestException extends RuntimeException {
     

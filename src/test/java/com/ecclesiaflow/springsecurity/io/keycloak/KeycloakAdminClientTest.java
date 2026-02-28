@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("KeycloakAdminClient - Tests Unitaires")
+@DisplayName("KeycloakAdminClient - Unit Tests")
 class KeycloakAdminClientTest {
 
     @Mock
@@ -475,7 +475,7 @@ class KeycloakAdminClientTest {
         @Test
         @DisplayName("Should use cached token in synchronized block when still valid")
         void shouldUseCachedTokenInSynchronizedBlock() throws Exception {
-            // Premier appel pour mettre en cache
+            // First call to cache
             Map<String, Object> tokenResponse = Map.of(
                     "access_token", ACCESS_TOKEN,
                     "expires_in", 3600
@@ -490,13 +490,13 @@ class KeycloakAdminClientTest {
             when(adminClient.createUser(anyString(), eq(REALM), any(KeycloakUserRepresentation.class)))
                     .thenReturn(response);
 
-            // Premier appel - met en cache
+            // First call - caches
             keycloakAdminClient.createUser(EMAIL, PASSWORD, true);
             
-            // Deuxième appel immédiat - devrait utiliser le cache (double-check dans synchronized)
+            // Second call immediate - should use the cache (double-check in synchronized)
             keycloakAdminClient.createUser(EMAIL, PASSWORD, true);
 
-            // Vérifier qu'on n'a appelé getToken qu'une seule fois
+            // Tests that we called getToken only once
             verify(tokenClient, times(1)).getToken(eq(REALM), any(MultiValueMap.class));
         }
     }

@@ -20,17 +20,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests unitaires pour GrpcServerLoggingAspect.
- * Version refactorisée sans boucles inutiles et avec tests paramétrés.
+ * Unit tests for GrpcServerLoggingAspect.
+ * Refactored version without unnecessary loops and with parameterized tests.
  */
-@DisplayName("GrpcServerLoggingAspect - Tests unitaires")
+@DisplayName("GrpcServerLoggingAspect - Unit tests")
 class GrpcServerLoggingAspectTest {
 
     private ListAppender<ILoggingEvent> listAppender;
     private Logger logger;
     private GrpcServerLoggingAspect aspect;
 
-    // Mocks réutilisables
+    // Reusable mocks
     private JoinPoint joinPoint;
     private Signature signature;
 
@@ -40,15 +40,15 @@ class GrpcServerLoggingAspectTest {
         listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
-        logger.setLevel(Level.DEBUG); // Capturer tous les niveaux
+        logger.setLevel(Level.DEBUG); // Capture all levels
 
         aspect = new GrpcServerLoggingAspect();
 
-        // Initialiser les mocks
+        // Initialize mocks
         joinPoint = mock(JoinPoint.class);
         signature = mock(Signature.class);
         when(joinPoint.getSignature()).thenReturn(signature);
-        when(joinPoint.getArgs()).thenReturn(new Object[]{}); // Comportement par défaut
+        when(joinPoint.getArgs()).thenReturn(new Object[]{}); // Default behavior
     }
 
     @AfterEach
@@ -61,7 +61,7 @@ class GrpcServerLoggingAspectTest {
     // ========================================================================
 
     @Test
-    @DisplayName("Doit logger (INFO) avant le démarrage du serveur gRPC")
+    @DisplayName("Should log (INFO) before startup of the gRPC server")
     void shouldLogBeforeServerStart() {
         // When
         aspect.logBeforeServerStart(joinPoint);
@@ -75,7 +75,7 @@ class GrpcServerLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (INFO) après le démarrage réussi du serveur")
+    @DisplayName("Should log (INFO) after successful server startup")
     void shouldLogAfterServerStart() {
         // When
         aspect.logAfterServerStart(joinPoint);
@@ -89,7 +89,7 @@ class GrpcServerLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (ERROR) les erreurs de démarrage du serveur")
+    @DisplayName("Should log (ERROR) server startup errors")
     void shouldLogServerStartError() {
         // Given
         Exception ex = new RuntimeException("bind to https://server:7443 and server.local:7443 failed");
@@ -103,7 +103,7 @@ class GrpcServerLoggingAspectTest {
 
         assertThat(log.getLevel()).isEqualTo(Level.ERROR);
         assertThat(log.getFormattedMessage()).contains("GRPC", "Failed to start gRPC server");
-        // Vérifier que l'exception est bien attachée au log
+        // Tests that the exception is properly attached to the log
         assertThat(log.getThrowableProxy()).isNotNull();
         assertThat(((ThrowableProxy) log.getThrowableProxy()).getThrowable()).isSameAs(ex);
         // Sanitization assertions
@@ -113,7 +113,7 @@ class GrpcServerLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (INFO) avant l'arrêt du serveur gRPC")
+    @DisplayName("Should log (INFO) before gRPC server shutdown")
     void shouldLogBeforeServerStop() {
         // When
         aspect.logBeforeServerStop(joinPoint);
@@ -127,7 +127,7 @@ class GrpcServerLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (INFO) après l'arrêt réussi du serveur")
+    @DisplayName("Should log (INFO) after successful server shutdown")
     void shouldLogAfterServerStop() {
         // When
         aspect.logAfterServerStop(joinPoint);
@@ -145,7 +145,7 @@ class GrpcServerLoggingAspectTest {
     // ========================================================================
 
     @Test
-    @DisplayName("Doit logger (INFO) avant un appel RPC 'generateTemporaryToken'")
+    @DisplayName("Should log (INFO) before an RPC call 'generateTemporaryToken'")
     void shouldLogBeforeRpcCall_GenerateTemporaryToken() {
         // Given
         when(signature.getName()).thenReturn("generateTemporaryToken");
@@ -162,7 +162,7 @@ class GrpcServerLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (DEBUG) avant l'appel pour les méthodes génériques")
+    @DisplayName("Should log (DEBUG) before call for generic methods")
     void shouldLogBeforeRpcCall_GenericMethod() {
         // Given
         when(signature.getName()).thenReturn("someMethodWithEmail");
@@ -180,7 +180,7 @@ class GrpcServerLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (DEBUG) avant un appel RPC 'validateToken'")
+    @DisplayName("Should log (DEBUG) before an RPC call 'validateToken'")
     void shouldLogBeforeRpcCall_ValidateToken() {
         // Given
         when(signature.getName()).thenReturn("validateToken");
@@ -194,7 +194,7 @@ class GrpcServerLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (INFO) après un appel RPC 'generateTemporaryToken' réussi")
+    @DisplayName("Should log (INFO) after successful 'generateTemporaryToken' RPC call")
     void shouldLogAfterSuccessfulRpcCall_GenerateTemporaryToken() {
         // Given
         when(signature.getName()).thenReturn("generateTemporaryToken");
@@ -211,7 +211,7 @@ class GrpcServerLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (DEBUG) après un appel RPC 'validateToken' réussi")
+    @DisplayName("Should log (DEBUG) after successful 'validateToken' RPC call")
     void shouldLogAfterSuccessfulRpcCall_OtherMethod() {
         // Given
         when(signature.getName()).thenReturn("validateToken");
@@ -229,7 +229,7 @@ class GrpcServerLoggingAspectTest {
     // ========================================================================
 
     @Test
-    @DisplayName("Doit logger (WARN) une IllegalArgumentException")
+    @DisplayName("Should log (WARN) an IllegalArgumentException")
     void shouldLogRpcCallError_IllegalArgument() {
         // Given
         when(signature.getName()).thenReturn("generateTemporaryToken");
@@ -251,7 +251,7 @@ class GrpcServerLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("Doit logger (ERROR) une erreur interne (RuntimeException)")
+    @DisplayName("Should log (ERROR) an internal error (RuntimeException)")
     void shouldLogRpcCallError_InternalError() {
         // Given
         when(signature.getName()).thenReturn("generateTemporaryToken");
@@ -274,7 +274,7 @@ class GrpcServerLoggingAspectTest {
     }
 
     // ========================================================================
-    // Tests - Méthodes privées utilitaires (via Réflexion)
+    // Tests - Private utility methods (via Reflection)
     // ========================================================================
 
     // ========================================================================
@@ -282,32 +282,32 @@ class GrpcServerLoggingAspectTest {
     // ========================================================================
 
     @Test
-    @DisplayName("Doit couvrir le pointcut grpcServerStart")
+    @DisplayName("Should cover the grpcServerStart pointcut")
     void shouldCoverGrpcServerStartPointcut() {
         // Given / When
         aspect.grpcServerStart();
 
-        // Then - Pas d'assertion nécessaire, juste couvrir le code du pointcut
+        // Then - No assertion needed, just cover the pointcut code
         assertThat(true).isTrue();
     }
 
     @Test
-    @DisplayName("Doit couvrir le pointcut grpcServerStop")
+    @DisplayName("Should cover the grpcServerStop pointcut")
     void shouldCoverGrpcServerStopPointcut() {
         // Given / When
         aspect.grpcServerStop();
 
-        // Then - Pas d'assertion nécessaire, juste couvrir le code du pointcut
+        // Then - No assertion needed, just cover the pointcut code
         assertThat(true).isTrue();
     }
 
     @Test
-    @DisplayName("Doit couvrir le pointcut grpcServiceCalls")
+    @DisplayName("Should cover the grpcServiceCalls pointcut")
     void shouldCoverGrpcServiceCallsPointcut() {
         // Given / When
         aspect.grpcServiceCalls();
 
-        // Then - Pas d'assertion nécessaire, juste couvrir le code du pointcut
+        // Then - No assertion needed, just cover the pointcut code
         assertThat(true).isTrue();
     }
 }

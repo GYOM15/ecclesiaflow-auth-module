@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("SecurityMaskingUtils - Tests complets")
+@DisplayName("SecurityMaskingUtils - Complete tests")
 class SecurityMaskingUtilsTest {
 
     @Nested
@@ -15,7 +15,7 @@ class SecurityMaskingUtilsTest {
     class MaskEmailTests {
 
         @Test
-        @DisplayName("devrait retourner [UNKNOWN] pour null")
+        @DisplayName("should return [UNKNOWN] for null")
         void shouldReturnUnknownForNull() {
             assertThat(SecurityMaskingUtils.maskEmail(null)).isEqualTo("[UNKNOWN]");
         }
@@ -25,7 +25,7 @@ class SecurityMaskingUtilsTest {
     class SanitizeInfraTests {
 
         @Test
-        @DisplayName("devrait remplacer URL, host:port et domaine")
+        @DisplayName("should replace URL, host:port and domain")
         void shouldReplaceUrlHostPortAndDomain() {
             String msg = "connect to https://api.internal:8443/auth?token=abc failed at example.com:443 and foo.bar";
             String sanitized = SecurityMaskingUtils.sanitizeInfra(msg);
@@ -38,7 +38,7 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("devrait retourner null pour null et conserver blanc tel quel")
+        @DisplayName("should return null for null and keep blank as is")
         void shouldReturnNullForNullAndKeepBlank() {
             assertThat(SecurityMaskingUtils.sanitizeInfra(null)).isNull();
             assertThat(SecurityMaskingUtils.sanitizeInfra(" ")).isEqualTo(" ");
@@ -46,13 +46,13 @@ class SecurityMaskingUtilsTest {
     }
 
         @Test
-        @DisplayName("devrait retourner [UNKNOWN] pour blanc")
+        @DisplayName("should return [UNKNOWN] for blank")
         void shouldReturnUnknownForBlank() {
             assertThat(SecurityMaskingUtils.maskEmail("   ")).isEqualTo("[UNKNOWN]");
         }
 
         @Test
-        @DisplayName("devrait retourner [INVALID_FORMAT] si '@' absent ou au début")
+        @DisplayName("should return [INVALID_FORMAT] if '@' is missing or at the beginning")
         void shouldReturnInvalidForBadFormat() {
             assertThat(SecurityMaskingUtils.maskEmail("noatsign"))
                     .isEqualTo("[INVALID_FORMAT]");
@@ -61,21 +61,21 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("devrait masquer email avec localPart d'une lettre")
+        @DisplayName("should mask email with one letter localPart")
         void shouldMaskLocalPartLength1() {
             String masked = SecurityMaskingUtils.maskEmail("a@domain.com");
             assertThat(masked).isEqualTo("a****@domain.com");
         }
 
         @Test
-        @DisplayName("devrait masquer email avec localPart de deux lettres")
+        @DisplayName("should mask email with two letter localPart")
         void shouldMaskLocalPartLength2() {
             String masked = SecurityMaskingUtils.maskEmail("ab@domain.com");
             assertThat(masked).isEqualTo("a****@domain.com");
         }
 
         @Test
-        @DisplayName("devrait masquer email avec localPart > 2 lettres (garder 2)")
+        @DisplayName("should mask email with localPart > 2 letters (keep 2)")
         void shouldMaskLocalPartLonger() {
             String masked = SecurityMaskingUtils.maskEmail("abc@domain.com");
             assertThat(masked).isEqualTo("ab****@domain.com");
@@ -87,7 +87,7 @@ class SecurityMaskingUtilsTest {
     class MaskUrlQueryParamTests {
 
         @Test
-        @DisplayName("devrait retourner [UNKNOWN] pour url null/blanche")
+        @DisplayName("should return [UNKNOWN] for null/blank url")
         void shouldReturnUnknownForNullOrBlankUrl() {
             assertThat(SecurityMaskingUtils.maskUrlQueryParam(null, "token"))
                     .isEqualTo("[UNKNOWN]");
@@ -96,7 +96,7 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("devrait retourner [URL] quand paramName est null/blanc")
+        @DisplayName("should return [URL] when paramName is null/blank")
         void shouldReturnUrlPlaceholderWhenParamNameNullOrBlank() {
             String url = "https://api.local/path?token=abc&user=bob";
             assertThat(SecurityMaskingUtils.maskUrlQueryParam(url, null)).isEqualTo("[URL]");
@@ -104,14 +104,14 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("devrait retourner [URL] quand pas de query")
+        @DisplayName("should return [URL] when no query")
         void shouldReturnUrlPlaceholderWhenNoQuery() {
             String url = "https://api.local/path";
             assertThat(SecurityMaskingUtils.maskUrlQueryParam(url, "token")).isEqualTo("[URL]");
         }
 
         @Test
-        @DisplayName("devrait masquer un paramètre simple et rédiger les autres")
+        @DisplayName("should mask a simple parameter and redact the others")
         void shouldMaskSimpleParamAndRedactOthers() {
             String url = "https://api.local/path?token=abc&user=bob";
             String masked = SecurityMaskingUtils.maskUrlQueryParam(url, "token");
@@ -119,7 +119,7 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("devrait masquer plusieurs occurrences du même paramètre")
+        @DisplayName("should mask multiple occurrences of the same parameter")
         void shouldMaskMultipleOccurrences() {
             String url = "https://api.local/path?token=abc&flag&token=def";
             String masked = SecurityMaskingUtils.maskUrlQueryParam(url, "token");
@@ -127,7 +127,7 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("devrait préserver les paramètres sans '='")
+        @DisplayName("should preserve parameters without '='")
         void shouldPreserveParamsWithoutEquals() {
             String url = "https://api.local/path?flag&token=abc";
             String masked = SecurityMaskingUtils.maskUrlQueryParam(url, "token");
@@ -135,16 +135,16 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("devrait gérer URL avec '?' terminal")
+        @DisplayName("should handle URL with terminal '?'")
         void shouldHandleTrailingQuestionMark() {
             String url = "https://api.local/path?";
             String masked = SecurityMaskingUtils.maskUrlQueryParam(url, "token");
-            // Pas de param -> retourne base + "?"
+            // No param -> returns base + "?"
             assertThat(masked).isEqualTo("https://api.local/path?");
         }
 
         @Test
-        @DisplayName("devrait masquer param sans valeur et rédiger les autres")
+        @DisplayName("should mask param without value and redact the others")
         void shouldMaskParamWithoutValueAndRedactOthers() {
             String url = "https://api.local/path?token=&user=bob";
             String masked = SecurityMaskingUtils.maskUrlQueryParam(url, "token");
@@ -157,20 +157,20 @@ class SecurityMaskingUtilsTest {
     class MaskIdTests {
 
         @Test
-        @DisplayName("devrait retourner [UNKNOWN] pour id null")
+        @DisplayName("should return [UNKNOWN] for null id")
         void shouldReturnUnknownForNullId() {
             assertThat(SecurityMaskingUtils.maskId(null)).isEqualTo("[UNKNOWN]");
         }
 
         @Test
-        @DisplayName("devrait masquer complètement pour longueur <= 8")
+        @DisplayName("should mask completely for length <= 8")
         void shouldMaskCompletelyForShortIds() {
             assertThat(SecurityMaskingUtils.maskId("123")).isEqualTo("********");
             assertThat(SecurityMaskingUtils.maskId("12345678")).isEqualTo("********");
         }
 
         @Test
-        @DisplayName("devrait garder 8 chars puis **** pour longueur > 8")
+        @DisplayName("should keep 8 chars then **** for length > 8")
         void shouldKeepEightThenMaskRest() {
             assertThat(SecurityMaskingUtils.maskId("1234567890")).isEqualTo("12345678********");
 
@@ -185,20 +185,20 @@ class SecurityMaskingUtilsTest {
     class RootMessageTests {
 
         @Test
-        @DisplayName("devrait retourner [NO_ERROR] pour null")
+        @DisplayName("should return [NO_ERROR] for null")
         void shouldReturnNoErrorForNull() {
             assertThat(SecurityMaskingUtils.rootMessage(null)).isEqualTo("[NO_ERROR]");
         }
 
         @Test
-        @DisplayName("devrait retourner le message pour exception simple")
+        @DisplayName("should return the message for simple exception")
         void shouldReturnMessageForSingleException() {
             RuntimeException ex = new RuntimeException("simple");
             assertThat(SecurityMaskingUtils.rootMessage(ex)).isEqualTo("simple");
         }
 
         @Test
-        @DisplayName("devrait retourner le message de la cause la plus profonde")
+        @DisplayName("should return the deepest cause message")
         void shouldReturnRootCauseMessage() {
             IllegalStateException root = new IllegalStateException("inner");
             RuntimeException ex = new RuntimeException("outer", root);
@@ -206,7 +206,7 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("devrait retourner le simpleName quand message root est null")
+        @DisplayName("should return simpleName when root message is null")
         void shouldReturnClassSimpleNameWhenRootMessageNull() {
             Exception root = new Exception((String) null);
             RuntimeException ex = new RuntimeException("outer", root);
@@ -219,26 +219,26 @@ class SecurityMaskingUtilsTest {
     class MaskAnyAndArgsTests {
 
         @Test
-        @DisplayName("maskAny - devrait retourner [UNKNOWN] pour null/blanc")
+        @DisplayName("maskAny - should return [UNKNOWN] for null/blank")
         void maskAny_ShouldReturnUnknownForNullOrBlank() {
             assertThat(SecurityMaskingUtils.maskAny(null)).isEqualTo("[UNKNOWN]");
             assertThat(SecurityMaskingUtils.maskAny(" ")).isEqualTo("[UNKNOWN]");
         }
 
         @Test
-        @DisplayName("maskAny - devrait masquer email")
+        @DisplayName("maskAny - should mask email")
         void maskAny_ShouldMaskEmail() {
             assertThat(SecurityMaskingUtils.maskAny("john.doe@example.com")).isEqualTo("jo****@example.com");
         }
 
         @Test
-        @DisplayName("maskAny - devrait rédiger JWT-like")
+        @DisplayName("maskAny - should redact JWT-like")
         void maskAny_ShouldRedactJwt() {
             assertThat(SecurityMaskingUtils.maskAny("aaa.bbb.ccc")).isEqualTo("[REDACTED]");
         }
 
         @Test
-        @DisplayName("maskAny - devrait masquer URL avec token et retourner [URL] sinon")
+        @DisplayName("maskAny - should mask URL with token and return [URL] otherwise")
         void maskAny_ShouldHandleUrls() {
             String withToken = "https://api.local/path?token=abc&user=bob";
             String maskedTokenUrl = SecurityMaskingUtils.maskAny(withToken);
@@ -250,14 +250,14 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("maskAny - devrait masquer Bearer token (case-insensitive)")
+        @DisplayName("maskAny - should mask Bearer token (case-insensitive)")
         void maskAny_ShouldMaskBearer() {
             assertThat(SecurityMaskingUtils.maskAny("bearer abcdef")).isEqualTo("Bearer ****");
             assertThat(SecurityMaskingUtils.maskAny("Bearer abcdef")).isEqualTo("Bearer ****");
         }
 
         @Test
-        @DisplayName("maskAny - devrait abréger les textes longs")
+        @DisplayName("maskAny - should abbreviate long texts")
         void maskAny_ShouldAbbreviateLongText() {
             String longText = "a".repeat(130);
             String masked = SecurityMaskingUtils.maskAny(longText);
@@ -266,7 +266,7 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("maskArgs - devrait masquer une liste d'arguments hétérogènes")
+        @DisplayName("maskArgs - should mask a list of heterogeneous arguments")
         void maskArgs_ShouldMaskHeterogeneousArgs() {
             Object[] args = new Object[] {
                     "john.doe@example.com",
@@ -285,13 +285,13 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("maskArgs - devrait retourner [] pour args null")
+        @DisplayName("maskArgs - should return [] for null args")
         void maskArgs_ShouldReturnEmptyBracketsForNull() {
             assertThat(SecurityMaskingUtils.maskArgs(null)).isEqualTo("[]");
         }
 
         @Test
-        @DisplayName("maskAny - devrait gérer URL http:// avec token")
+        @DisplayName("maskAny - should handle URL http:// with token")
         void maskAny_ShouldHandleHttpUrls() {
             String httpWithToken = "http://api.local/path?token=secret";
             String masked = SecurityMaskingUtils.maskAny(httpWithToken);
@@ -299,37 +299,37 @@ class SecurityMaskingUtilsTest {
         }
 
         @Test
-        @DisplayName("maskAny - devrait retourner [URL] pour http:// sans token")
+        @DisplayName("maskAny - should return [URL] for http:// without token")
         void maskAny_ShouldReturnUrlForHttpWithoutToken() {
             String httpNoToken = "http://api.local/path?id=10";
             assertThat(SecurityMaskingUtils.maskAny(httpNoToken)).isEqualTo("[URL]");
         }
 
         @Test
-        @DisplayName("rootMessage - devrait retourner simpleName pour message blanc")
+        @DisplayName("rootMessage - should return simpleName for blank message")
         void rootMessage_ShouldReturnSimpleNameForBlankMessage() {
             Exception ex = new Exception("  ");
             assertThat(SecurityMaskingUtils.rootMessage(ex)).isEqualTo("Exception");
         }
 
         @Test
-        @DisplayName("maskId - devrait retourner [UNKNOWN] pour id blanc")
+        @DisplayName("maskId - should return [UNKNOWN] for blank id")
         void maskId_ShouldReturnUnknownForBlankId() {
             assertThat(SecurityMaskingUtils.maskId("  ")).isEqualTo("[UNKNOWN]");
         }
     }
 
     @Nested
-    @DisplayName("maskUrlQueryParam - Gestion des exceptions")
+    @DisplayName("maskUrlQueryParam - Exception handling")
     class MaskUrlQueryParamExceptionTests {
 
         @Test
-        @DisplayName("devrait retourner [URL_MASKING_ERROR] en cas d'exception")
+        @DisplayName("should return [URL_MASKING_ERROR] in case of exception")
         void shouldReturnErrorOnException() {
-            // Créer une URL malformée qui pourrait causer une exception lors du parsing
+            // Create a malformed URL that could cause an exception during parsing
             String malformedUrl = "https://api.local/path?" + "\u0000";
             String result = SecurityMaskingUtils.maskUrlQueryParam(malformedUrl, "token");
-            // Le résultat devrait être soit [URL_MASKING_ERROR] soit géré correctement
+            // The result should be either [URL_MASKING_ERROR] or handled correctly
             assertThat(result).isNotNull();
         }
     }
@@ -339,20 +339,20 @@ class SecurityMaskingUtilsTest {
     class AbbreviateTests {
 
         @Test
-        @DisplayName("devrait retourner [UNKNOWN] pour null")
+        @DisplayName("should return [UNKNOWN] for null")
         void shouldReturnUnknownForNull() {
             assertThat(SecurityMaskingUtils.abbreviate(null, 10)).isEqualTo("[UNKNOWN]");
         }
 
         @Test
-        @DisplayName("devrait retourner la chaîne complète si <= max")
+        @DisplayName("should return the complete string if <= max")
         void shouldReturnFullStringWhenWithinMax() {
             assertThat(SecurityMaskingUtils.abbreviate("hello", 10)).isEqualTo("hello");
             assertThat(SecurityMaskingUtils.abbreviate("exactly10!", 10)).isEqualTo("exactly10!");
         }
 
         @Test
-        @DisplayName("devrait abréger si > max")
+        @DisplayName("should abbreviate if > max")
         void shouldAbbreviateWhenExceedsMax() {
             assertThat(SecurityMaskingUtils.abbreviate("this is too long", 10)).isEqualTo("this is to...");
         }
@@ -363,7 +363,7 @@ class SecurityMaskingUtilsTest {
     class MaskResetLinkTests {
 
         @Test
-        @DisplayName("devrait masquer le paramètre token dans un lien de reset")
+        @DisplayName("should mask the token parameter in a reset link")
         void shouldMaskTokenInResetLink() {
             String link = "https://app.example.com/reset?token=secret123&email=user@test.com";
             String masked = SecurityMaskingUtils.maskResetLink(link);

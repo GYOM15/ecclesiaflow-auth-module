@@ -20,12 +20,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests unitaires pour {@link GrpcServerConfig}.
+ * Unit tests for {@link GrpcServerConfig}.
  * <p>
- * Teste la configuration et le cycle de vie du serveur gRPC.
+ * Tests the configuration and lifecycle of the gRPC server.
  * </p>
  */
-@DisplayName("GrpcServerConfig - Tests unitaires")
+@DisplayName("GrpcServerConfig - Unit tests")
 class GrpcServerConfigTest {
 
     @Mock
@@ -45,7 +45,7 @@ class GrpcServerConfigTest {
         closeable = MockitoAnnotations.openMocks(this);
         config = new GrpcServerConfig(jwtGrpcService);
         
-        // Configuration des valeurs par défaut
+        // Default values configuration
         ReflectionTestUtils.setField(config, "grpcServerPort", 9090);
         ReflectionTestUtils.setField(config, "shutdownTimeoutSeconds", 30);
     }
@@ -58,11 +58,11 @@ class GrpcServerConfigTest {
     }
 
     // =====================================================
-    // Tests de configuration
+    // Tests for configuration
     // =====================================================
 
     @Test
-    @DisplayName("Doit créer GrpcServerConfig avec les dépendances")
+    @DisplayName("Should create GrpcServerConfig with dependencies")
     void shouldCreateConfigWithDependencies() {
         // Given / When
         GrpcServerConfig newConfig = new GrpcServerConfig(jwtGrpcService);
@@ -72,7 +72,7 @@ class GrpcServerConfigTest {
     }
 
     @Test
-    @DisplayName("Doit utiliser le port par défaut si non configuré")
+    @DisplayName("Should use the default port if not configured")
     void shouldUseDefaultPort() {
         // Given
         GrpcServerConfig newConfig = new GrpcServerConfig(jwtGrpcService);
@@ -86,7 +86,7 @@ class GrpcServerConfigTest {
     }
 
     @Test
-    @DisplayName("Doit utiliser le timeout par défaut si non configuré")
+    @DisplayName("Should use the default timeout if not configured")
     void shouldUseDefaultShutdownTimeout() {
         // Given
         GrpcServerConfig newConfig = new GrpcServerConfig(jwtGrpcService);
@@ -100,21 +100,21 @@ class GrpcServerConfigTest {
     }
 
     // =====================================================
-    // Tests de stop
+    // Tests for stop
     // =====================================================
 
     @Test
-    @DisplayName("Stop doit gérer un serveur null sans erreur")
+    @DisplayName("Stop should handle a null server without error")
     void stopShouldHandleNullServer() {
         // Given
         ReflectionTestUtils.setField(config, "grpcServer", null);
 
-        // When/Then - Ne doit pas lancer d'exception
+        // When/Then - Should not throw an exception
         assertDoesNotThrow(() -> config.stop());
     }
 
     @Test
-    @DisplayName("Stop doit arrêter proprement un serveur actif")
+    @DisplayName("Stop should stop cleanly an active server")
     void stopShouldStopActiveServer() throws InterruptedException {
         // Given
         when(mockServer.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
@@ -133,9 +133,9 @@ class GrpcServerConfigTest {
     }
 
     @Test
-    @DisplayName("Stop doit forcer l'arrêt si le timeout est dépassé")
+    @DisplayName("Stop should force shutdown if timeout is exceeded")
     void stopShouldForceShutdownOnTimeout() throws InterruptedException {
-        // Given - Le serveur ne se termine pas dans le délai
+        // Given - The server does not terminate within the timeout
         when(mockServer.awaitTermination(30, TimeUnit.SECONDS)).thenReturn(false);
         when(mockServer.awaitTermination(5, TimeUnit.SECONDS)).thenReturn(true);
         ReflectionTestUtils.setField(config, "grpcServer", mockServer);
@@ -154,7 +154,7 @@ class GrpcServerConfigTest {
     }
 
     @Test
-    @DisplayName("Stop doit gérer InterruptedException")
+    @DisplayName("Stop should handle InterruptedException")
     void stopShouldHandleInterruptedException() throws InterruptedException {
         // Given
         when(mockServer.awaitTermination(anyLong(), any(TimeUnit.class)))
@@ -175,7 +175,7 @@ class GrpcServerConfigTest {
     }
 
     @Test
-    @DisplayName("Stop doit gérer exception dans enterTerminalState")
+    @DisplayName("Stop should handle exception in enterTerminalState")
     void stopShouldHandleExceptionInEnterTerminalState() throws InterruptedException {
         // Given
         doThrow(new RuntimeException("Health manager error")).when(mockHealthStatusManager).enterTerminalState();
@@ -183,18 +183,18 @@ class GrpcServerConfigTest {
         ReflectionTestUtils.setField(config, "grpcServer", mockServer);
         ReflectionTestUtils.setField(config, "healthStatusManager", mockHealthStatusManager);
 
-        // When/Then - Ne doit pas propager l'exception
+        // When/Then - Should not propagate the exception
         assertThatThrownBy(() -> config.stop())
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Health manager error");
     }
 
     // =====================================================
-    // Tests de beans
+    // Tests for beans
     // =====================================================
 
     @Test
-    @DisplayName("grpcServer() doit retourner l'instance du serveur")
+    @DisplayName("grpcServer() should return the server instance")
     void grpcServerShouldReturnServerInstance() {
         // Given
         ReflectionTestUtils.setField(config, "grpcServer", mockServer);
@@ -207,7 +207,7 @@ class GrpcServerConfigTest {
     }
 
     @Test
-    @DisplayName("grpcServer() doit retourner null si serveur non initialisé")
+    @DisplayName("grpcServer() should return null if server not initialized")
     void grpcServerShouldReturnNullIfNotInitialized() {
         // Given
         ReflectionTestUtils.setField(config, "grpcServer", null);
@@ -220,7 +220,7 @@ class GrpcServerConfigTest {
     }
 
     @Test
-    @DisplayName("healthStatusManager() doit retourner l'instance du health manager")
+    @DisplayName("healthStatusManager() should return the health manager instance")
     void healthStatusManagerShouldReturnManagerInstance() {
         // Given
         ReflectionTestUtils.setField(config, "healthStatusManager", mockHealthStatusManager);
@@ -233,7 +233,7 @@ class GrpcServerConfigTest {
     }
 
     @Test
-    @DisplayName("healthStatusManager() doit retourner null si non initialisé")
+    @DisplayName("healthStatusManager() should return null if not initialized")
     void healthStatusManagerShouldReturnNullIfNotInitialized() {
         // Given
         ReflectionTestUtils.setField(config, "healthStatusManager", null);
@@ -246,11 +246,11 @@ class GrpcServerConfigTest {
     }
 
     // =====================================================
-    // Tests de configuration avec différents ports
+    // Tests for configuration with different ports
     // =====================================================
 
     @Test
-    @DisplayName("Doit accepter un port personnalisé")
+    @DisplayName("Should accept a custom port")
     void shouldAcceptCustomPort() {
         // Given
         GrpcServerConfig customConfig = new GrpcServerConfig(jwtGrpcService);
@@ -264,7 +264,7 @@ class GrpcServerConfigTest {
     }
 
     @Test
-    @DisplayName("Doit accepter un timeout personnalisé")
+    @DisplayName("Should accept a custom timeout")
     void shouldAcceptCustomTimeout() {
         // Given
         GrpcServerConfig customConfig = new GrpcServerConfig(jwtGrpcService);

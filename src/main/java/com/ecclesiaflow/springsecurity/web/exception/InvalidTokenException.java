@@ -1,7 +1,7 @@
 package com.ecclesiaflow.springsecurity.web.exception;
 
 /**
- * Exception levée lors de la validation d'un token invalide ou expiré
+ * Exception thrown when validating an invalid or expired token.
  */
 public class InvalidTokenException extends RuntimeException {
     

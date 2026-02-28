@@ -6,13 +6,13 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests unitaires pour {@link PasswordManagement}.
+ * Unit tests for {@link PasswordManagement}.
  */
-@DisplayName("PasswordManagement - Tests du record de domaine")
+@DisplayName("PasswordManagement - Domain record tests")
 class PasswordManagementTest {
 
     @Test
-    @DisplayName("Devrait créer un PasswordManagement avec password et temporaryToken")
+    @DisplayName("Should create a PasswordManagement with password and temporaryToken")
     void shouldCreatePasswordManagementWithPasswordAndToken() {
         // Given
         String password = "SecurePassword123!";
@@ -28,7 +28,7 @@ class PasswordManagementTest {
     }
 
     @Test
-    @DisplayName("Devrait créer un PasswordManagement avec valeurs nulles")
+    @DisplayName("Should create a PasswordManagement with null values")
     void shouldCreatePasswordManagementWithNullValues() {
         // When
         PasswordManagement passwordManagement = new PasswordManagement(null, null);
@@ -40,7 +40,7 @@ class PasswordManagementTest {
     }
 
     @Test
-    @DisplayName("Devrait supporter l'égalité entre deux instances avec mêmes valeurs")
+    @DisplayName("Should support equality between two instances with same values")
     void shouldSupportEquality() {
         // Given
         String password = "password123";
@@ -55,7 +55,7 @@ class PasswordManagementTest {
     }
 
     @Test
-    @DisplayName("Devrait avoir un hashCode cohérent")
+    @DisplayName("Should have a hashCode consistent")
     void shouldHaveConsistentHashCode() {
         // Given
         PasswordManagement passwordManagement = new PasswordManagement("pwd", "token");
@@ -69,7 +69,7 @@ class PasswordManagementTest {
     }
 
     @Test
-    @DisplayName("Devrait avoir une représentation toString lisible")
+    @DisplayName("Should have a readable toString representation")
     void shouldHaveReadableToString() {
         // Given
         PasswordManagement passwordManagement = new PasswordManagement("myPassword", "myToken");
@@ -84,7 +84,7 @@ class PasswordManagementTest {
     }
 
     @Test
-    @DisplayName("Deux instances avec valeurs différentes ne devraient pas être égales")
+    @DisplayName("Two instances with different values should not be equal")
     void shouldNotBeEqualWithDifferentValues() {
         // Given
         PasswordManagement pm1 = new PasswordManagement("password1", "token1");
@@ -95,7 +95,7 @@ class PasswordManagementTest {
     }
 
     @Test
-    @DisplayName("Devrait permettre d'accéder aux champs via les accesseurs du record")
+    @DisplayName("Should allow access to fields via accessors of the record")
     void shouldAccessFieldsViaRecordAccessors() {
         // Given
         String expectedPassword = "TestPassword";

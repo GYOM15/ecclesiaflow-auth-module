@@ -10,21 +10,21 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests unitaires pour {@link MembersGrpcClient}.
+ * Unit tests for {@link MembersGrpcClient}.
  * <p>
- * Note : Les tests de communication réelle et de gestion d'erreurs sont dans
- * {@link MembersGrpcClientIntegrationTest} avec InProcessServer.
- * Ces tests se concentrent sur la construction et la logique métier simple.
+ * Note: Real communication and error handling tests are in
+ * {@link MembersGrpcClientIntegrationTest} with InProcessServer.
+ * These tests focus on construction and simple business logic.
  * </p>
  */
 class MembersGrpcClientTest {
 
     // =====================================================
-    // Tests de construction et logique métier
+    // Construction and business logic tests
     // =====================================================
 
     @Test
-    @DisplayName("Doit créer le members avec un canal valide")
+    @DisplayName("Should create the client with a valid channel")
     void shouldConstructWithValidChannel() {
         // Given
         ManagedChannel channel = mock(ManagedChannel.class);
@@ -33,11 +33,11 @@ class MembersGrpcClientTest {
         MembersGrpcClient client = new MembersGrpcClient(channel);
 
         // Then
-        assertNotNull(client, "Le members ne doit pas être null");
+        assertNotNull(client, "The client must not be null");
     }
 
     @Test
-    @DisplayName("Construction des requêtes Protobuf")
+    @DisplayName("Protobuf request construction")
     void shouldConstructProtobufRequests() {
         // When
         ConfirmationStatusRequest request = ConfirmationStatusRequest.newBuilder()
@@ -49,7 +49,7 @@ class MembersGrpcClientTest {
     }
 
     @Test
-    @DisplayName("Parsing des réponses Protobuf - membre existe et confirmé")
+    @DisplayName("Protobuf response parsing - member exists and confirmed")
     void shouldParseConfirmedMember() {
         // Given
         ConfirmationStatusResponse response = ConfirmationStatusResponse.newBuilder()
@@ -57,17 +57,17 @@ class MembersGrpcClientTest {
                 .setIsConfirmed(true)
                 .build();
 
-        // When - Logique métier : isEmailNotConfirmed
+        // When - Business logic : isEmailNotConfirmed
         boolean isNotConfirmed = !response.getMemberExists() || !response.getIsConfirmed();
 
         // Then
-        assertFalse(isNotConfirmed, "Un membre confirmé ne doit PAS être bloqué");
+        assertFalse(isNotConfirmed, "A confirmed member must NOT be blocked");
         assertTrue(response.getMemberExists());
         assertTrue(response.getIsConfirmed());
     }
 
     @Test
-    @DisplayName("Parsing des réponses Protobuf - membre existe mais non confirmé")
+    @DisplayName("Protobuf response parsing - member exists but not confirmed")
     void shouldParseUnconfirmedMember() {
         // Given
         ConfirmationStatusResponse response = ConfirmationStatusResponse.newBuilder()
@@ -75,17 +75,17 @@ class MembersGrpcClientTest {
                 .setIsConfirmed(false)
                 .build();
 
-        // When - Logique métier : isEmailNotConfirmed
+        // When - Business logic : isEmailNotConfirmed
         boolean isNotConfirmed = !response.getMemberExists() || !response.getIsConfirmed();
 
         // Then
-        assertTrue(isNotConfirmed, "Un membre non confirmé doit être bloqué");
+        assertTrue(isNotConfirmed, "An unconfirmed member must be blocked");
         assertTrue(response.getMemberExists());
         assertFalse(response.getIsConfirmed());
     }
 
     @Test
-    @DisplayName("Parsing des réponses Protobuf - membre n'existe pas")
+    @DisplayName("Protobuf response parsing - member does not exist")
     void shouldParseMemberNotFound() {
         // Given
         ConfirmationStatusResponse response = ConfirmationStatusResponse.newBuilder()
@@ -93,19 +93,19 @@ class MembersGrpcClientTest {
                 .setIsConfirmed(false)
                 .build();
 
-        // When - Logique métier : isEmailNotConfirmed
+        // When - Business logic : isEmailNotConfirmed
         boolean isNotConfirmed = !response.getMemberExists() || !response.getIsConfirmed();
 
         // Then
-        assertTrue(isNotConfirmed, "Un membre inexistant doit être bloqué");
+        assertTrue(isNotConfirmed, "A non-existent member must be blocked");
         assertFalse(response.getMemberExists());
     }
 
     @Test
-    @DisplayName("Exception personnalisée MembersServiceUnavailableException")
+    @DisplayName("Custom exception MembersServiceUnavailableException")
     void shouldCreateCustomException() {
         // Given
-        String message = "Service indisponible";
+        String message = "Service unavailable";
         Throwable cause = new RuntimeException("Test");
 
         // When
@@ -119,7 +119,7 @@ class MembersGrpcClientTest {
     }
 
     @Test
-    @DisplayName("Parsing des réponses Protobuf - notifyAccountActivated success")
+    @DisplayName("Protobuf response parsing - notifyAccountActivated success")
     void shouldParseAccountActivatedSuccess() {
         // Given
         AccountActivatedResponse response = AccountActivatedResponse.newBuilder()
@@ -131,12 +131,12 @@ class MembersGrpcClientTest {
         boolean success = response.getSuccess();
 
         // Then
-        assertTrue(success, "La réponse devrait indiquer un succès");
+        assertTrue(success, "The response should indicate success");
         assertEquals("Account activated", response.getMessage());
     }
 
     @Test
-    @DisplayName("Parsing des réponses Protobuf - notifyAccountActivated failure")
+    @DisplayName("Protobuf response parsing - notifyAccountActivated failure")
     void shouldParseAccountActivatedFailure() {
         // Given
         AccountActivatedResponse response = AccountActivatedResponse.newBuilder()
@@ -148,7 +148,7 @@ class MembersGrpcClientTest {
         boolean success = response.getSuccess();
 
         // Then
-        assertFalse(success, "La réponse devrait indiquer un échec");
+        assertFalse(success, "The response should indicate a failure");
         assertEquals("Member not found", response.getMessage());
     }
 }

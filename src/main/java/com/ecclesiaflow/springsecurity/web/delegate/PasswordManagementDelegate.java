@@ -10,27 +10,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 /**
- * Délégué pour la gestion des mots de passe - Pattern Delegate avec OpenAPI Generator.
+ * Delegate for password management - Delegate pattern with OpenAPI Generator.
  * <p>
- * Ce délégué contient toute la logique métier pour la gestion des mots de passe,
- * séparant ainsi les responsabilités entre le contrôleur (gestion HTTP) et la logique applicative.
+ * This delegate contains all business logic for password management,
+ * separating responsibilities between the controller (HTTP handling) and application logic.
  * </p>
+ *
  * 
- * <p><strong>Architecture :</strong></p>
- * <pre>
- * PasswordController (implémente PasswordManagementApi)
- *    ↓ délègue à
- * PasswordManagementDelegate ← Cette classe
- *    ↓ utilise
- * SetupTokenService + KeycloakAdminClient + MembersGrpcClient
- * </pre>
- * 
- * <p><strong>Responsabilités :</strong></p>
+ * <p><strong>Responsibilities:</strong></p>
  * <ul>
- *   <li>Définition du mot de passe initial après confirmation email</li>
- *   <li>Extraction et validation du token temporaire depuis le header X-Setup-Token</li>
- *   <li>Création de l'utilisateur dans Keycloak avec le mot de passe</li>
- *   <li>Notification du module Members de l'activation du compte</li>
+ *   <li>Initial password setup after email confirmation</li>
+ *   <li>Extraction and validation of temporary token from X-Setup-Token header</li>
+ *   <li>Keycloak user creation with the password</li>
+ *   <li>Notification of the Members module about account activation</li>
  * </ul>
  * 
  * @author EcclesiaFlow Team

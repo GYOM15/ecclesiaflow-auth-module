@@ -8,16 +8,16 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests unitaires pour AsyncConfig.
+ * Unit tests for AsyncConfig.
  * <p>
- * Vérifie que la configuration asynchrone est correctement mise en place.
+ * Tests that asynchronous configuration is properly set up.
  * </p>
  */
-@DisplayName("AsyncConfig - Tests Unitaires")
+@DisplayName("AsyncConfig - Unit Tests")
 class AsyncConfigTest {
 
     @Test
-    @DisplayName("Devrait avoir l'annotation @Configuration")
+    @DisplayName("Should have @Configuration annotation")
     void shouldHaveConfigurationAnnotation() {
         // Given
         Class<AsyncConfig> configClass = AsyncConfig.class;
@@ -27,12 +27,12 @@ class AsyncConfigTest {
 
         // Then
         assertThat(hasConfiguration)
-                .as("AsyncConfig devrait avoir @Configuration")
+                .as("AsyncConfig should have @Configuration")
                 .isTrue();
     }
 
     @Test
-    @DisplayName("Devrait avoir l'annotation @EnableAsync")
+    @DisplayName("Should have @EnableAsync annotation")
     void shouldHaveEnableAsyncAnnotation() {
         // Given
         Class<AsyncConfig> configClass = AsyncConfig.class;
@@ -42,24 +42,24 @@ class AsyncConfigTest {
 
         // Then
         assertThat(hasEnableAsync)
-                .as("AsyncConfig devrait avoir @EnableAsync pour activer l'exécution asynchrone")
+                .as("AsyncConfig should have @EnableAsync to enable asynchronous execution")
                 .isTrue();
     }
 
     @Test
-    @DisplayName("Devrait être instanciable")
+    @DisplayName("Should be instantiable")
     void shouldBeInstantiable() {
         // When
         AsyncConfig asyncConfig = new AsyncConfig();
 
         // Then
         assertThat(asyncConfig)
-                .as("AsyncConfig devrait pouvoir être instancié")
+                .as("AsyncConfig should be instantiable")
                 .isNotNull();
     }
 
     @Test
-    @DisplayName("Devrait configurer @EnableAsync avec mode proxy par défaut")
+    @DisplayName("Should configure @EnableAsync with default proxy mode")
     void shouldConfigureEnableAsyncWithProxyMode() {
         // Given
         Class<AsyncConfig> configClass = AsyncConfig.class;
@@ -67,9 +67,9 @@ class AsyncConfigTest {
 
         // Then
         assertThat(enableAsync).isNotNull();
-        // Par défaut, EnableAsync utilise le mode proxy
+        // By default, EnableAsync uses proxy mode
         assertThat(enableAsync.mode().name())
-                .as("EnableAsync devrait utiliser le mode PROXY par défaut")
+                .as("EnableAsync should use PROXY mode by default")
                 .isEqualTo("PROXY");
     }
 }

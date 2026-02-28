@@ -14,7 +14,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("CapabilitiesDelegate - Tests unitaires")
+@DisplayName("CapabilitiesDelegate - Unit tests")
 class CapabilitiesDelegateTest {
 
     private CapabilitiesDelegate capabilitiesDelegate;
@@ -29,7 +29,7 @@ class CapabilitiesDelegateTest {
     class GetAllCapabilitiesTests {
 
         @Test
-        @DisplayName("Devrait retourner une réponse avec status OK")
+        @DisplayName("Should return a response with OK status")
         void shouldReturnResponseWithOkStatus() {
             ResponseEntity<AllCapabilitiesResponse> response = capabilitiesDelegate.getAllCapabilities();
 
@@ -37,7 +37,7 @@ class CapabilitiesDelegateTest {
         }
 
         @Test
-        @DisplayName("Devrait retourner les capabilities Auth")
+        @DisplayName("Should return Auth capabilities")
         void shouldReturnAuthCapabilities() {
             ResponseEntity<AllCapabilitiesResponse> response = capabilitiesDelegate.getAllCapabilities();
 
@@ -47,7 +47,7 @@ class CapabilitiesDelegateTest {
         }
 
         @Test
-        @DisplayName("Devrait marquer la réponse comme partielle")
+        @DisplayName("Should mark the response as partial")
         void shouldMarkResponseAsPartial() {
             ResponseEntity<AllCapabilitiesResponse> response = capabilitiesDelegate.getAllCapabilities();
 
@@ -55,7 +55,7 @@ class CapabilitiesDelegateTest {
         }
 
         @Test
-        @DisplayName("Devrait inclure le statut de la source Auth comme AVAILABLE")
+        @DisplayName("Should include the Auth source status as AVAILABLE")
         void shouldIncludeAuthSourceStatusAsAvailable() {
             ResponseEntity<AllCapabilitiesResponse> response = capabilitiesDelegate.getAllCapabilities();
 
@@ -71,7 +71,7 @@ class CapabilitiesDelegateTest {
         }
 
         @Test
-        @DisplayName("Devrait inclure le statut de la source Members comme UNAVAILABLE")
+        @DisplayName("Should include le statut de la source Members comme UNAVAILABLE")
         void shouldIncludeMembersSourceStatusAsUnavailable() {
             ResponseEntity<AllCapabilitiesResponse> response = capabilitiesDelegate.getAllCapabilities();
 
@@ -87,7 +87,7 @@ class CapabilitiesDelegateTest {
         }
 
         @Test
-        @DisplayName("Devrait inclure le statut de la source Comm comme UNAVAILABLE")
+        @DisplayName("Should include le statut de la source Comm comme UNAVAILABLE")
         void shouldIncludeCommSourceStatusAsUnavailable() {
             ResponseEntity<AllCapabilitiesResponse> response = capabilitiesDelegate.getAllCapabilities();
 
@@ -103,7 +103,7 @@ class CapabilitiesDelegateTest {
         }
 
         @Test
-        @DisplayName("Devrait retourner des listes vides pour les modules indisponibles")
+        @DisplayName("Should return des listes vides pour les modules indisponibles")
         void shouldReturnEmptyListsForUnavailableModules() {
             ResponseEntity<AllCapabilitiesResponse> response = capabilitiesDelegate.getAllCapabilities();
 
@@ -114,7 +114,7 @@ class CapabilitiesDelegateTest {
         }
 
         @Test
-        @DisplayName("Devrait inclure 3 sources dans la réponse")
+        @DisplayName("Should include 3 sources in the response")
         void shouldIncludeThreeSourcesInResponse() {
             ResponseEntity<AllCapabilitiesResponse> response = capabilitiesDelegate.getAllCapabilities();
 
@@ -123,7 +123,7 @@ class CapabilitiesDelegateTest {
         }
 
         @Test
-        @DisplayName("Les capabilities Auth devraient avoir le bon format")
+        @DisplayName("Auth capabilities should have the correct format")
         void authCapabilitiesShouldHaveCorrectFormat() {
             ResponseEntity<AllCapabilitiesResponse> response = capabilitiesDelegate.getAllCapabilities();
 
@@ -136,7 +136,7 @@ class CapabilitiesDelegateTest {
         }
 
         @Test
-        @DisplayName("Devrait inclure toutes les capabilities Auth attendues")
+        @DisplayName("Should include toutes les capabilities Auth attendues")
         void shouldIncludeAllExpectedAuthCapabilities() {
             ResponseEntity<AllCapabilitiesResponse> response = capabilitiesDelegate.getAllCapabilities();
 

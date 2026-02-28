@@ -14,10 +14,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests unitaires pour ApiErrorResponse.
- * Vérifie la construction, la sérialisation JSON et le comportement du builder.
+ * Unit tests for ApiErrorResponse.
+ * Tests construction, JSON serialization and builder behavior.
  */
-@DisplayName("ApiErrorResponse - Tests Unitaires")
+@DisplayName("ApiErrorResponse - Unit Tests")
 class ApiErrorResponseTest {
 
     private ObjectMapper objectMapper;
@@ -33,7 +33,7 @@ class ApiErrorResponseTest {
     // === TESTS DE CONSTRUCTION ===
 
     @Test
-    @DisplayName("Devrait créer une ApiErrorResponse avec tous les paramètres")
+    @DisplayName("Should create une ApiErrorResponse with all parameters")
     void constructor_WithAllParameters_ShouldCreateValidResponse() {
         // Given
         List<ValidationError> errors = List.of(
@@ -56,11 +56,11 @@ class ApiErrorResponseTest {
     }
 
     @Test
-    @DisplayName("Devrait garder errors null si null est passé explicitement")
+    @DisplayName("Should keep errors null if null is passed explicitly")
     void constructor_WithNullErrors_ShouldKeepNull() {
         // When
         ApiErrorResponse response = new ApiErrorResponse(
-                testTimestamp, 404, "Not Found", "Ressource non trouvée", "/api/test", null
+                testTimestamp, 404, "Not Found", "Resource not found", "/api/test", null
         );
 
         // Then
@@ -70,7 +70,7 @@ class ApiErrorResponseTest {
     // === TESTS DU BUILDER ===
 
     @Test
-    @DisplayName("Devrait créer un builder avec valeurs par défaut")
+    @DisplayName("Should create a builder with default values")
     void builder_ShouldCreateBuilderWithDefaults() {
         // When
         ApiErrorResponse.ApiErrorResponseBuilder builder = ApiErrorResponse.builder();
@@ -80,13 +80,13 @@ class ApiErrorResponseTest {
     }
 
     @Test
-    @DisplayName("Devrait construire une réponse complète avec le builder")
+    @DisplayName("Should build a complete response with the builder")
     void builder_WithAllFields_ShouldBuildCompleteResponse() {
         // When
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .status(404)
                 .error("Not Found")
-                .message("Ressource non trouvée")
+                .message("Resource not found")
                 .path("/api/members/123")
                 .addValidationError(new ValidationError("Erreur", "field", "type", "exp", "rec", "CODE", null, null))
                 .build();
@@ -94,7 +94,7 @@ class ApiErrorResponseTest {
         // Then
         assertThat(response.status()).isEqualTo(404);
         assertThat(response.error()).isEqualTo("Not Found");
-        assertThat(response.message()).isEqualTo("Ressource non trouvée");
+        assertThat(response.message()).isEqualTo("Resource not found");
         assertThat(response.path()).isEqualTo("/api/members/123");
         assertThat(response.timestamp()).isNotNull();
         assertThat(response.errors()).hasSize(1);
@@ -123,7 +123,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
-    @DisplayName("Devrait générer automatiquement un timestamp lors de la construction")
+    @DisplayName("Should generate automatically a timestamp during construction")
     void builder_ShouldGenerateTimestampAutomatically() {
         // Given
         LocalDateTime beforeBuild = LocalDateTime.now();
@@ -142,10 +142,10 @@ class ApiErrorResponseTest {
         assertThat(response.timestamp()).isBetween(beforeBuild, afterBuild);
     }
 
-    // === TESTS DE SÉRIALISATION JSON ===
+    // === JSON SERIALIZATION TESTS ===
 
     @Test
-    @DisplayName("Devrait sérialiser correctement en JSON")
+    @DisplayName("Should serialize correctly to JSON")
     void serialization_ShouldProduceValidJson() throws JsonProcessingException {
         // Given
         ApiErrorResponse response = ApiErrorResponse.builder()
@@ -170,7 +170,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
-    @DisplayName("Devrait désérialiser correctement depuis JSON")
+    @DisplayName("Should deserialize correctly from JSON")
     void deserialization_ShouldProduceValidObject() throws JsonProcessingException {
         // Given
         String json = """
@@ -178,7 +178,7 @@ class ApiErrorResponseTest {
                 "timestamp": "2024-01-15T10:30:00",
                 "status": 404,
                 "error": "Not Found",
-                "message": "Membre non trouvé",
+                "message": "Member not found",
                 "path": "/api/members/123",
                 "errors": [
                     {
@@ -202,7 +202,7 @@ class ApiErrorResponseTest {
         assertThat(response.timestamp()).isEqualTo(LocalDateTime.of(2024, 1, 15, 10, 30, 0));
         assertThat(response.status()).isEqualTo(404);
         assertThat(response.error()).isEqualTo("Not Found");
-        assertThat(response.message()).isEqualTo("Membre non trouvé");
+        assertThat(response.message()).isEqualTo("Member not found");
         assertThat(response.path()).isEqualTo("/api/members/123");
         assertThat(response.errors()).hasSize(1);
 
@@ -213,7 +213,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
-    @DisplayName("Devrait exclure les champs null lors de la sérialisation JSON")
+    @DisplayName("Should exclude null fields during JSON serialization")
     void serialization_ShouldExcludeNullFields() throws JsonProcessingException {
         // Given
         ApiErrorResponse response = new ApiErrorResponse(
@@ -225,14 +225,14 @@ class ApiErrorResponseTest {
 
         // Then
         assertThat(json).doesNotContain("null");
-        // Les erreurs vides devraient être incluses car c'est une liste vide, pas null
+        // Empty errors should be included since it is an empty list, not null
         assertThat(json).contains("\"errors\":[]");
     }
 
-    // === TESTS D'ÉGALITÉ ET HASHCODE ===
+    // === EQUALS AND HASHCODE TESTS ===
 
     @Test
-    @DisplayName("Devrait implémenter equals correctement")
+    @DisplayName("Should implement equals correctly")
     void equals_WithSameContent_ShouldReturnTrue() {
         // Given
         List<ValidationError> errors = List.of(
@@ -252,7 +252,7 @@ class ApiErrorResponseTest {
     }
 
     @Test
-    @DisplayName("Devrait implémenter equals correctement pour des contenus différents")
+    @DisplayName("Should implement equals correctly for different contents")
     void equals_WithDifferentContent_ShouldReturnFalse() {
         // Given
         ApiErrorResponse response1 = new ApiErrorResponse(
@@ -269,7 +269,7 @@ class ApiErrorResponseTest {
     // === TESTS DE toString ===
 
     @Test
-    @DisplayName("Devrait produire une représentation string lisible")
+    @DisplayName("Should produce a readable string representation")
     void toString_ShouldProduceReadableString() {
         // Given
         ApiErrorResponse response = ApiErrorResponse.builder()

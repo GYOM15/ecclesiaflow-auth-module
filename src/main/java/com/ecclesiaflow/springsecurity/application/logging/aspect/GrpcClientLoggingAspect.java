@@ -10,11 +10,11 @@ import static com.ecclesiaflow.springsecurity.application.logging.SecurityMaskin
 
 
 /**
- * Aspect AOP dédié au logging des appels gRPC sortants du module Auth.
+ * AOP aspect dedicated to logging outgoing gRPC calls from the Auth module.
  * <p>
- * Cette classe implémente un aspect spécialisé dans le logging des communications
- * gRPC entre le module Auth et le module Members. Elle capture les appels sortants,
- * les erreurs de communication et les métriques de performance.
+ * This class implements a specialized aspect for logging gRPC communications
+ * between the Auth module and the Members module. It captures outgoing calls,
+ * communication errors, and performance metrics.
  * </p>
  *
  * @author EcclesiaFlow Team
@@ -58,7 +58,7 @@ public class GrpcClientLoggingAspect {
     }
 
     // ========================================================================
-    // Advices - Appels RPC sortants
+    // Advices - Outgoing RPC calls
     // ========================================================================
 
     @Before("grpcClientCalls()")

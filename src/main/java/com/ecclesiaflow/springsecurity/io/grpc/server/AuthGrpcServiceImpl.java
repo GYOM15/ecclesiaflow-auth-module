@@ -82,14 +82,14 @@ public class AuthGrpcServiceImpl extends AuthServiceGrpc.AuthServiceImplBase {
     }
 
     // ========================================================================
-    // Méthodes utilitaires privées
+    // Private utility methods
     // ========================================================================
 
     /**
-     * Valide le format d'une adresse email.
+     * Validates email address format.
      *
-     * @param email l'email à valider
-     * @throws IllegalArgumentException si l'email est invalide
+     * @param email the email to validate
+     * @throws IllegalArgumentException if the email is invalid
      */
     private void validateEmail(String email) {
         if (email.isBlank()) {
@@ -102,11 +102,11 @@ public class AuthGrpcServiceImpl extends AuthServiceGrpc.AuthServiceImplBase {
     }
 
     /**
-     * Valide et parse un UUID depuis une chaîne de caractères.
+     * Validates and parses a UUID from a string.
      *
-     * @param uuidStr la chaîne UUID à parser
-     * @return le UUID parsé
-     * @throws IllegalArgumentException si l'UUID est invalide
+     * @param uuidStr the UUID string to parse
+     * @return the parsed UUID
+     * @throws IllegalArgumentException if the UUID is invalid
      */
     private UUID validateAndParseUUID(String uuidStr) {
         if (uuidStr.isBlank()) {

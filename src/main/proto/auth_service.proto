@@ -16,9 +16,9 @@ service AuthService {
 // ============================================================================
 
 /**
- * Requête pour générer un token temporaire.
+ * Request to generate a temporary token.
  * 
- * Correspondance avec REST API:
+ * REST API mapping:
  * POST /ecclesiaflow/auth/temporary-token
  * Body: { email, memberId }
  */

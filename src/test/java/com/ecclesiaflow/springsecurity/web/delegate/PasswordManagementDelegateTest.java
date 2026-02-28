@@ -70,7 +70,7 @@ class PasswordManagementDelegateTest {
                     passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD);
 
             assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().getMessage()).contains("succès");
+            assertThat(response.getBody().getMessage()).contains("successfully");
         }
     }
 

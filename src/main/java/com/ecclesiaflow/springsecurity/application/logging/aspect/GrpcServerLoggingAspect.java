@@ -8,48 +8,46 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * Aspect AOP dédié au logging des opérations gRPC du module d'authentification.
+ * AOP aspect dedicated to logging gRPC operations in the authentication module.
  * <p>
- * Cette classe implémente un aspect spécialisé dans le logging des communications
- * gRPC inter-modules. Elle capture les appels entrants sur le serveur gRPC,
- * les erreurs de traitement et les métriques de performance.
+ * This class implements a specialized aspect for logging inter-module gRPC communications.
+ * It captures incoming gRPC server calls, processing errors, and performance metrics.
  * </p>
  *
- * <p><strong>Rôle architectural :</strong> Aspect infrastructure - Audit des communications gRPC</p>
  *
- * <p><strong>Dépendances critiques :</strong></p>
+ * <p><strong>Critical dependencies:</strong></p>
  * <ul>
- *   <li>Spring AOP - Framework de programmation orientée aspect</li>
- *   <li>SLF4J/Logback - Framework de logging</li>
- *   <li>GrpcServerConfig - Configuration du serveur gRPC</li>
- *   <li>AuthGrpcServiceImpl - Implémentation des services gRPC JWT</li>
+ *   <li>Spring AOP - Aspect-oriented programming framework</li>
+ *   <li>SLF4J/Logback - Logging framework</li>
+ *   <li>GrpcServerConfig - gRPC server configuration</li>
+ *   <li>AuthGrpcServiceImpl - gRPC JWT service implementation</li>
  * </ul>
  *
- * <p><strong>Responsabilités principales :</strong></p>
+ * <p><strong>Main responsibilities:</strong></p>
  * <ul>
- *   <li>Logging des démarrages/arrêts du serveur gRPC</li>
- *   <li>Audit des appels RPC entrants (GenerateTemporaryToken)</li>
- *   <li>Capture des erreurs de traitement gRPC</li>
- *   <li>Traçabilité inter-modules (Members → Auth)</li>
- *   <li>Sanitization des données sensibles (emails, tokens)</li>
+ *   <li>Logging gRPC server start/stop events</li>
+ *   <li>Auditing incoming RPC calls (GenerateTemporaryToken)</li>
+ *   <li>Capturing gRPC processing errors</li>
+ *   <li>Inter-module traceability (Members → Auth)</li>
+ *   <li>Sensitive data sanitization (emails, tokens)</li>
  * </ul>
  *
- * <p><strong>Cas d'utilisation typiques :</strong></p>
+ * <p><strong>Typical use cases:</strong></p>
  * <ul>
- *   <li>Audit de sécurité des communications inter-services</li>
- *   <li>Monitoring des performances gRPC (latence, throughput)</li>
- *   <li>Debugging des problèmes de communication</li>
- *   <li>Analyse des patterns d'appels entre modules</li>
+ *   <li>Security audit of inter-service communications</li>
+ *   <li>gRPC performance monitoring (latency, throughput)</li>
+ *   <li>Debugging communication issues</li>
+ *   <li>Analyzing call patterns between modules</li>
  * </ul>
  *
- * <p><strong>Sécurité :</strong></p>
+ * <p><strong>Security:</strong></p>
  * <ul>
- *   <li>Masquage partiel des emails (GDPR compliance)</li>
- *   <li>Pas de logging des tokens complets</li>
- *   <li>Sanitization automatique des données sensibles</li>
+ *   <li>Partial email masking (GDPR compliance)</li>
+ *   <li>No logging of complete tokens</li>
+ *   <li>Automatic sensitive data sanitization</li>
  * </ul>
  *
- * <p><strong>Garanties :</strong> Thread-safe, logging asynchrone, impact minimal sur performances.</p>
+ * <p><strong>Guarantees:</strong> Thread-safe, asynchronous logging, minimal performance impact.</p>
  *
  * @author EcclesiaFlow Team
  * @since 1.0.0
@@ -61,45 +59,45 @@ import org.springframework.stereotype.Component;
 public class GrpcServerLoggingAspect {
 
     // ========================================================================
-    // Pointcuts - Définition des points d'interception
+    // Pointcuts - Interception point definitions
     // ========================================================================
 
     /**
-     * Pointcut pour le démarrage du serveur gRPC.
+     * Pointcut for gRPC server startup.
      * <p>
-     * Intercepte la méthode {@code start()} pour auditer les démarrages du serveur.
+     * Intercepts the {@code start()} method to audit server startups.
      * </p>
      */
     @Pointcut("execution(* com.ecclesiaflow.springsecurity.application.config.GrpcServerConfig.start())")
     public void grpcServerStart() {}
 
     /**
-     * Pointcut pour l'arrêt du serveur gRPC.
+     * Pointcut for gRPC server shutdown.
      * <p>
-     * Intercepte la méthode {@code stop()} pour auditer les arrêts graceful.
+     * Intercepts the {@code stop()} method to audit graceful shutdowns.
      * </p>
      */
     @Pointcut("execution(* com.ecclesiaflow.springsecurity.application.config.GrpcServerConfig.stop())")
     public void grpcServerStop() {}
 
     /**
-     * Pointcut pour tous les appels RPC du service JWT.
+     * Pointcut for all JWT service RPC calls.
      * <p>
-     * Intercepte toutes les méthodes publiques de {@code AuthGrpcServiceImpl}
-     * pour auditer les communications gRPC entrantes.
+     * Intercepts all public methods of {@code AuthGrpcServiceImpl}
+     * to audit incoming gRPC communications.
      * </p>
      */
     @Pointcut("execution(* com.ecclesiaflow.springsecurity.io.grpc.server.AuthGrpcServiceImpl.*(..))")
     public void grpcServiceCalls() {}
 
     // ========================================================================
-    // Advices - Démarrage/Arrêt du serveur gRPC
+    // Advices - gRPC server start/stop
     // ========================================================================
 
     /**
-     * Log avant le démarrage du serveur gRPC.
+     * Log before gRPC server startup.
      *
-     * @param joinPoint point de jonction contenant les détails de l'appel
+     * @param joinPoint join point containing call details
      */
     @Before("grpcServerStart()")
     public void logBeforeServerStart(JoinPoint joinPoint) {
@@ -107,9 +105,9 @@ public class GrpcServerLoggingAspect {
     }
 
     /**
-     * Log après démarrage réussi du serveur gRPC.
+     * Log after successful gRPC server startup.
      *
-     * @param joinPoint point de jonction
+     * @param joinPoint join point
      */
     @AfterReturning("grpcServerStart()")
     public void logAfterServerStart(JoinPoint joinPoint) {
@@ -117,10 +115,10 @@ public class GrpcServerLoggingAspect {
     }
 
     /**
-     * Log des erreurs lors du démarrage du serveur gRPC.
+     * Log errors during gRPC server startup.
      *
-     * @param joinPoint point de jonction
-     * @param exception exception levée lors du démarrage
+     * @param joinPoint join point
+     * @param exception exception thrown during startup
      */
     @AfterThrowing(pointcut = "grpcServerStart()", throwing = "exception")
     public void logServerStartError(JoinPoint joinPoint, Exception exception) {
@@ -131,9 +129,9 @@ public class GrpcServerLoggingAspect {
     }
 
     /**
-     * Log avant l'arrêt du serveur gRPC.
+     * Log before gRPC server shutdown.
      *
-     * @param joinPoint point de jonction
+     * @param joinPoint join point
      */
     @Before("grpcServerStop()")
     public void logBeforeServerStop(JoinPoint joinPoint) {
@@ -141,9 +139,9 @@ public class GrpcServerLoggingAspect {
     }
 
     /**
-     * Log après arrêt réussi du serveur gRPC.
+     * Log after successful gRPC server shutdown.
      *
-     * @param joinPoint point de jonction
+     * @param joinPoint join point
      */
     @AfterReturning("grpcServerStop()")
     public void logAfterServerStop(JoinPoint joinPoint) {
@@ -151,24 +149,24 @@ public class GrpcServerLoggingAspect {
     }
 
     // ========================================================================
-    // Advices - Appels RPC (GenerateTemporaryToken)
+    // Advices - RPC calls (GenerateTemporaryToken)
     // ========================================================================
 
     /**
-     * Log avant chaque appel RPC entrant.
+     * Log before each incoming RPC call.
      * <p>
-     * Capture les informations de base de l'appel pour traçabilité inter-modules.
-     * Masque les données sensibles (emails, tokens).
+     * Captures basic call information for inter-module traceability.
+     * Masks sensitive data (emails, tokens).
      * </p>
      *
-     * @param joinPoint point de jonction contenant le nom de la méthode et les arguments
+     * @param joinPoint join point containing method name and arguments
      */
     @Before("grpcServiceCalls()")
     public void logBeforeRpcCall(JoinPoint joinPoint) {
         String methodName = joinPoint.getSignature().getName();
         Object[] args = joinPoint.getArgs();
         
-        // Log selon le type de RPC
+        // Log based on RPC type
         if ("generateTemporaryToken".equals(methodName)) {
             log.info("GRPC-RPC: Received {} request from Members module", methodName);
         } else if ("validateToken".equals(methodName)) {
@@ -179,12 +177,12 @@ public class GrpcServerLoggingAspect {
     }
 
     /**
-     * Log après succès d'un appel RPC.
+     * Log after successful RPC call.
      * <p>
-     * Confirme le traitement réussi de l'appel RPC.
+     * Confirms successful processing of the RPC call.
      * </p>
      *
-     * @param joinPoint point de jonction
+     * @param joinPoint join point
      */
     @AfterReturning("grpcServiceCalls()")
     public void logAfterSuccessfulRpcCall(JoinPoint joinPoint) {
@@ -198,27 +196,27 @@ public class GrpcServerLoggingAspect {
     }
 
     /**
-     * Log des erreurs lors du traitement RPC.
+     * Log errors during RPC processing.
      * <p>
-     * Capture les exceptions levées pendant le traitement des appels gRPC.
-     * Différencie les erreurs métier (IllegalArgumentException) des erreurs techniques.
+     * Captures exceptions thrown during gRPC call processing.
+     * Differentiates business errors (IllegalArgumentException) from technical errors.
      * </p>
      *
-     * @param joinPoint point de jonction
-     * @param exception exception levée
+     * @param joinPoint join point
+     * @param exception thrown exception
      */
     @AfterThrowing(pointcut = "grpcServiceCalls()", throwing = "exception")
     public void logRpcCallError(JoinPoint joinPoint, Exception exception) {
         String methodName = joinPoint.getSignature().getName();
         
-        // Erreurs de validation (members error)
+        // Validation errors (members error)
         if (exception instanceof IllegalArgumentException) {
             log.warn("GRPC-RPC: Invalid argument in {} - {}",
                     methodName, 
                     SecurityMaskingUtils.sanitizeInfra(exception.getMessage()),
                     exception);
         } 
-        // Erreurs internes (server error)
+        // Internal errors (server error)
         else {
             log.error("GRPC-RPC: Error in {} - {}: {}",
                     methodName,

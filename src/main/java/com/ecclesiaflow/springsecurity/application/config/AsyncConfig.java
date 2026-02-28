@@ -4,17 +4,17 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
- * Configuration pour l'exécution asynchrone des tâches.
+ * Configuration for asynchronous task execution.
  * <p>
- * Active le support de l'annotation @Async pour permettre l'exécution
- * asynchrone des méthodes, notamment pour l'envoi d'emails via les listeners d'événements.
+ * Enables @Async annotation support to allow asynchronous method execution,
+ * particularly for sending emails via event listeners.
  * </p>
  * 
- * <p><strong>Cas d'usage :</strong></p>
+ * <p><strong>Use cases:</strong></p>
  * <ul>
- *   <li>Envoi d'emails sans bloquer les transactions principales</li>
- *   <li>Traitement d'événements en arrière-plan</li>
- *   <li>Amélioration de la réactivité de l'application</li>
+ *   <li>Sending emails without blocking main transactions</li>
+ *   <li>Background event processing</li>
+ *   <li>Improving application responsiveness</li>
  * </ul>
  * 
  * @author EcclesiaFlow Team
@@ -23,6 +23,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @Configuration
 @EnableAsync
 public class AsyncConfig {
-    // Configuration par défaut de Spring suffisante pour notre cas d'usage
-    // Si besoin de personnaliser l'executor, ajouter un @Bean TaskExecutor
+    // Spring default configuration is sufficient for our use case
+    // If customization is needed, add a @Bean TaskExecutor
 }

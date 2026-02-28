@@ -13,14 +13,14 @@ import jakarta.annotation.PreDestroy;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Configuration du members gRPC pour le module Auth.
+ * Members gRPC client configuration for the Auth module.
  * <p>
- * Cette classe configure le canal de communication gRPC (ManagedChannel) vers
- * le module Members. Elle gère le cycle de vie du canal : création,
- * configuration et fermeture graceful lors de l'arrêt de l'application.
+ * This class configures the gRPC communication channel (ManagedChannel) to the
+ * Members module. It manages the channel lifecycle: creation, configuration,
+ * and graceful shutdown when the application stops.
  * </p>
  *
- * <p><strong>Rôle architectural :</strong> Infrastructure - gRPC Client Configuration</p>
+ * <p><strong>Architectural role:</strong> Infrastructure - gRPC Client Configuration</p>
  *
  * @author EcclesiaFlow Team
  * @since 1.0.0
@@ -51,17 +51,17 @@ public class GrpcClientConfig {
     private ManagedChannel emailChannel;
 
     /**
-     * Crée et configure le canal gRPC vers le module Members.
+     * Creates and configures the gRPC channel to the Members module.
      *
-     * @return le canal gRPC configuré et prêt à l'emploi
+     * @return the configured and ready-to-use gRPC channel
      */
     @Bean
     public ManagedChannel membersGrpcChannel() {
         membersChannel = ManagedChannelBuilder
                 .forAddress(membersServiceHost, membersServicePort)
 
-                // DÉVELOPPEMENT: Utilise plaintext (pas de TLS)
-                // TODO PRODUCTION: Remplacer par .useTransportSecurity() + certificats
+                // DEVELOPMENT: Uses plaintext (no TLS)
+                // TODO PRODUCTION: Replace with .useTransportSecurity() + certificates
                 .usePlaintext()
                 .maxInboundMessageSize(4 * 1024 * 1024)
                 .keepAliveTime(120, TimeUnit.SECONDS)
@@ -74,9 +74,9 @@ public class GrpcClientConfig {
     }
 
     /**
-     * Crée et configure le canal gRPC vers le module Email.
+     * Creates and configures the gRPC channel to the Email module.
      *
-     * @return le canal gRPC configuré et prêt à l'emploi
+     * @return the configured and ready-to-use gRPC channel
      */
     @Bean
     public ManagedChannel emailGrpcChannel() {
@@ -84,9 +84,9 @@ public class GrpcClientConfig {
                 .forAddress(emailServiceHost, emailServicePort)
                 .usePlaintext()
                 .maxInboundMessageSize(4 * 1024 * 1024)
-                .keepAliveTime(120, TimeUnit.SECONDS)  // Augmenté à 2 minutes (recommandé gRPC)
+                .keepAliveTime(120, TimeUnit.SECONDS)  // Increased to 2 minutes (gRPC recommended)
                 .keepAliveTimeout(20, TimeUnit.SECONDS)
-                .keepAliveWithoutCalls(false)           // Ne pas envoyer de ping si pas d'appels
+                .keepAliveWithoutCalls(false)           // Do not send pings if no active calls
                 .idleTimeout(5, TimeUnit.MINUTES)
                 .build();
 
@@ -94,9 +94,9 @@ public class GrpcClientConfig {
     }
 
     /**
-     * Ferme proprement les canaux gRPC lors de l'arrêt de l'application.
+     * Gracefully shuts down gRPC channels on application shutdown.
      *
-     * @throws InterruptedException si l'arrêt est interrompu
+     * @throws InterruptedException if the shutdown is interrupted
      */
     @PreDestroy
     public void shutdown() throws InterruptedException {

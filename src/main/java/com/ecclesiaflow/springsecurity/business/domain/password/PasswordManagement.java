@@ -2,30 +2,21 @@ package com.ecclesiaflow.springsecurity.business.domain.password;
 
 
 /**
- * Objet métier représentant le résultat d'une authentification réussie.
+ * Business object representing a password management operation.
  * <p>
- * Cette classe encapsule les données retournées après une authentification réussie :
- * le membre authentifié et ses tokens JWT d'accès et de rafraîchissement.
- * Fait partie de la couche métier et reste indépendant des DTOs de la couche web.
+ * This class encapsulates the data needed for password setup:
+ * the password and the setup token. Part of the business layer
+ * and remains independent of web layer DTOs.
  * </p>
  * 
- * <p><strong>Rôle architectural :</strong> Objet métier - Résultat d'authentification</p>
- * 
- * <p><strong>Responsabilités principales :</strong></p>
+ *
+ * <p><strong>Main responsibilities:</strong></p>
  * <ul>
- *   <li>Encapsulation des données d'authentification</li>
- *   <li>Transport des informations entre couches service et web</li>
- *   <li>Séparation claire entre domaine métier et DTOs</li>
+ *   <li>Authentication data encapsulation</li>
+ *   <li>Information transport between service and web layers</li>
  * </ul>
  * 
- * <p><strong>Cas d'utilisation typiques :</strong></p>
- * <ul>
- *   <li>Retour des services d'authentification</li>
- *   <li>Conversion vers DTOs web par les mappers</li>
- *   <li>Opérations de rafraîchissement de tokens</li>
- * </ul>
- * 
- * <p><strong>Garanties :</strong> Immutable après construction, thread-safe.</p>
+ * <p><strong>Guarantees:</strong> Immutable after construction, thread-safe.</p>
  * 
  * @author EcclesiaFlow Team
  * @since 1.0.0

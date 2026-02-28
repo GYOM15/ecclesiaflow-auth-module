@@ -7,13 +7,13 @@ option java_outer_classname = "MembersServiceProto";
 package ecclesiaflow.members;
 
 /**
- * Service de gestion des membres EcclesiaFlow pour communication inter-modules.
+ * EcclesiaFlow member management service for inter-module communication.
  * 
- * Ce service gRPC permet aux autres modules (notamment Auth) d'interroger
- * le statut des membres sans exposer la base de données directement.
+ * This gRPC service allows other modules (notably Auth) to query
+ * member status without directly exposing the database.
  *
- * Architecture: Communication synchrone entre Auth Module et Members Module
- * Sécurité: JWT dans metadata pour authentification inter-services
+ * Architecture: Synchronous communication between Auth Module and Members Module
+ * Security: JWT in metadata for inter-service authentication
  */
 service MembersService {
   rpc GetMemberConfirmationStatus(ConfirmationStatusRequest) returns (ConfirmationStatusResponse);
@@ -25,17 +25,17 @@ service MembersService {
 // ============================================================================
 
 /**
- * Requête pour obtenir le statut de confirmation d'un membre.
+ * Request to get a member's confirmation status.
  */
 message ConfirmationStatusRequest {
-  // Email du membre à vérifier
+  // Email of the member to verify
   string email = 1;
 }
 
 message ConfirmationStatusResponse {
   bool member_exists = 1;
   
-  // Indique si l'email du membre a été confirmé
+  // Indicates whether the member's email has been confirmed
   bool is_confirmed = 2;
 }
 

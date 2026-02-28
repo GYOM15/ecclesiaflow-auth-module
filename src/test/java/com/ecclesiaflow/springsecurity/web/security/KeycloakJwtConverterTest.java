@@ -13,7 +13,7 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("KeycloakJwtConverter - Tests unitaires")
+@DisplayName("KeycloakJwtConverter - Unit tests")
 class KeycloakJwtConverterTest {
 
     private KeycloakJwtConverter keycloakJwtConverter;
@@ -24,11 +24,11 @@ class KeycloakJwtConverterTest {
     }
 
     @Nested
-    @DisplayName("convert - Conversion JWT vers Authentication")
+    @DisplayName("convert - JWT to Authentication conversion")
     class ConvertTests {
 
         @Test
-        @DisplayName("Devrait convertir un JWT en AbstractAuthenticationToken")
+        @DisplayName("Should convert a JWT to AbstractAuthenticationToken")
         void shouldConvertJwtToAuthenticationToken() {
             Jwt jwt = createJwtWithRoles(List.of("USER"));
 
@@ -39,7 +39,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait extraire les rôles directs du claim 'roles'")
+        @DisplayName("Should extract roles directly from 'roles' claim")
         void shouldExtractDirectRolesFromRolesClaim() {
             Jwt jwt = createJwtWithDirectRoles(List.of("ADMIN", "USER"));
 
@@ -52,7 +52,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait extraire les rôles du claim 'realm_access.roles'")
+        @DisplayName("Should extract roles from 'realm_access.roles' claim")
         void shouldExtractRealmAccessRoles() {
             Jwt jwt = createJwtWithRealmAccessRoles(List.of("SUPER_ADMIN", "SUPPORT"));
 
@@ -65,7 +65,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait combiner les rôles directs et realm_access")
+        @DisplayName("Should combine roles direct and realm_access")
         void shouldCombineDirectAndRealmAccessRoles() {
             Map<String, Object> claims = new HashMap<>();
             claims.put("roles", List.of("USER"));
@@ -83,7 +83,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait dédupliquer les rôles identiques")
+        @DisplayName("Should deduplicate roles identical")
         void shouldDeduplicateIdenticalRoles() {
             Map<String, Object> claims = new HashMap<>();
             claims.put("roles", List.of("ADMIN"));
@@ -101,7 +101,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait retourner une liste vide si aucun rôle n'est présent")
+        @DisplayName("Should return an empty list if no role is present")
         void shouldReturnEmptyListWhenNoRolesPresent() {
             Jwt jwt = createJwtWithoutRoles();
 
@@ -112,7 +112,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait préfixer les rôles avec ROLE_ s'ils ne le sont pas déjà")
+        @DisplayName("Should prefix roles with ROLE_ if they don't already have it")
         void shouldPrefixRolesWithRolePrefix() {
             Jwt jwt = createJwtWithDirectRoles(List.of("USER", "ROLE_ADMIN"));
 
@@ -125,7 +125,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait utiliser l'email comme principal si disponible")
+        @DisplayName("Should use email as principal if available")
         void shouldUseEmailAsPrincipalWhenAvailable() {
             Map<String, Object> claims = new HashMap<>();
             claims.put("sub", "user-123");
@@ -139,7 +139,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait utiliser le subject comme principal si email absent")
+        @DisplayName("Should use subject as principal if email absent")
         void shouldUseSubjectAsPrincipalWhenEmailAbsent() {
             Map<String, Object> claims = new HashMap<>();
             claims.put("sub", "user-123");
@@ -152,7 +152,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait utiliser le subject si email est vide")
+        @DisplayName("Should use subject if email is empty")
         void shouldUseSubjectWhenEmailIsBlank() {
             Map<String, Object> claims = new HashMap<>();
             claims.put("sub", "user-123");
@@ -167,11 +167,11 @@ class KeycloakJwtConverterTest {
     }
 
     @Nested
-    @DisplayName("extractUserId - Extraction de l'ID utilisateur")
+    @DisplayName("extractUserId - User ID extraction")
     class ExtractUserIdTests {
 
         @Test
-        @DisplayName("Devrait extraire l'ID utilisateur du claim 'sub'")
+        @DisplayName("Should extract user ID from 'sub' claim")
         void shouldExtractUserIdFromSubClaim() {
             Jwt jwt = createJwtWithSubject("user-456");
 
@@ -181,7 +181,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait retourner null si le subject est absent")
+        @DisplayName("Should return null if subject is absent")
         void shouldReturnNullWhenSubjectAbsent() {
             Map<String, Object> claims = new HashMap<>();
             Jwt jwt = createJwt(claims);
@@ -193,11 +193,11 @@ class KeycloakJwtConverterTest {
     }
 
     @Nested
-    @DisplayName("extractEmail - Extraction de l'email")
+    @DisplayName("extractEmail - Email extraction")
     class ExtractEmailTests {
 
         @Test
-        @DisplayName("Devrait extraire l'email du claim 'email'")
+        @DisplayName("Should extract email from 'email' claim")
         void shouldExtractEmailFromEmailClaim() {
             Map<String, Object> claims = new HashMap<>();
             claims.put("sub", "user-123");
@@ -211,7 +211,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait retourner null si l'email est absent")
+        @DisplayName("Should return null if email is absent")
         void shouldReturnNullWhenEmailAbsent() {
             Jwt jwt = createJwtWithSubject("user-123");
 
@@ -222,11 +222,11 @@ class KeycloakJwtConverterTest {
     }
 
     @Nested
-    @DisplayName("hasRole - Vérification de rôle")
+    @DisplayName("hasRole - Role verification")
     class HasRoleTests {
 
         @Test
-        @DisplayName("Devrait retourner true si le rôle est présent")
+        @DisplayName("Should return true if role is present")
         void shouldReturnTrueWhenRoleIsPresent() {
             Jwt jwt = createJwtWithDirectRoles(List.of("ADMIN", "USER"));
 
@@ -236,7 +236,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait retourner false si le rôle est absent")
+        @DisplayName("Should return false if role is absent")
         void shouldReturnFalseWhenRoleIsAbsent() {
             Jwt jwt = createJwtWithDirectRoles(List.of("USER"));
 
@@ -246,7 +246,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait fonctionner avec ou sans préfixe ROLE_")
+        @DisplayName("Should work with or without ROLE_ prefix")
         void shouldWorkWithOrWithoutRolePrefix() {
             Jwt jwt = createJwtWithDirectRoles(List.of("ADMIN"));
 
@@ -255,7 +255,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait vérifier les rôles dans realm_access")
+        @DisplayName("Should verify roles in realm_access")
         void shouldCheckRolesInRealmAccess() {
             Jwt jwt = createJwtWithRealmAccessRoles(List.of("SUPER_ADMIN"));
 
@@ -265,7 +265,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait retourner false si aucun rôle n'est présent")
+        @DisplayName("Should return false if no role is present")
         void shouldReturnFalseWhenNoRolesPresent() {
             Jwt jwt = createJwtWithoutRoles();
 
@@ -276,11 +276,11 @@ class KeycloakJwtConverterTest {
     }
 
     @Nested
-    @DisplayName("Gestion des cas limites")
+    @DisplayName("Edge case handling")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Devrait gérer un claim 'roles' qui n'est pas une liste")
+        @DisplayName("Should handle a 'roles' claim that is not a list")
         void shouldHandleRolesClaimThatIsNotAList() {
             Map<String, Object> claims = new HashMap<>();
             claims.put("roles", "ADMIN");
@@ -295,7 +295,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait gérer un claim 'realm_access' sans 'roles'")
+        @DisplayName("Should handle a 'realm_access' claim without 'roles'")
         void shouldHandleRealmAccessWithoutRoles() {
             Map<String, Object> claims = new HashMap<>();
             claims.put("realm_access", Map.of("other", "value"));
@@ -310,7 +310,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait gérer un claim 'realm_access.roles' qui n'est pas une liste")
+        @DisplayName("Should handle a 'realm_access.roles' claim that is not a list")
         void shouldHandleRealmAccessRolesThatIsNotAList() {
             Map<String, Object> claims = new HashMap<>();
             claims.put("realm_access", Map.of("roles", "ADMIN"));
@@ -325,7 +325,7 @@ class KeycloakJwtConverterTest {
         }
 
         @Test
-        @DisplayName("Devrait gérer des listes de rôles vides")
+        @DisplayName("Should handle empty role lists")
         void shouldHandleEmptyRoleLists() {
             Map<String, Object> claims = new HashMap<>();
             claims.put("roles", List.of());

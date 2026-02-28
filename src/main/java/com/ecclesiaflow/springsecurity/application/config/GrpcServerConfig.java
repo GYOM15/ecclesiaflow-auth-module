@@ -17,37 +17,36 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Configuration du serveur gRPC pour le module d'authentification EcclesiaFlow.
+ * gRPC server configuration for the EcclesiaFlow authentication module.
  * <p>
- * Cette classe configure et démarre un serveur gRPC qui expose les services
- * d'authentification pour la communication inter-modules. Le serveur est démarré
- * automatiquement au démarrage de l'application Spring Boot et s'arrête proprement
- * lors de l'arrêt de l'application.
+ * This class configures and starts a gRPC server that exposes authentication services
+ * for inter-module communication. The server starts automatically with the Spring Boot
+ * application and shuts down gracefully when the application stops.
  * </p>
  *
- * <p><strong>Rôle architectural :</strong> Infrastructure - gRPC Server Configuration</p>
+ * <p><strong>Architectural role:</strong> Infrastructure - gRPC Server Configuration</p>
  *
- * <p><strong>Fonctionnalités :</strong></p>
+ * <p><strong>Features:</strong></p>
  * <ul>
- *   <li>Démarrage automatique du serveur gRPC sur un port configurable</li>
- *   <li>Enregistrement des services gRPC (AuthService, etc.)</li>
- *   <li>Health checks automatiques via gRPC Health Checking Protocol</li>
- *   <li>Reflection API pour debugging (désactivable en production)</li>
- *   <li>Shutdown graceful avec timeout configurable</li>
+ *   <li>Automatic gRPC server startup on a configurable port</li>
+ *   <li>gRPC service registration (AuthService, etc.)</li>
+ *   <li>Automatic health checks via gRPC Health Checking Protocol</li>
+ *   <li>Reflection API for debugging (can be disabled in production)</li>
+ *   <li>Graceful shutdown with configurable timeout</li>
  * </ul>
  *
- * <p><strong>Configuration :</strong></p>
+ * <p><strong>Configuration:</strong></p>
  * <ul>
- *   <li>grpc.enabled - Active/désactive le serveur gRPC (défaut: false)</li>
- *   <li>grpc.server.port - Port du serveur gRPC (défaut: 9090)</li>
- *   <li>grpc.server.shutdown-timeout-seconds - Timeout pour shutdown (défaut: 30s)</li>
+ *   <li>grpc.enabled - Enables/disables the gRPC server (default: false)</li>
+ *   <li>grpc.server.port - gRPC server port (default: 9090)</li>
+ *   <li>grpc.server.shutdown-timeout-seconds - Shutdown timeout (default: 30s)</li>
  * </ul>
  *
- * <p><strong>Sécurité :</strong></p>
+ * <p><strong>Security:</strong></p>
  * <ul>
- *   <li>TLS/mTLS configurable (désactivé par défaut pour développement)</li>
- *   <li>Authentification via JWT dans metadata gRPC</li>
- *   <li>Isolation réseau (port séparé du HTTP REST)</li>
+ *   <li>TLS/mTLS configurable (disabled by default for development)</li>
+ *   <li>Authentication via JWT in gRPC metadata</li>
+ *   <li>Network isolation (separate port from HTTP REST)</li>
  * </ul>
  *
  * @author EcclesiaFlow Team
@@ -71,59 +70,59 @@ public class GrpcServerConfig {
     private HealthStatusManager healthStatusManager;
 
     /**
-     * Démarre le serveur gRPC au démarrage de l'application.
+     * Starts the gRPC server on application startup.
      * <p>
-     * Cette méthode est appelée automatiquement par Spring après l'initialisation
-     * des beans. Elle configure et démarre le serveur gRPC avec tous les services
-     * enregistrés et les fonctionnalités de monitoring.
+     * This method is automatically called by Spring after bean initialization.
+     * It configures and starts the gRPC server with all registered services
+     * and monitoring features.
      * </p>
      *
-     * @throws IOException si le serveur ne peut pas démarrer (port occupé, etc.)
+     * @throws IOException if the server cannot start (port in use, etc.)
      */
     @PostConstruct
     public void start() throws IOException {
         healthStatusManager = new HealthStatusManager();
         
         grpcServer = ServerBuilder.forPort(grpcServerPort)
-                // Enregistrer les services métier
+                // Register business services
                 .addService(jwtGrpcService)
                 
                 // Health checks (gRPC Health Checking Protocol)
                 .addService(healthStatusManager.getHealthService())
                 
-                // Reflection service (pour debugging avec grpcurl/grpcui)
-                // TODO: Désactiver en production pour sécurité
+                // Reflection service (for debugging with grpcurl/grpcui)
+                // TODO: Disable in production for security
                 .addService(ProtoReflectionService.newInstance())
                 
-                // Configuration du serveur
+                // Server configuration
                 .maxInboundMessageSize(4 * 1024 * 1024) // 4MB max message size
                 .build()
                 .start();
 
-        // Marquer le service comme SERVING pour health checks
+        // Mark service as SERVING for health checks
         healthStatusManager.setStatus("ecclesiaflow.auth.AuthService", 
                 io.grpc.health.v1.HealthCheckResponse.ServingStatus.SERVING);
 
-        // Hook pour arrêt graceful si JVM s'arrête
+        // Hook for graceful shutdown if JVM stops
         Runtime.getRuntime().addShutdownHook(new Thread(GrpcServerConfig.this::stop));
     }
 
     /**
-     * Arrête proprement le serveur gRPC lors de l'arrêt de l'application.
+     * Gracefully stops the gRPC server on application shutdown.
      * <p>
-     * Cette méthode est appelée automatiquement par Spring lors de la destruction
-     * du contexte. Elle initie un arrêt graceful du serveur avec un timeout,
-     * permettant aux requêtes en cours de se terminer.
+     * This method is automatically called by Spring during context destruction.
+     * It initiates a graceful server shutdown with a timeout, allowing
+     * in-flight requests to complete.
      * </p>
      */
     @PreDestroy
     public void stop() {
         if (grpcServer != null) {
             try {
-                // Marquer les services comme NOT_SERVING
+                // Mark services as NOT_SERVING
                 healthStatusManager.enterTerminalState();
                 
-                // Arrêt graceful avec timeout
+                // Graceful shutdown with timeout
                 grpcServer.shutdown();
                 
                 if (!grpcServer.awaitTermination(shutdownTimeoutSeconds, TimeUnit.SECONDS)) {
@@ -138,9 +137,9 @@ public class GrpcServerConfig {
     }
 
     /**
-     * Expose le serveur gRPC comme bean Spring (optionnel, pour monitoring).
+     * Exposes the gRPC server as a Spring bean (optional, for monitoring).
      *
-     * @return l'instance du serveur gRPC
+     * @return the gRPC server instance
      */
     @Bean
     public Server grpcServer() {
@@ -148,9 +147,9 @@ public class GrpcServerConfig {
     }
 
     /**
-     * Expose le health status manager comme bean Spring (pour monitoring externe).
+     * Exposes the health status manager as a Spring bean (for external monitoring).
      *
-     * @return l'instance du health status manager
+     * @return the health status manager instance
      */
     @Bean
     public HealthStatusManager healthStatusManager() {

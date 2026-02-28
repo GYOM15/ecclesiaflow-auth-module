@@ -15,10 +15,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests unitaires pour {@link GrpcClientConfig}.
+ * Unit tests for {@link GrpcClientConfig}.
  * <p>
- * Teste la configuration du members gRPC, notamment la création du canal
- * et le shutdown gracieux lors de l'arrêt de l'application.
+ * Tests the members gRPC configuration, including channel creation
+ * and graceful shutdown during application shutdown.
  * </p>
  */
 class GrpcClientConfigTest {
@@ -34,7 +34,7 @@ class GrpcClientConfigTest {
         closeable = MockitoAnnotations.openMocks(this);
         config = new GrpcClientConfig();
         
-        // Configuration des valeurs par défaut
+        // Default values configuration
         ReflectionTestUtils.setField(config, "membersServiceHost", "localhost");
         ReflectionTestUtils.setField(config, "membersServicePort", 9091);
         ReflectionTestUtils.setField(config, "shutdownTimeoutSeconds", 5);
@@ -48,26 +48,26 @@ class GrpcClientConfigTest {
     }
 
     // =====================================================
-    // Tests de création du canal
+    // Channel creation tests
     // =====================================================
 
     @Test
-    @DisplayName("Doit créer un ManagedChannel avec la configuration correcte")
+    @DisplayName("Should create a ManagedChannel with the correct configuration")
     void shouldCreateManagedChannel() {
         // When
         ManagedChannel channel = config.membersGrpcChannel();
 
         // Then
-        assertNotNull(channel, "Le canal ne doit pas être null");
-        assertFalse(channel.isShutdown(), "Le canal doit être actif après création");
-        assertFalse(channel.isTerminated(), "Le canal ne doit pas être terminé après création");
+        assertNotNull(channel, "The channel must not be null");
+        assertFalse(channel.isShutdown(), "The channel must be active after creation");
+        assertFalse(channel.isTerminated(), "The channel must not be terminated after creation");
         
         // Cleanup
         channel.shutdownNow();
     }
 
     @Test
-    @DisplayName("Doit utiliser le host et port configurés")
+    @DisplayName("Should use the configured host and port")
     void shouldUseConfiguredHostAndPort() {
         // Given
         ReflectionTestUtils.setField(config, "membersServiceHost", "members-service");
@@ -84,22 +84,22 @@ class GrpcClientConfigTest {
     }
 
     // =====================================================
-    // Tests de shutdown
+    // Shutdown tests
     // =====================================================
 
     @Test
-    @DisplayName("Shutdown doit gérer un canal null sans erreur")
+    @DisplayName("Shutdown should handle a null channel without error")
     void shutdownShouldHandleNullChannel() {
         // Given
         ReflectionTestUtils.setField(config, "membersChannel", null);
         ReflectionTestUtils.setField(config, "emailChannel", null);
 
-        // When/Then - Ne doit pas lancer d'exception
+        // When/Then - Should not throw an exception
         assertDoesNotThrow(() -> config.shutdown());
     }
 
     @Test
-    @DisplayName("Shutdown doit gérer un canal déjà arrêté")
+    @DisplayName("Shutdown should handle an already shutdown channel")
     void shutdownShouldHandleAlreadyShutdownChannel() throws InterruptedException {
         // Given
         when(mockChannel.isShutdown()).thenReturn(true);
@@ -111,11 +111,11 @@ class GrpcClientConfigTest {
 
         // Then
         verify(mockChannel, times(1)).isShutdown();
-        verify(mockChannel, never()).shutdown(); // Ne doit pas rappeler shutdown
+        verify(mockChannel, never()).shutdown(); // Should not call shutdown again
     }
 
     @Test
-    @DisplayName("Shutdown doit arrêter proprement un canal actif")
+    @DisplayName("Shutdown should stop an active channel cleanly")
     void shutdownShouldStopActiveChannel() throws InterruptedException {
         // Given
         when(mockChannel.isShutdown()).thenReturn(false);
@@ -131,13 +131,13 @@ class GrpcClientConfigTest {
         verify(mockChannel).isShutdown();
         verify(mockChannel).shutdown();
         verify(mockChannel).awaitTermination(5, TimeUnit.SECONDS);
-        verify(mockChannel, never()).shutdownNow(); // Ne doit pas forcer l'arrêt
+        verify(mockChannel, never()).shutdownNow(); // Should not force shutdown
     }
 
     @Test
-    @DisplayName("Shutdown doit forcer l'arrêt si le timeout est dépassé")
+    @DisplayName("Shutdown should force shutdown if timeout is exceeded")
     void shutdownShouldForceStopOnTimeout() throws InterruptedException {
-        // Given - Le canal ne se termine pas dans le délai
+        // Given - The channel does not terminate within the timeout
         when(mockChannel.isShutdown()).thenReturn(false);
         when(mockChannel.awaitTermination(5, TimeUnit.SECONDS)).thenReturn(false);
         when(mockChannel.awaitTermination(1, TimeUnit.SECONDS)).thenReturn(true);
@@ -152,12 +152,12 @@ class GrpcClientConfigTest {
         verify(mockChannel).isShutdown();
         verify(mockChannel).shutdown();
         verify(mockChannel).awaitTermination(5, TimeUnit.SECONDS);
-        verify(mockChannel).shutdownNow(); // Doit forcer l'arrêt
+        verify(mockChannel).shutdownNow(); // Should force shutdown
         verify(mockChannel).awaitTermination(1, TimeUnit.SECONDS);
     }
 
     @Test
-    @DisplayName("Shutdown doit propager InterruptedException")
+    @DisplayName("Shutdown should propagate InterruptedException")
     void shutdownShouldPropagateInterruptedException() throws InterruptedException {
         // Given
         when(mockChannel.isShutdown()).thenReturn(false);
@@ -171,7 +171,7 @@ class GrpcClientConfigTest {
     }
 
     @Test
-    @DisplayName("Doit gérer un timeout de 0 seconde")
+    @DisplayName("Should handle a 0 second timeout")
     void shouldHandleZeroTimeout() throws InterruptedException {
         // Given
         when(mockChannel.isShutdown()).thenReturn(false);
@@ -185,15 +185,15 @@ class GrpcClientConfigTest {
         config.shutdown();
 
         // Then
-        verify(mockChannel).shutdownNow(); // Doit immédiatement forcer l'arrêt
+        verify(mockChannel).shutdownNow(); // Should immediately force shutdown
     }
 
     // =====================================================
-    // Tests pour Email Channel
+    // Email Channel tests
     // =====================================================
 
     @Test
-    @DisplayName("Doit créer un emailGrpcChannel avec la configuration correcte")
+    @DisplayName("Should create an emailGrpcChannel with the correct configuration")
     void shouldCreateEmailGrpcChannel() {
         // Given
         ReflectionTestUtils.setField(config, "emailServiceHost", "localhost");
@@ -203,16 +203,16 @@ class GrpcClientConfigTest {
         ManagedChannel channel = config.emailGrpcChannel();
 
         // Then
-        assertNotNull(channel, "Le canal email ne doit pas être null");
-        assertFalse(channel.isShutdown(), "Le canal doit être actif après création");
-        assertFalse(channel.isTerminated(), "Le canal ne doit pas être terminé après création");
+        assertNotNull(channel, "The email channel must not be null");
+        assertFalse(channel.isShutdown(), "The channel must be active after creation");
+        assertFalse(channel.isTerminated(), "The channel must not be terminated after creation");
         
         // Cleanup
         channel.shutdownNow();
     }
 
     @Test
-    @DisplayName("Doit utiliser le host et port configurés pour email")
+    @DisplayName("Should use the configured host and port for email")
     void shouldUseConfiguredHostAndPortForEmail() {
         // Given
         ReflectionTestUtils.setField(config, "emailServiceHost", "email-service");
@@ -229,11 +229,11 @@ class GrpcClientConfigTest {
     }
 
     // =====================================================
-    // Tests de shutdown avec les deux canaux
+    // Shutdown tests with both channels
     // =====================================================
 
     @Test
-    @DisplayName("Shutdown doit fermer les deux canaux (members et email)")
+    @DisplayName("Shutdown should close both channels (members and email)")
     void shutdownShouldCloseBothChannels() throws InterruptedException {
         // Given
         ManagedChannel mockEmailChannel = mock(ManagedChannel.class);
@@ -260,7 +260,7 @@ class GrpcClientConfigTest {
     }
 
     @Test
-    @DisplayName("Shutdown doit gérer un canal email déjà arrêté")
+    @DisplayName("Shutdown should handle an already shutdown email channel")
     void shutdownShouldHandleAlreadyShutdownEmailChannel() throws InterruptedException {
         // Given
         ManagedChannel mockEmailChannel = mock(ManagedChannel.class);
@@ -278,11 +278,11 @@ class GrpcClientConfigTest {
 
         // Then
         verify(mockChannel).shutdown();
-        verify(mockEmailChannel, never()).shutdown(); // Ne doit pas rappeler shutdown sur email
+        verify(mockEmailChannel, never()).shutdown(); // Should not call shutdown again on email
     }
 
     @Test
-    @DisplayName("Shutdown doit forcer l'arrêt du canal email si timeout dépassé")
+    @DisplayName("Shutdown should force email channel shutdown if timeout exceeded")
     void shutdownShouldForceStopEmailChannelOnTimeout() throws InterruptedException {
         // Given
         ManagedChannel mockEmailChannel = mock(ManagedChannel.class);
@@ -303,11 +303,11 @@ class GrpcClientConfigTest {
 
         // Then
         verify(mockEmailChannel).shutdown();
-        verify(mockEmailChannel).shutdownNow(); // Doit forcer l'arrêt du canal email
+        verify(mockEmailChannel).shutdownNow(); // Should force shutdown du canal email
     }
 
     @Test
-    @DisplayName("Shutdown doit continuer même si members channel échoue")
+    @DisplayName("Shutdown should continue even if members channel fails")
     void shutdownShouldContinueEvenIfMembersChannelFails() throws InterruptedException {
         // Given
         ManagedChannel mockEmailChannel = mock(ManagedChannel.class);
@@ -322,26 +322,26 @@ class GrpcClientConfigTest {
         ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
         ReflectionTestUtils.setField(config, "emailChannel", mockEmailChannel);
 
-        // When/Then - Doit propager l'exception
+        // When/Then - Should propagate the exception
         assertThrows(InterruptedException.class, () -> config.shutdown());
         
-        // Mais members channel doit quand même avoir tenté le shutdown
+        // But members channel should still have attempted shutdown
         verify(mockChannel).shutdown();
     }
 
     @Test
-    @DisplayName("Shutdown ne doit rien faire si les deux canaux sont null")
+    @DisplayName("Shutdown should do nothing if both channels are null")
     void shutdownShouldDoNothingIfBothChannelsAreNull() {
         // Given
         ReflectionTestUtils.setField(config, "membersChannel", null);
         ReflectionTestUtils.setField(config, "emailChannel", null);
 
-        // When/Then - Ne doit pas lancer d'exception
+        // When/Then - Should not throw an exception
         assertDoesNotThrow(() -> config.shutdown());
     }
 
     @Test
-    @DisplayName("Shutdown doit gérer email channel null mais members channel actif")
+    @DisplayName("Shutdown should handle null email channel with active members channel")
     void shutdownShouldHandleNullEmailChannelWithActiveMembersChannel() throws InterruptedException {
         // Given
         when(mockChannel.isShutdown()).thenReturn(false);

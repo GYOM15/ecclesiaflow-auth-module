@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("CapabilitiesController - Tests unitaires")
+@DisplayName("CapabilitiesController - Unit tests")
 class CapabilitiesControllerTest {
 
     @Mock
@@ -35,7 +35,7 @@ class CapabilitiesControllerTest {
     class GetAllCapabilitiesTests {
 
         @Test
-        @DisplayName("Devrait retourner toutes les capabilities via le delegate")
+        @DisplayName("Should return toutes les capabilities via le delegate")
         void shouldReturnAllCapabilitiesViaDelegate() {
             AllCapabilitiesResponse expectedResponse = new AllCapabilitiesResponse();
             when(capabilitiesDelegate.getAllCapabilities())
@@ -50,7 +50,7 @@ class CapabilitiesControllerTest {
         }
 
         @Test
-        @DisplayName("Devrait déléguer l'appel au delegate")
+        @DisplayName("Should delegate the call to the delegate")
         void shouldDelegateCallToDelegate() {
             AllCapabilitiesResponse response = new AllCapabilitiesResponse();
             when(capabilitiesDelegate.getAllCapabilities())
@@ -67,7 +67,7 @@ class CapabilitiesControllerTest {
     class GetAuthCapabilitiesTests {
 
         @Test
-        @DisplayName("Devrait retourner les capabilities du module Auth")
+        @DisplayName("Should return les capabilities du module Auth")
         void shouldReturnAuthCapabilities() {
             ResponseEntity<ModuleCapabilitiesResponse> response = 
                     capabilitiesController._capabilitiesGetAuthCapabilities();
@@ -79,7 +79,7 @@ class CapabilitiesControllerTest {
         }
 
         @Test
-        @DisplayName("Devrait retourner les 5 capabilities Auth définies")
+        @DisplayName("Should return the 5 defined Auth capabilities")
         void shouldReturnFiveAuthCapabilities() {
             ResponseEntity<ModuleCapabilitiesResponse> response = 
                     capabilitiesController._capabilitiesGetAuthCapabilities();
@@ -89,7 +89,7 @@ class CapabilitiesControllerTest {
         }
 
         @Test
-        @DisplayName("Devrait inclure la capability users:read")
+        @DisplayName("Should include la capability users:read")
         void shouldIncludeUsersReadCapability() {
             ResponseEntity<ModuleCapabilitiesResponse> response = 
                     capabilitiesController._capabilitiesGetAuthCapabilities();
@@ -101,7 +101,7 @@ class CapabilitiesControllerTest {
         }
 
         @Test
-        @DisplayName("Devrait inclure la capability users:write")
+        @DisplayName("Should include la capability users:write")
         void shouldIncludeUsersWriteCapability() {
             ResponseEntity<ModuleCapabilitiesResponse> response = 
                     capabilitiesController._capabilitiesGetAuthCapabilities();
@@ -113,7 +113,7 @@ class CapabilitiesControllerTest {
         }
 
         @Test
-        @DisplayName("Devrait inclure la capability users:delete")
+        @DisplayName("Should include la capability users:delete")
         void shouldIncludeUsersDeleteCapability() {
             ResponseEntity<ModuleCapabilitiesResponse> response = 
                     capabilitiesController._capabilitiesGetAuthCapabilities();
@@ -125,7 +125,7 @@ class CapabilitiesControllerTest {
         }
 
         @Test
-        @DisplayName("Devrait inclure la capability roles:read")
+        @DisplayName("Should include la capability roles:read")
         void shouldIncludeRolesReadCapability() {
             ResponseEntity<ModuleCapabilitiesResponse> response = 
                     capabilitiesController._capabilitiesGetAuthCapabilities();
@@ -137,7 +137,7 @@ class CapabilitiesControllerTest {
         }
 
         @Test
-        @DisplayName("Devrait inclure la capability roles:write")
+        @DisplayName("Should include la capability roles:write")
         void shouldIncludeRolesWriteCapability() {
             ResponseEntity<ModuleCapabilitiesResponse> response = 
                     capabilitiesController._capabilitiesGetAuthCapabilities();
@@ -149,7 +149,7 @@ class CapabilitiesControllerTest {
         }
 
         @Test
-        @DisplayName("Chaque capability devrait avoir un nom et une description")
+        @DisplayName("Chaque capability should have un nom et une description")
         void eachCapabilityShouldHaveNameAndDescription() {
             ResponseEntity<ModuleCapabilitiesResponse> response = 
                     capabilitiesController._capabilitiesGetAuthCapabilities();

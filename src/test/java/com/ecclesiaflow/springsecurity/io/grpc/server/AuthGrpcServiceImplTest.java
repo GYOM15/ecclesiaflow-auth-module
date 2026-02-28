@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthGrpcServiceImpl - Tests unitaires")
+@DisplayName("AuthGrpcServiceImpl - Unit tests")
 class AuthGrpcServiceImplTest {
 
     @Mock
@@ -48,11 +48,11 @@ class AuthGrpcServiceImplTest {
     }
 
     @Nested
-    @DisplayName("generateTemporaryToken - Tests de succès")
+    @DisplayName("generateTemporaryToken - Tests for success")
     class GenerateTemporaryTokenSuccessTests {
 
         @Test
-        @DisplayName("Devrait générer un token temporaire avec succès")
+        @DisplayName("Should generate a temporary token avec success")
         void shouldGenerateTemporaryTokenSuccessfully() {
             TemporaryTokenRequest request = TemporaryTokenRequest.newBuilder()
                     .setEmail(TEST_EMAIL)
@@ -77,7 +77,7 @@ class AuthGrpcServiceImplTest {
         }
 
         @Test
-        @DisplayName("Devrait appeler le service avec les bons paramètres")
+        @DisplayName("Should call the service avec the correct parameters")
         void shouldCallServiceWithCorrectParameters() {
             TemporaryTokenRequest request = TemporaryTokenRequest.newBuilder()
                     .setEmail(TEST_EMAIL)
@@ -114,7 +114,7 @@ class AuthGrpcServiceImplTest {
     }
 
     @Nested
-    @DisplayName("generateTemporaryToken - Validation des entrées")
+    @DisplayName("generateTemporaryToken - Validation input")
     class GenerateTemporaryTokenValidationTests {
 
         @Test
@@ -196,7 +196,7 @@ class AuthGrpcServiceImplTest {
         }
 
         @Test
-        @DisplayName("Devrait accepter un email valide avec différents formats")
+        @DisplayName("Should accept a valid email avec different formats")
         void shouldAcceptValidEmailFormats() {
             String[] validEmails = {
                 "test@example.com",
@@ -228,7 +228,7 @@ class AuthGrpcServiceImplTest {
     class GenerateTemporaryTokenErrorHandlingTests {
 
         @Test
-        @DisplayName("Devrait retourner INTERNAL pour exception inattendue")
+        @DisplayName("Should return INTERNAL pour exception inattendue")
         void shouldReturnInternalForUnexpectedException() {
             TemporaryTokenRequest request = TemporaryTokenRequest.newBuilder()
                     .setEmail(TEST_EMAIL)
@@ -252,7 +252,7 @@ class AuthGrpcServiceImplTest {
         }
 
         @Test
-        @DisplayName("Ne devrait pas propager l'exception au-delà du responseObserver")
+        @DisplayName("Should not propagate the exception beyond the responseObserver")
         void shouldNotPropagateExceptionBeyondResponseObserver() {
             TemporaryTokenRequest request = TemporaryTokenRequest.newBuilder()
                     .setEmail(TEST_EMAIL)

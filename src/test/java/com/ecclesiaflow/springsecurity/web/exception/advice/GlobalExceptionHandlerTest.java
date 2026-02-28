@@ -56,7 +56,7 @@ class GlobalExceptionHandlerTest {
 
         assertThat(resp.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
         assertThat(resp.getBody()).isNotNull();
-        assertThat(resp.getBody().message()).contains("Media type non supporté");
+        assertThat(resp.getBody().message()).contains("Unsupported media type");
     }
 
     @Test
@@ -74,8 +74,8 @@ class GlobalExceptionHandlerTest {
 
         assertThat(resp.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
         assertThat(resp.getBody()).isNotNull();
-        assertThat(resp.getBody().message()).contains("Méthode HTTP non supportée");
-        assertThat(resp.getBody().message()).contains("autorisées");
+        assertThat(resp.getBody().message()).contains("HTTP method not supported");
+        assertThat(resp.getBody().message()).contains("allowed");
     }
 
     @Test
@@ -93,7 +93,7 @@ class GlobalExceptionHandlerTest {
 
         assertThat(resp.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
         assertThat(resp.getBody()).isNotNull();
-        assertThat(resp.getBody().message()).isEqualTo("Méthode HTTP non supportée");
+        assertThat(resp.getBody().message()).isEqualTo("HTTP method not supported");
     }
 
     @Test
@@ -110,7 +110,7 @@ class GlobalExceptionHandlerTest {
 
         assertThat(resp.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
         assertThat(resp.getBody()).isNotNull();
-        assertThat(resp.getBody().message()).isEqualTo("Méthode HTTP non supportée");
+        assertThat(resp.getBody().message()).isEqualTo("HTTP method not supported");
     }
 
     @Test
@@ -246,7 +246,7 @@ class GlobalExceptionHandlerTest {
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(resp.getBody()).isNotNull();
-        assertThat(resp.getBody().message()).contains("En-tête requis manquant");
+        assertThat(resp.getBody().message()).contains("Missing required header");
     }
 
     @Test
@@ -310,17 +310,17 @@ class GlobalExceptionHandlerTest {
     }
 
     // ====================================================================
-    // Tests simples d'instanciation des exceptions du package web.exception
+    // Simple instantiation tests for web.exception package exceptions
     // ====================================================================
     @Test
-    @DisplayName("InvalidRequestException conserve le message")
+    @DisplayName("InvalidRequestException preserves the message")
     void invalidRequestException_creation() {
         InvalidRequestException ex = new InvalidRequestException("invalid request");
         assertThat(ex).hasMessage("invalid request");
     }
 
     @Test
-    @DisplayName("InvalidTokenException conserve le message")
+    @DisplayName("InvalidTokenException preserves the message")
     void invalidTokenException_creation() {
         InvalidTokenException ex = new InvalidTokenException("invalid token");
         assertThat(ex).hasMessage("invalid token");

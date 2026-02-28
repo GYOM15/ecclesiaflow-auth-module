@@ -12,14 +12,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("OpenApiConfig - Tests de configuration OpenAPI")
+@DisplayName("OpenApiConfig - OpenAPI configuration tests")
 class OpenApiConfigTest {
 
     @InjectMocks
     private OpenApiConfig openApiConfig;
 
     @Test
-    @DisplayName("Devrait configurer l'objet OpenAPI avec les informations et les schémas de sécurité corrects")
+    @DisplayName("Should configure the OpenAPI object with information and correct security schemas")
     void shouldConfigureOpenApiWithCorrectInfoAndSecuritySchemes() {
         // When
         OpenAPI openAPI = openApiConfig.ecclesiaFlowOpenAPI();
@@ -34,13 +34,13 @@ class OpenApiConfigTest {
                 () -> assertThat(openAPI.getInfo().getLicense().getName()).isEqualTo("MIT License"),
                 () -> assertThat(openAPI.getInfo().getLicense().getUrl()).isEqualTo("https://opensource.org/licenses/MIT"),
                 () -> {
-                    // Vérification du SecurityRequirement
+                    // Verification of SecurityRequirement
                     assertThat(openAPI.getSecurity()).hasSize(1);
                     SecurityRequirement securityRequirement = openAPI.getSecurity().get(0);
                     assertThat(securityRequirement).containsKey("Bearer Authentication");
                 },
                 () -> {
-                    // Vérification du SecurityScheme
+                    // Verification of SecurityScheme
                     SecurityScheme securityScheme = openAPI.getComponents().getSecuritySchemes().get("Bearer Authentication");
                     assertThat(securityScheme).isNotNull();
                     assertThat(securityScheme.getType()).isEqualTo(SecurityScheme.Type.HTTP);

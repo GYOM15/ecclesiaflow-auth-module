@@ -13,7 +13,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("SetupTokenPersistenceMapper - Tests unitaires")
+@DisplayName("SetupTokenPersistenceMapper - Unit tests")
 class SetupTokenPersistenceMapperTest {
 
     private SetupTokenPersistenceMapper mapper;
@@ -24,11 +24,11 @@ class SetupTokenPersistenceMapperTest {
     }
 
     @Nested
-    @DisplayName("toDomain - Conversion Entity vers Domain")
+    @DisplayName("toDomain - Entity to Domain conversion")
     class ToDomainTests {
 
         @Test
-        @DisplayName("Devrait convertir une entité en objet domaine")
+        @DisplayName("Should convert an entity to domain object")
         void shouldConvertEntityToDomain() {
             SetupTokenEntity entity = createValidEntity();
 
@@ -46,7 +46,7 @@ class SetupTokenPersistenceMapperTest {
         }
 
         @Test
-        @DisplayName("Devrait retourner null si l'entité est null")
+        @DisplayName("Should return null if the entity is null")
         void shouldReturnNullWhenEntityIsNull() {
             SetupToken domain = mapper.toDomain(null);
 
@@ -55,11 +55,11 @@ class SetupTokenPersistenceMapperTest {
     }
 
     @Nested
-    @DisplayName("toEntity - Conversion Domain vers Entity")
+    @DisplayName("toEntity - Domain to Entity conversion")
     class ToEntityTests {
 
         @Test
-        @DisplayName("Devrait convertir un objet domaine en entité")
+        @DisplayName("Should convert a domain object to entity")
         void shouldConvertDomainToEntity() {
             SetupToken domain = createValidDomain();
 
@@ -77,7 +77,7 @@ class SetupTokenPersistenceMapperTest {
         }
 
         @Test
-        @DisplayName("Devrait retourner null si le domaine est null")
+        @DisplayName("Should return null if domain is null")
         void shouldReturnNullWhenDomainIsNull() {
             SetupTokenEntity entity = mapper.toEntity(null);
 
@@ -86,11 +86,11 @@ class SetupTokenPersistenceMapperTest {
     }
 
     @Nested
-    @DisplayName("toDomainOrThrow - Conversion avec validation")
+    @DisplayName("toDomainOrThrow - Conversion with validation")
     class ToDomainOrThrowTests {
 
         @Test
-        @DisplayName("Devrait convertir une entité valide")
+        @DisplayName("Should convert a valid entity")
         void shouldConvertValidEntity() {
             SetupTokenEntity entity = createValidEntity();
 
@@ -101,7 +101,7 @@ class SetupTokenPersistenceMapperTest {
         }
 
         @Test
-        @DisplayName("Devrait lever une exception si l'entité est null")
+        @DisplayName("Should throw an exception if the entity is null")
         void shouldThrowExceptionWhenEntityIsNull() {
             assertThatThrownBy(() -> mapper.toDomainOrThrow(null))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -110,11 +110,11 @@ class SetupTokenPersistenceMapperTest {
     }
 
     @Nested
-    @DisplayName("toEntityOrThrow - Conversion avec validation")
+    @DisplayName("toEntityOrThrow - Conversion with validation")
     class ToEntityOrThrowTests {
 
         @Test
-        @DisplayName("Devrait convertir un domaine valide")
+        @DisplayName("Should convert a valid domain")
         void shouldConvertValidDomain() {
             SetupToken domain = createValidDomain();
 
@@ -125,7 +125,7 @@ class SetupTokenPersistenceMapperTest {
         }
 
         @Test
-        @DisplayName("Devrait lever une exception si le domaine est null")
+        @DisplayName("Should throw an exception if domain is null")
         void shouldThrowExceptionWhenDomainIsNull() {
             assertThatThrownBy(() -> mapper.toEntityOrThrow(null))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -134,11 +134,11 @@ class SetupTokenPersistenceMapperTest {
     }
 
     @Nested
-    @DisplayName("Bidirectionnalité - Tests de conversion aller-retour")
+    @DisplayName("Bidirectionality - Tests for round-trip conversion")
     class BidirectionalityTests {
 
         @Test
-        @DisplayName("Devrait conserver les données lors d'une conversion Entity -> Domain -> Entity")
+        @DisplayName("Should preserve data during conversion Entity -> Domain -> Entity")
         void shouldPreserveDataInEntityToDomainToEntity() {
             SetupTokenEntity originalEntity = createValidEntity();
 
@@ -154,7 +154,7 @@ class SetupTokenPersistenceMapperTest {
         }
 
         @Test
-        @DisplayName("Devrait conserver les données lors d'une conversion Domain -> Entity -> Domain")
+        @DisplayName("Should preserve data during conversion Domain -> Entity -> Domain")
         void shouldPreserveDataInDomainToEntityToDomain() {
             SetupToken originalDomain = createValidDomain();
 
@@ -171,11 +171,11 @@ class SetupTokenPersistenceMapperTest {
     }
 
     @Nested
-    @DisplayName("Mapping des enums")
+    @DisplayName("Enum mapping")
     class EnumMappingTests {
 
         @Test
-        @DisplayName("Devrait mapper correctement TokenPurpose.PASSWORD_SETUP")
+        @DisplayName("Should map TokenPurpose.PASSWORD_SETUP correctly")
         void shouldMapPasswordSetupPurpose() {
             SetupTokenEntity entity = createValidEntity();
             entity.setPurpose(SetupToken.TokenPurpose.PASSWORD_SETUP);
@@ -186,7 +186,7 @@ class SetupTokenPersistenceMapperTest {
         }
 
         @Test
-        @DisplayName("Devrait mapper correctement TokenStatus.ISSUED")
+        @DisplayName("Should map TokenStatus.ISSUED correctly")
         void shouldMapIssuedStatus() {
             SetupTokenEntity entity = createValidEntity();
             entity.setStatus(SetupToken.TokenStatus.ISSUED);
@@ -199,7 +199,7 @@ class SetupTokenPersistenceMapperTest {
 
 
         @Test
-        @DisplayName("Devrait mapper correctement TokenStatus.REVOKED")
+        @DisplayName("Should map TokenStatus.REVOKED correctly")
         void shouldMapRevokedStatus() {
             SetupTokenEntity entity = createValidEntity();
             entity.setStatus(SetupToken.TokenStatus.REVOKED);

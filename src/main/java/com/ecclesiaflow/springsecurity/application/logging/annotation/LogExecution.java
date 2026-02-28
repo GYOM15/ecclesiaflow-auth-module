@@ -6,29 +6,29 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation pour marquer les méthodes nécessitant un logging détaillé d'exécution.
+ * Annotation to mark methods requiring detailed execution logging.
  * <p>
- * Cette annotation permet de déclencher automatiquement un logging des appels de méthodes
- * via la programmation orientée aspect (AOP). Offre un contrôle granulaire sur le niveau
- * de log, l'inclusion des paramètres et la durée d'exécution.
+ * This annotation triggers automatic method call logging via aspect-oriented
+ * programming (AOP). Provides granular control over log level, parameter inclusion,
+ * and execution time measurement.
  * </p>
  * 
- * <p><strong>Rôle architectural :</strong> Annotation AOP - Logging transversal</p>
+ * <p><strong>Architectural role:</strong> AOP annotation - Cross-cutting logging</p>
  * 
- * <p><strong>Dépendances critiques :</strong></p>
+ * <p><strong>Critical dependencies:</strong></p>
  * <ul>
- *   <li>Spring AOP - Traitement des aspects de logging</li>
- *   <li>Framework de logging (SLF4J/Logback) - Sortie des logs</li>
+ *   <li>Spring AOP - Logging aspect processing</li>
+ *   <li>Logging framework (SLF4J/Logback) - Log output</li>
  * </ul>
  * 
- * <p><strong>Cas d'utilisation typiques :</strong></p>
+ * <p><strong>Typical use cases:</strong></p>
  * <ul>
- *   <li>Debugging des méthodes critiques d'authentification</li>
- *   <li>Monitoring des performances des services métier</li>
- *   <li>Audit des opérations sensibles (inscription, connexion)</li>
+ *   <li>Debugging critical authentication methods</li>
+ *   <li>Monitoring business service performance</li>
+ *   <li>Auditing sensitive operations (registration, login)</li>
  * </ul>
  * 
- * <p><strong>Garanties :</strong> Thread-safe, impact minimal sur les performances.</p>
+ * <p><strong>Guarantees:</strong> Thread-safe, minimal performance impact.</p>
  * 
  * @author EcclesiaFlow Team
  * @since 1.0.0
@@ -38,45 +38,45 @@ import java.lang.annotation.Target;
 public @interface LogExecution {
     
     /**
-     * Message personnalisé pour le log.
+     * Custom log message.
      * <p>
-     * Si non spécifié, utilise le nom de la méthode par défaut.
+     * If not specified, uses the method name by default.
      * </p>
      * 
-     * @return le message personnalisé ou chaîne vide pour utiliser le défaut
+     * @return the custom message or empty string to use the default
      */
     String value() default "";
     
     /**
-     * Niveau de log pour cette exécution.
+     * Log level for this execution.
      * <p>
-     * Détermine l'importance du message de log. Les valeurs supportées
-     * sont : INFO, WARN, ERROR, DEBUG.
+     * Determines the log message importance. Supported values
+     * are: INFO, WARN, ERROR, DEBUG.
      * </p>
      * 
-     * @return le niveau de log, INFO par défaut
+     * @return the log level, INFO by default
      */
     String level() default "INFO";
     
     /**
-     * Indique si les paramètres de la méthode doivent être inclus dans le log.
+     * Whether method parameters should be included in the log.
      * <p>
-     * Attention : peut exposer des données sensibles comme les mots de passe.
-     * À utiliser avec précaution sur les méthodes d'authentification.
+     * Warning: may expose sensitive data such as passwords.
+     * Use with caution on authentication methods.
      * </p>
      * 
-     * @return true pour inclure les paramètres, false par défaut
+     * @return true to include parameters, false by default
      */
     boolean includeParams() default false;
     
     /**
-     * Indique si la durée d'exécution doit être mesurée et loggée.
+     * Whether execution time should be measured and logged.
      * <p>
-     * Utile pour le monitoring des performances et l'identification
-     * des goulots d'étranglement dans l'application.
+     * Useful for performance monitoring and identifying
+     * bottlenecks in the application.
      * </p>
      * 
-     * @return true pour mesurer la durée, true par défaut
+     * @return true to measure duration, true by default
      */
     boolean includeExecutionTime() default true;
 }

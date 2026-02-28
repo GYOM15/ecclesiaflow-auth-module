@@ -19,10 +19,10 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests d'intégration pour MembersGrpcClient.
+ * Integration tests for MembersGrpcClient.
  * <p>
- * Teste le members gRPC avec un vrai serveur Members mock via InProcessServer.
- * Couvre la communication réelle et les scénarios d'erreur.
+ * Tests the members gRPC avec un vrai serveur Members mock via InProcessServer.
+ * Covers real communication and error scenarios.
  * </p>
  */
 class MembersGrpcClientIntegrationTest {
@@ -43,7 +43,7 @@ class MembersGrpcClientIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Créer un service Members mock
+        // Create a mock Members service
         MembersServiceGrpc.MembersServiceImplBase mockService = new MembersServiceGrpc.MembersServiceImplBase() {
             @Override
             public void getMemberConfirmationStatus(ConfirmationStatusRequest request,
@@ -114,7 +114,7 @@ class MembersGrpcClientIntegrationTest {
             }
         };
 
-        // Démarrer le serveur in-memory
+        // Start the in-memory server
         server = InProcessServerBuilder
                 .forName(SERVER_NAME)
                 .directExecutor()
@@ -122,13 +122,13 @@ class MembersGrpcClientIntegrationTest {
                 .build()
                 .start();
 
-        // Créer le canal members
+        // Create the members channel
         channel = InProcessChannelBuilder
                 .forName(SERVER_NAME)
                 .directExecutor()
                 .build();
 
-        // Créer le members
+        // Create the client
         client = new MembersGrpcClient(channel);
     }
 
