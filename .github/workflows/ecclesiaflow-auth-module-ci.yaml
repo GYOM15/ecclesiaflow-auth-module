@@ -1,0 +1,39 @@
+name: EcclesiaFlow Auth Module CI
+
+on:
+  push:
+    branches:
+      - main
+      - ecclesiaflow-auth-module-v1-dev
+      - feature/**
+  pull_request:
+    branches:
+      - main
+      - ecclesiaflow-auth-module-v1-dev
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and run tests
+        run: mvn verify -B
+
+      - name: Upload JaCoCo report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          retention-days: 7
