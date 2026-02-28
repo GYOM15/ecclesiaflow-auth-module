@@ -44,7 +44,7 @@
       "description": "Confidential client for backend microservices",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_BACKEND_CLIENT_SECRET}",
+      "secret": "__KEYCLOAK_BACKEND_CLIENT_SECRET__",
       "bearerOnly": false,
       "consentRequired": false,
       "standardFlowEnabled": false,
@@ -87,7 +87,7 @@
       "directAccessGrantsEnabled": false,
       "implicitFlowEnabled": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET}"
+      "secret": "__KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET__"
     },
     {
       "clientId": "ecclesiaflow-frontend",
@@ -101,14 +101,14 @@
       "serviceAccountsEnabled": false,
       "protocol": "openid-connect",
       "redirectUris": [
-        "${FRONTEND_REDIRECT_URI_1:http://localhost:3000/*}",
-        "${FRONTEND_REDIRECT_URI_2:http://localhost:4200/*}",
-        "${FRONTEND_REDIRECT_URI_3:http://localhost:5173/*}"
+        "__FRONTEND_REDIRECT_URI_1__",
+        "__FRONTEND_REDIRECT_URI_2__",
+        "__FRONTEND_REDIRECT_URI_3__"
       ],
       "webOrigins": [
-        "${FRONTEND_ORIGIN_1:http://localhost:3000}",
-        "${FRONTEND_ORIGIN_2:http://localhost:4200}",
-        "${FRONTEND_ORIGIN_3:http://localhost:5173}"
+        "__FRONTEND_ORIGIN_1__",
+        "__FRONTEND_ORIGIN_2__",
+        "__FRONTEND_ORIGIN_3__"
       ],
       "attributes": {
         "access.token.lifespan": "300",
