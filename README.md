@@ -129,7 +129,7 @@ See `.env.example` for the full list with defaults.
 
 ```bash
 mvn clean verify          # compile + tests + coverage check
-mvn spring-boot:run       # start on port 8081
+mvn spring-boot:run '-Dspring-boot.run.arguments=--server.port=8081'
 ```
 
 The application is available at `http://localhost:8081`.
@@ -152,12 +152,15 @@ The `docker/` directory contains a fully automated Keycloak setup:
 1. Substitutes all `__PLACEHOLDER__` values in the realm template with environment variables
 2. Detects the Keycloak command (`start-dev` vs `start`):
    - **Dev mode** — runs Keycloak in background, patches the master realm `sslRequired=NONE`
-     (workaround for Docker Desktop bridge networking), then waits
+     (workaround for Docker Desktop bridge networking), creates the `social-auto-provision`
+     authentication flow via `kcadm.sh`, then waits
    - **Production mode** — straight `exec` so Keycloak becomes PID 1 with proper signal handling
 
 ### Features configured automatically
 
-- **Social login** — Google and Facebook identity providers (optional, set credentials in `.env`)
+- **Social login** — Google and Facebook identity providers (optional, set credentials in `.env`).
+  A custom `social-auto-provision` authentication flow silently creates or links accounts
+  on first social login — no Keycloak forms shown to the user
 - **Service account roles** — `view-users`, `query-users`, `manage-users` assigned to
   `ecclesiaflow-admin-service` on every realm import (no manual UI setup needed)
 - **Brute force protection** — enabled with lockout after 5 failed attempts
