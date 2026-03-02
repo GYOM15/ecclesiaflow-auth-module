@@ -196,7 +196,7 @@
         "clientId": "__GOOGLE_CLIENT_ID__",
         "clientSecret": "__GOOGLE_CLIENT_SECRET__",
         "defaultScope": "openid email profile",
-        "syncMode": "INHERIT",
+        "syncMode": "FORCE",
         "useJwksUrl": "true"
       }
     },
@@ -215,7 +215,7 @@
         "clientId": "__FACEBOOK_CLIENT_ID__",
         "clientSecret": "__FACEBOOK_CLIENT_SECRET__",
         "defaultScope": "email,public_profile",
-        "syncMode": "INHERIT"
+        "syncMode": "FORCE"
       }
     }
   ],

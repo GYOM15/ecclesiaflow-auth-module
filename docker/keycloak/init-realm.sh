@@ -121,6 +121,107 @@ if [ "$IS_DEV" = "true" ]; then
     echo "[init-realm] WARNING: Could not patch master realm sslRequired" >&2
   fi
 
+  # -----------------------------------------------------------------------
+  # Create custom "social-auto-provision" authentication flow
+  # -----------------------------------------------------------------------
+  # Keycloak 23 replaces ALL built-in flows if authenticationFlows is in
+  # the realm JSON, so we create the custom flow via Admin CLI instead.
+  #
+  # Flow logic:
+  #   social-auto-provision (top-level)
+  #     ├── idp-create-user-if-unique  (ALTERNATIVE) — new user → silent create
+  #     └── social-auto-link           (ALTERNATIVE) — existing user → sub-flow
+  #           ├── idp-detect-existing-broker-user (REQUIRED)
+  #           └── idp-auto-link                   (REQUIRED)
+  # -----------------------------------------------------------------------
+
+  KCADM="/opt/keycloak/bin/kcadm.sh"
+  REALM="ecclesiaflow"
+
+  # Helper: extract execution ID by displayName from pretty-printed kcadm JSON.
+  # Uses grep -B4 since "id" is always 2-4 lines before "displayName" in output.
+  # Usage: get_exec_id "<json>" "<displayName>"
+  get_exec_id() {
+    echo "$1" | grep -B4 "\"$2\"" | grep '"id"' | tail -1 | sed 's/.*: "//;s/".*//'
+  }
+
+  # Helper: update execution requirement via raw PUT body (bypasses GET-merge-PUT).
+  # Usage: set_req "<flow-alias>" "<exec-id>" "<requirement>"
+  set_req() {
+    printf '{"id":"%s","requirement":"%s"}' "$2" "$3" | \
+      $KCADM update "authentication/flows/$1/executions" -r "$REALM" -f - 2>&1
+  }
+
+  echo "[init-realm] Creating social-auto-provision authentication flow..."
+
+  # 1. Create the top-level flow
+  $KCADM create authentication/flows \
+    -r "$REALM" \
+    -s alias=social-auto-provision \
+    -s providerId=basic-flow \
+    -s topLevel=true \
+    -s builtIn=false \
+    -s 'description=Silently create or link social login users — no forms shown' 2>&1
+
+  # 2. Add "idp-create-user-if-unique" execution
+  $KCADM create authentication/flows/social-auto-provision/executions/execution \
+    -r "$REALM" \
+    -s provider=idp-create-user-if-unique 2>&1
+
+  # 3. Create "social-auto-link" sub-flow inside the top-level flow
+  $KCADM create authentication/flows/social-auto-provision/executions/flow \
+    -r "$REALM" \
+    -s alias=social-auto-link \
+    -s type=basic-flow \
+    -s provider=registration-page-form \
+    -s 'description=Auto-link social account to existing user by email' 2>&1
+
+  # 4. Set requirements on the top-level flow executions
+  TOP_EXECS=$($KCADM get authentication/flows/social-auto-provision/executions -r "$REALM" 2>/dev/null)
+
+  EID=$(get_exec_id "$TOP_EXECS" "Create User If Unique")
+  [ -n "$EID" ] && set_req "social-auto-provision" "$EID" "ALTERNATIVE" \
+    && echo "[init-realm]   idp-create-user-if-unique → ALTERNATIVE"
+
+  EID=$(get_exec_id "$TOP_EXECS" "social-auto-link")
+  [ -n "$EID" ] && set_req "social-auto-provision" "$EID" "ALTERNATIVE" \
+    && echo "[init-realm]   social-auto-link → ALTERNATIVE"
+
+  # 5. Add executions to the sub-flow
+  $KCADM create authentication/flows/social-auto-link/executions/execution \
+    -r "$REALM" \
+    -s provider=idp-detect-existing-broker-user 2>&1
+
+  $KCADM create authentication/flows/social-auto-link/executions/execution \
+    -r "$REALM" \
+    -s provider=idp-auto-link 2>&1
+
+  # 6. Set sub-flow executions to REQUIRED
+  SUB_EXECS=$($KCADM get authentication/flows/social-auto-link/executions -r "$REALM" 2>/dev/null)
+
+  EID=$(get_exec_id "$SUB_EXECS" "Detect existing broker user")
+  [ -n "$EID" ] && set_req "social-auto-link" "$EID" "REQUIRED" \
+    && echo "[init-realm]   idp-detect-existing-broker-user → REQUIRED"
+
+  EID=$(get_exec_id "$SUB_EXECS" "Automatically set existing user")
+  [ -n "$EID" ] && set_req "social-auto-link" "$EID" "REQUIRED" \
+    && echo "[init-realm]   idp-auto-link → REQUIRED"
+
+  # 7. Point identity providers to the new flow
+  echo "[init-realm] Updating identity providers to use social-auto-provision..."
+
+  $KCADM update identity-provider/instances/google \
+    -r "$REALM" \
+    -s firstBrokerLoginFlowAlias=social-auto-provision 2>&1 && \
+    echo "[init-realm] Google IdP → social-auto-provision"
+
+  $KCADM update identity-provider/instances/facebook \
+    -r "$REALM" \
+    -s firstBrokerLoginFlowAlias=social-auto-provision 2>&1 && \
+    echo "[init-realm] Facebook IdP → social-auto-provision"
+
+  echo "[init-realm] Social auto-provision flow configured"
+
   wait $KC_PID
 else
   # --- PRODUCTION MODE ----------------------------------------------------
