@@ -17,7 +17,9 @@ services:
       KC_HOSTNAME: ${KC_HOSTNAME:-localhost}
       KC_HOSTNAME_PORT: ${KC_HOSTNAME_PORT:-8180}
       KC_HTTP_ENABLED: ${KC_HTTP_ENABLED:-true}
-      KC_PROXY_HEADERS: ${KC_PROXY_HEADERS:-xforwarded}
+      # KC_PROXY_HEADERS is a Keycloak 24+ option (ignored in 23.0).
+      # Use KC_PROXY for Keycloak 23.x when behind a reverse proxy.
+      # KC_PROXY: edge
 
       # Observability
       KC_HEALTH_ENABLED: true
@@ -31,6 +33,16 @@ services:
       KEYCLOAK_SMTP_FROM: ${KEYCLOAK_SMTP_FROM:-noreply@ecclesiaflow.com}
       KEYCLOAK_SMTP_USER: ${KEYCLOAK_SMTP_USER}
       KEYCLOAK_SMTP_PASSWORD: ${KEYCLOAK_SMTP_PASSWORD}
+
+      # SSL / TLS requirement at realm level (consumed by init-realm.sh)
+      # Dev: "none" (default) | Production: "external" or "all"
+      SSL_REQUIRED: ${SSL_REQUIRED:-none}
+
+      # Social Identity Providers (optional — defaults to DISABLED)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-DISABLED}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-DISABLED}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-DISABLED}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-DISABLED}
 
       # Frontend URIs (optional — defaults applied by init-realm.sh)
       FRONTEND_REDIRECT_URI_1: ${FRONTEND_REDIRECT_URI_1:-http://localhost:3000/*}

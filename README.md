@@ -144,18 +144,39 @@ The `docker/` directory contains a fully automated Keycloak setup:
 |------|----------|
 | `docker-compose.keycloak.yml` | Keycloak 23.0 + PostgreSQL 16 |
 | `keycloak/realm-ecclesiaflow.json` | Realm template with `__PLACEHOLDER__` tokens |
-| `keycloak/init-realm.sh` | Entrypoint script — injects secrets at startup |
-| `.env.example` | Documented environment variables template |
+| `keycloak/init-realm.sh` | Entrypoint script — injects secrets, detects dev/prod mode |
+| `.env.example` | Documented environment variables (includes production checklist) |
 
-**Environment variables injected by `init-realm.sh`:**
+### What `init-realm.sh` does
+
+1. Substitutes all `__PLACEHOLDER__` values in the realm template with environment variables
+2. Detects the Keycloak command (`start-dev` vs `start`):
+   - **Dev mode** — runs Keycloak in background, patches the master realm `sslRequired=NONE`
+     (workaround for Docker Desktop bridge networking), then waits
+   - **Production mode** — straight `exec` so Keycloak becomes PID 1 with proper signal handling
+
+### Features configured automatically
+
+- **Social login** — Google and Facebook identity providers (optional, set credentials in `.env`)
+- **Service account roles** — `view-users`, `query-users`, `manage-users` assigned to
+  `ecclesiaflow-admin-service` on every realm import (no manual UI setup needed)
+- **Brute force protection** — enabled with lockout after 5 failed attempts
+
+### Environment variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `KEYCLOAK_BACKEND_CLIENT_SECRET` | Yes | OAuth2 backend client secret |
 | `KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET` | Yes | Admin service-account secret |
 | `KEYCLOAK_SMTP_PASSWORD` | Yes | Gmail App Password for email features |
+| `SSL_REQUIRED` | No | `none` (dev, default) / `external` or `all` (prod) |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | No | Google OAuth2 credentials (defaults to `DISABLED`) |
+| `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | No | Facebook OAuth2 credentials (defaults to `DISABLED`) |
 | `KEYCLOAK_SMTP_FROM` / `KEYCLOAK_SMTP_USER` | No | Defaults to `noreply@ecclesiaflow.com` |
 | `FRONTEND_REDIRECT_URI_*` / `FRONTEND_ORIGIN_*` | No | Defaults to `localhost` dev ports |
+
+> See the **production checklist** at the top of `docker/.env.example` for all values
+> to adjust before deploying.
 
 ---
 

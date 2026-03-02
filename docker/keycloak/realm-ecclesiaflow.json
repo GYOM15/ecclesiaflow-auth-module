@@ -3,7 +3,7 @@
   "enabled": true,
   "displayName": "EcclesiaFlow",
   "displayNameHtml": "<strong>EcclesiaFlow</strong>",
-  "sslRequired": "external",
+  "sslRequired": "__SSL_REQUIRED__",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
@@ -146,6 +146,16 @@
       ]
     }
   ],
+  "users": [
+    {
+      "username": "service-account-ecclesiaflow-admin-service",
+      "enabled": true,
+      "serviceAccountClientId": "ecclesiaflow-admin-service",
+      "clientRoles": {
+        "realm-management": ["view-users", "query-users", "manage-users"]
+      }
+    }
+  ],
   "accessTokenLifespan": 300,
   "accessTokenLifespanForImplicitFlow": 300,
   "ssoSessionIdleTimeout": 1800,
@@ -170,6 +180,45 @@
     "starttls": "true",
     "ssl": "false"
   },
+  "identityProviders": [
+    {
+      "alias": "google",
+      "displayName": "Google",
+      "providerId": "google",
+      "enabled": true,
+      "trustEmail": true,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "__GOOGLE_CLIENT_ID__",
+        "clientSecret": "__GOOGLE_CLIENT_SECRET__",
+        "defaultScope": "openid email profile",
+        "syncMode": "INHERIT",
+        "useJwksUrl": "true"
+      }
+    },
+    {
+      "alias": "facebook",
+      "displayName": "Facebook",
+      "providerId": "facebook",
+      "enabled": true,
+      "trustEmail": true,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "__FACEBOOK_CLIENT_ID__",
+        "clientSecret": "__FACEBOOK_CLIENT_SECRET__",
+        "defaultScope": "email,public_profile",
+        "syncMode": "INHERIT"
+      }
+    }
+  ],
   "internationalizationEnabled": true,
   "supportedLocales": ["en", "fr"],
   "defaultLocale": "en"
