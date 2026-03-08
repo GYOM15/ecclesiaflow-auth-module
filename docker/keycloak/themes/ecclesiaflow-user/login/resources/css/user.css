@@ -1,0 +1,118 @@
+/* ================================================================
+   EcclesiaFlow User — Centered Card Layout
+   Simple, welcoming interface with subtle background particles.
+   ================================================================ */
+
+/* ================================================================
+   CENTERED LAYOUT
+   ================================================================ */
+.user-centered {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    background: var(--bg-page);
+    position: relative;
+    overflow: hidden;
+}
+
+.user-centered::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(59, 82, 246, 0.04) 0%, transparent 60%),
+        radial-gradient(circle at 80% 80%, rgba(59, 82, 246, 0.02) 0%, transparent 40%);
+}
+
+/* Background floating particles */
+.user-bg-particles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.user-bg-particle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(59, 82, 246, 0.06);
+    animation: userfloat 20s ease-in-out infinite;
+}
+
+@keyframes userfloat {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+    33%      { transform: translate(15px, -20px) scale(1.1); opacity: 0.5; }
+    66%      { transform: translate(-10px, 10px) scale(0.95); opacity: 0.3; }
+}
+
+/* Content wrapper */
+.user-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Logo */
+.user-logo {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--text-1);
+    margin-bottom: 6px;
+}
+
+.user-logo .flow { color: var(--sapphire-500); }
+
+/* Welcome text */
+.user-welcome {
+    font-size: 14px;
+    color: var(--text-2);
+    margin-bottom: 28px;
+    text-align: center;
+    max-width: 320px;
+    line-height: 1.5;
+}
+
+/* Card */
+.user-card {
+    width: 464px;
+    max-width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.04);
+    transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Dark mode card shadow */
+[data-theme="dark"] .user-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Allow fcard to fill the card */
+.user-card .fcard { max-width: 100%; }
+
+/* Locale selector */
+.user-locale {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 3;
+}
+
+.user-locale select {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    outline: none;
+}
