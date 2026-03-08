@@ -1,0 +1,238 @@
+/* ================================================================
+   EcclesiaFlow Admin — Split Layout
+   Dark branding panel (left) + form panel (right).
+   ================================================================ */
+
+/* ================================================================
+   SPLIT LAYOUT
+   ================================================================ */
+.split {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ----------------------------------------------------------------
+   Left branding panel (always dark)
+   ---------------------------------------------------------------- */
+.panel-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+    background: #0F1629;
+}
+
+[data-theme="dark"] .panel-left { background: #0A0E1A; }
+
+.panel-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 30% 70%, rgba(59, 82, 246, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 70% 30%, rgba(59, 82, 246, 0.05) 0%, transparent 50%);
+}
+
+/* Grid overlay */
+.pl-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+}
+
+/* Floating particles */
+.pl-particles { position: absolute; inset: 0; overflow: hidden; }
+
+.pl-particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: rgba(96, 120, 250, 0.2);
+    animation: plrise linear infinite;
+}
+
+@keyframes plrise {
+    0%   { transform: translateY(100%) scale(0); opacity: 0; }
+    10%  { opacity: 0.5; }
+    90%  { opacity: 0.5; }
+    100% { transform: translateY(-10%) scale(1); opacity: 0; }
+}
+
+/* Pulsing rings */
+.pl-pulse {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(59, 82, 246, 0.06);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: plpulse 5s ease-in-out infinite;
+}
+
+.pl-pulse:nth-child(1) { width: 200px; height: 200px; }
+.pl-pulse:nth-child(2) { width: 300px; height: 300px; animation-delay: -1.8s; }
+.pl-pulse:nth-child(3) { width: 400px; height: 400px; animation-delay: -3.5s; }
+
+@keyframes plpulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    50%      { transform: translate(-50%, -50%) scale(1.06); opacity: 0.15; }
+}
+
+/* Branding content */
+.pl-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    max-width: 360px;
+}
+
+.pl-logo {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #FFFFFF;
+    margin-bottom: 4px;
+}
+
+.pl-logo .flow { color: rgba(255, 255, 255, 0.7); }
+
+.pl-tagline {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 48px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+/* Feature list */
+.brand-features {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.brand-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.brand-feature-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-feature-icon svg {
+    width: 18px;
+    height: 18px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.brand-feature-text h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin-bottom: 2px;
+}
+
+.brand-feature-text p {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.4);
+    line-height: 1.4;
+}
+
+/* Locale selector (on dark panel) */
+.locale {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 3;
+}
+
+.locale select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.4);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    outline: none;
+}
+
+/* ----------------------------------------------------------------
+   Right form panel
+   ---------------------------------------------------------------- */
+.panel-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 40px;
+    background: var(--bg-page);
+}
+
+.form-container {
+    width: 100%;
+    max-width: 380px;
+}
+
+.form-container h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.form-container .subtitle {
+    font-size: 15px;
+    color: var(--text-2);
+    margin-bottom: 32px;
+}
+
+/* Override .fcard max-width inside form-container */
+.form-container .fcard { max-width: 100%; }
+
+/* Mobile logo (shown when left panel hidden) */
+.mobile-logo {
+    display: none;
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.mobile-logo .logo-text {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--text-1);
+}
+
+.mobile-logo .logo-text .flow { color: var(--sapphire-500); }
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 768px) {
+    .split { flex-direction: column; }
+    .panel-left { display: none; }
+    .mobile-logo { display: block !important; }
+    .panel-right { padding: 40px 20px; }
+}
