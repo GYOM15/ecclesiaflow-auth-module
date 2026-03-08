@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcclesiaFlow — Complete Design Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ================================================================
+       DESIGN TOKENS
+       ================================================================ */
+    :root {
+      --sapphire-50:  #EFF4FF;
+      --sapphire-100: #DBE4FE;
+      --sapphire-200: #BFCEFE;
+      --sapphire-300: #93AAFD;
+      --sapphire-400: #6078FA;
+      --sapphire-500: #3B52F6;
+      --sapphire-600: #2535EB;
+      --sapphire-700: #1D27D8;
+      --sapphire-800: #1E23AF;
+      --sapphire-900: #1E238A;
+      --sapphire-950: #161654;
+
+      --gold-50:  #FFFBEB;
+      --gold-100: #FEF3C7;
+      --gold-200: #FDE68A;
+      --gold-300: #FCD34D;
+      --gold-400: #FBBF24;
+      --gold-500: #F59E0B;
+      --gold-600: #D97706;
+      --gold-700: #B45309;
+
+      --teal-50:  #F0FDFA;
+      --teal-100: #CCFBF1;
+      --teal-300: #5EEAD4;
+      --teal-500: #14B8A6;
+      --teal-600: #0D9488;
+      --teal-700: #0F766E;
+
+      --success: #22C55E;
+      --error:   #EF4444;
+      --warning: #F59E0B;
+
+      --radius-sm: 8px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+    }
+
+    [data-theme="dark"] {
+      --bg-page:    #0A0E1A;
+      --bg-surface: #111827;
+      --bg-input:   #1A2035;
+      --bg-panel:   #0A0E1A;
+      --text-1: #F1F5F9;
+      --text-2: #94A3B8;
+      --text-3: #475569;
+      --border:       #1E293B;
+      --border-hover: #334155;
+    }
+    [data-theme="light"] {
+      --bg-page:    #FFFFFF;
+      --bg-surface: #FFFFFF;
+      --bg-input:   #F8FAFC;
+      --bg-panel:   #0F1629;
+      --text-1: #0F172A;
+      --text-2: #475569;
+      --text-3: #94A3B8;
+      --border:       #E2E8F0;
+      --border-hover: #CBD5E1;
+    }
+
+    /* ================================================================
+       RESET & BASE
+       ================================================================ */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-page); color: var(--text-1);
+      line-height: 1.5; transition: background 0.3s, color 0.3s;
+    }
+    a { color: var(--sapphire-500); text-decoration: none; font-weight: 500; }
+    a:hover { color: var(--sapphire-400); }
+
+    /* ================================================================
+       TOP NAV
+       ================================================================ */
+    .topnav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg-surface); border-bottom: 1px solid var(--border);
+      padding: 0 20px; display: flex; align-items: center;
+      height: 48px; gap: 4px; overflow-x: auto;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .topnav-brand {
+      font-size: 13px; font-weight: 800; letter-spacing: 0.04em;
+      color: var(--text-1); margin-right: 16px; white-space: nowrap;
+    }
+    .topnav-brand .flow { color: var(--sapphire-500); }
+    .topnav-btn {
+      background: none; border: 1px solid transparent; color: var(--text-3);
+      padding: 6px 12px; border-radius: var(--radius-sm); font-family: 'Inter';
+      font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .topnav-btn:hover { color: var(--text-1); border-color: var(--border); }
+    .topnav-btn.active { background: var(--sapphire-600); color: white; border-color: var(--sapphire-600); }
+    .topnav-sep { width: 1px; height: 20px; background: var(--border); margin: 0 8px; flex-shrink: 0; }
+
+    /* Theme selector (Admin/User) */
+    .theme-selector {
+      display: flex; align-items: center; gap: 2px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: 8px; padding: 2px; margin-right: 8px;
+    }
+    .theme-selector-btn {
+      background: none; border: none; padding: 4px 10px; border-radius: 6px;
+      font-family: 'Inter'; font-size: 11px; font-weight: 600; cursor: pointer;
+      color: var(--text-3); transition: all 0.15s; white-space: nowrap;
+    }
+    .theme-selector-btn.active {
+      background: var(--sapphire-600); color: white;
+    }
+    .theme-selector-btn:not(.active):hover { color: var(--text-1); }
+
+    .theme-toggle {
+      margin-left: auto; display: flex; align-items: center; gap: 6px;
+      background: none; border: 1px solid var(--border); border-radius: 20px;
+      padding: 3px 10px 3px 5px; cursor: pointer; font-size: 11px;
+      font-weight: 500; color: var(--text-2); font-family: 'Inter'; transition: all 0.15s;
+    }
+    .theme-toggle:hover { border-color: var(--border-hover); color: var(--text-1); }
+    .tt-track { width: 26px; height: 14px; background: var(--border); border-radius: 7px; position: relative; transition: background 0.3s; }
+    [data-theme="light"] .tt-track { background: var(--sapphire-500); }
+    .tt-knob { position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: white; transition: transform 0.3s; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+    [data-theme="light"] .tt-knob { transform: translateX(12px); }
+
+    /* ================================================================
+       PAGES
+       ================================================================ */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ================================================================
+       SPLIT LAYOUT (Admin pages) — exact replica of style-clean-minimal
+       ================================================================ */
+    .split { display: flex; min-height: calc(100vh - 48px); }
+
+    /* Left branding panel */
+    .panel-left {
+      flex: 1; display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: 60px 40px; position: relative; overflow: hidden;
+      background: #0A0E1A;
+    }
+    [data-theme="light"] .panel-left { background: #0F1629; }
+    .panel-left::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 30% 70%, rgba(59,82,246,0.08) 0%, transparent 50%),
+        radial-gradient(circle at 70% 30%, rgba(59,82,246,0.05) 0%, transparent 50%);
+    }
+    .pl-grid {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                         linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    }
+    .pl-particles { position: absolute; inset: 0; overflow: hidden; }
+    .pl-particle {
+      position: absolute; width: 2px; height: 2px; border-radius: 50%;
+      background: rgba(96,120,250,0.2);
+      animation: plrise linear infinite;
+    }
+    @keyframes plrise {
+      0% { transform: translateY(100%) scale(0); opacity: 0; }
+      10% { opacity: 0.5; } 90% { opacity: 0.5; }
+      100% { transform: translateY(-10%) scale(1); opacity: 0; }
+    }
+    .pl-pulse {
+      position: absolute; border-radius: 50%;
+      border: 1px solid rgba(59,82,246,0.06);
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+      animation: plpulse 5s ease-in-out infinite;
+    }
+    .pl-pulse:nth-child(1) { width: 200px; height: 200px; }
+    .pl-pulse:nth-child(2) { width: 300px; height: 300px; animation-delay: -1.8s; }
+    .pl-pulse:nth-child(3) { width: 400px; height: 400px; animation-delay: -3.5s; }
+    @keyframes plpulse {
+      0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 0.5; }
+      50% { transform: translate(-50%,-50%) scale(1.06); opacity: 0.15; }
+    }
+    .pl-content { position: relative; z-index: 1; text-align: center; max-width: 360px; }
+    .pl-logo { font-size: 36px; font-weight: 800; letter-spacing: 0.04em; color: #FFFFFF; margin-bottom: 4px; }
+    .pl-logo .flow { color: rgba(255,255,255,0.7); }
+    .pl-tagline { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 48px; letter-spacing: 0.12em; text-transform: uppercase; }
+    .brand-features { text-align: left; display: flex; flex-direction: column; gap: 20px; }
+    .brand-feature { display: flex; align-items: flex-start; gap: 14px; }
+    .brand-feature-icon {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      background: rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-feature-icon svg { width: 18px; height: 18px; color: rgba(255,255,255,0.7); }
+    .brand-feature-text h4 { font-size: 14px; font-weight: 600; color: #FFFFFF; margin-bottom: 2px; }
+    .brand-feature-text p { font-size: 13px; color: rgba(255,255,255,0.4); line-height: 1.4; }
+
+    /* Right form panel */
+    .panel-right {
+      flex: 1; display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: 60px 40px; background: var(--bg-page);
+    }
+    .form-container { width: 100%; max-width: 380px; }
+    .form-container h2 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .form-container .subtitle { font-size: 15px; color: var(--text-2); margin-bottom: 32px; }
+    .mobile-logo { display: none; text-align: center; margin-bottom: 32px; }
+    .mobile-logo .logo-text { font-size: 24px; font-weight: 800; letter-spacing: 0.04em; color: var(--text-1); }
+    .mobile-logo .logo-text .flow { color: var(--sapphire-500); }
+
+    .locale { position: absolute; top: 16px; right: 16px; z-index: 3; }
+    .locale select {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.4); padding: 4px 8px; border-radius: 6px;
+      font-family: 'Inter'; font-size: 11px; cursor: pointer; outline: none;
+    }
+
+    /* ================================================================
+       CENTERED LAYOUT (User pages + secondary pages)
+       ================================================================ */
+    .centered {
+      min-height: calc(100vh - 48px); display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 20px; background: var(--bg-page);
+    }
+    .centered .logo-mini { font-size: 22px; font-weight: 800; letter-spacing: 0.04em; color: var(--text-1); margin-bottom: 8px; }
+    .centered .logo-mini .flow { color: var(--sapphire-500); }
+    .centered .welcome-sub { font-size: 13px; color: var(--text-2); margin-bottom: 32px; text-align: center; }
+
+    /* ================================================================
+       FORM CARD
+       ================================================================ */
+    .fcard { width: 100%; max-width: 400px; }
+    .fcard h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .fcard .sub { font-size: 14px; color: var(--text-2); margin-bottom: 24px; }
+
+    /* Social */
+    .social-row { display: flex; gap: 10px; margin-bottom: 20px; }
+    .btn-social {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border);
+      background: var(--bg-page); font-family: 'Inter'; font-size: 13px; font-weight: 500;
+      color: var(--text-1); cursor: pointer; transition: all 0.15s;
+    }
+    .btn-social:hover { border-color: var(--border-hover); background: var(--bg-input); }
+    .btn-social svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* Divider */
+    .divider {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 20px; font-size: 12px; color: var(--text-3);
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* Form fields */
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 13px; font-weight: 500; color: var(--text-2); margin-bottom: 6px; }
+    .field input {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--border);
+      border-radius: var(--radius-md); background: var(--bg-input);
+      font-family: 'Inter'; font-size: 14px; color: var(--text-1);
+      outline: none; transition: all 0.15s;
+    }
+    .field input::placeholder { color: var(--text-3); }
+    .field input:hover { border-color: var(--border-hover); }
+    .field input:focus { border-color: var(--sapphire-500); box-shadow: 0 0 0 3px rgba(59,82,246,0.1); }
+    .field input.error { border-color: var(--error); box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+    .field-hint { font-size: 12px; color: var(--text-3); margin-top: 6px; }
+
+    .form-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; font-size: 13px;
+    }
+    .form-row label { display: flex; align-items: center; gap: 6px; color: var(--text-2); cursor: pointer; }
+    .form-row input[type="checkbox"] { accent-color: var(--sapphire-600); width: 15px; height: 15px; }
+    .form-row a { color: var(--sapphire-500); font-weight: 500; text-decoration: none; }
+    .form-row a:hover { color: var(--sapphire-400); }
+
+    /* Password strength */
+    .pw-strength { display: flex; gap: 4px; margin-top: 8px; }
+    .pw-bar { flex: 1; height: 3px; background: var(--border); border-radius: 2px; transition: background 0.3s; }
+    .pw-bar.weak { background: var(--error); }
+    .pw-bar.medium { background: var(--warning); }
+    .pw-bar.strong { background: var(--success); }
+
+    /* Buttons */
+    .btn {
+      width: 100%; padding: 11px; border: none; border-radius: var(--radius-md);
+      font-family: 'Inter'; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-primary { background: var(--sapphire-600); color: white; }
+    .btn-primary:hover { background: var(--sapphire-500); }
+    .btn-outline { background: none; color: var(--text-2); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--border-hover); color: var(--text-1); }
+    .btn + .btn { margin-top: 10px; }
+
+    /* Footer */
+    .fcard-footer {
+      text-align: center; margin-top: 20px; padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 13px; color: var(--text-2);
+    }
+
+    /* Alerts */
+    .alert {
+      padding: 12px 14px; border-radius: var(--radius-md); font-size: 13px;
+      margin-bottom: 16px; display: flex; align-items: flex-start; gap: 10px;
+    }
+    .alert svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+    .alert-error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.15); color: var(--error); }
+    .alert-success { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.15); color: var(--success); }
+    .alert-info { background: rgba(59,82,246,0.08); border: 1px solid rgba(59,82,246,0.12); color: var(--sapphire-400); }
+    .alert-warning { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.15); color: var(--warning); }
+
+    /* ================================================================
+       USER THEME — Centered login/register with subtle background
+       ================================================================ */
+    .user-centered {
+      min-height: calc(100vh - 48px); display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 20px; background: var(--bg-page);
+      position: relative; overflow: hidden;
+    }
+    .user-centered::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(59,82,246,0.04) 0%, transparent 60%),
+        radial-gradient(circle at 80% 80%, rgba(59,82,246,0.02) 0%, transparent 40%);
+    }
+    .user-bg-particles { position: absolute; inset: 0; overflow: hidden; }
+    .user-bg-particle {
+      position: absolute; border-radius: 50%;
+      background: rgba(59,82,246,0.06);
+      animation: userfloat 20s ease-in-out infinite;
+    }
+    @keyframes userfloat {
+      0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+      33% { transform: translate(15px, -20px) scale(1.1); opacity: 0.5; }
+      66% { transform: translate(-10px, 10px) scale(0.95); opacity: 0.3; }
+    }
+
+    .user-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; }
+    .user-logo { font-size: 28px; font-weight: 800; letter-spacing: 0.04em; color: var(--text-1); margin-bottom: 6px; }
+    .user-logo .flow { color: var(--sapphire-500); }
+    .user-welcome { font-size: 14px; color: var(--text-2); margin-bottom: 28px; text-align: center; max-width: 320px; line-height: 1.5; }
+
+    .user-card {
+      width: 464px; max-width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
+      transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    [data-theme="dark"] .user-card {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.15);
+    }
+    .user-card .fcard { max-width: 100%; }
+
+    .user-locale {
+      position: absolute; top: 20px; right: 20px; z-index: 3;
+    }
+    .user-locale select {
+      background: var(--bg-input); border: 1px solid var(--border);
+      color: var(--text-3); padding: 4px 8px; border-radius: 6px;
+      font-family: 'Inter'; font-size: 11px; cursor: pointer; outline: none;
+    }
+
+    /* ================================================================
+       BRAND GUIDE PAGE
+       ================================================================ */
+    .guide { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+    .guide section { padding: 40px 0; border-bottom: 1px solid var(--border); }
+    .guide section:last-child { border-bottom: none; }
+    .guide h2 { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
+    .guide h3 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .guide .desc { font-size: 14px; color: var(--text-2); margin-bottom: 28px; max-width: 580px; }
+
+    .palette-group { margin-bottom: 32px; }
+    .palette-label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .palette-desc { font-size: 12px; color: var(--text-2); margin-bottom: 10px; }
+    .palette-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; }
+    .swatch { border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); }
+    .swatch-color { height: 48px; }
+    .swatch-info { padding: 6px 8px; background: var(--bg-surface); }
+    .swatch-name { font-size: 10px; font-weight: 600; color: var(--text-1); }
+    .swatch-hex { font-size: 9px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+
+    .type-scale { display: flex; flex-direction: column; gap: 16px; }
+    .type-row { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .type-meta { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text-3); }
+
+    .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .comp-card { padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--bg-surface); }
+    .comp-card h4 { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); margin-bottom: 16px; }
+
+    .badges-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge { display: inline-flex; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .badge-sapphire { background: rgba(59,82,246,0.1); color: var(--sapphire-400); }
+    .badge-gold { background: rgba(245,158,11,0.1); color: var(--gold-500); }
+    .badge-teal { background: rgba(20,184,166,0.1); color: var(--teal-500); }
+    .badge-success { background: rgba(34,197,94,0.1); color: var(--success); }
+    .badge-error { background: rgba(239,68,68,0.1); color: var(--error); }
+    .badge-neutral { background: var(--bg-input); color: var(--text-2); }
+
+    /* ================================================================
+       RESPONSIVE
+       ================================================================ */
+    @media (max-width: 768px) {
+      .split { flex-direction: column; }
+      .panel-left { display: none; }
+      .mobile-logo { display: block !important; }
+      .social-row { flex-direction: column; }
+      .comp-grid { grid-template-columns: 1fr; }
+      .theme-selector { display: none; }
+    }
+    .mobile-logo { display: none; text-align: center; margin-bottom: 28px; }
+    .mobile-logo span { font-size: 22px; font-weight: 800; letter-spacing: 0.04em; color: var(--text-1); }
+    .mobile-logo .flow { color: var(--sapphire-500); }
+  </style>
+</head>
+<body>
+
+<!-- ================================================================
+     TOP NAVIGATION
+     ================================================================ -->
+<nav class="topnav">
+  <div class="topnav-brand">Ecclesia<span class="flow">Flow</span></div>
+
+  <div class="theme-selector">
+    <button class="theme-selector-btn active" onclick="switchExperience('admin', this)">Admin</button>
+    <button class="theme-selector-btn" onclick="switchExperience('user', this)">User</button>
+  </div>
+
+  <button class="topnav-btn active" data-page="login" onclick="showPage('login',this)">Login</button>
+  <button class="topnav-btn" data-page="register" onclick="showPage('register',this)">Register</button>
+  <button class="topnav-btn" data-page="forgot" onclick="showPage('forgot',this)">Forgot Password</button>
+  <button class="topnav-btn" data-page="reset" onclick="showPage('reset',this)">Reset Password</button>
+  <button class="topnav-btn" data-page="setup" onclick="showPage('setup',this)">Set Password</button>
+  <div class="topnav-sep"></div>
+  <button class="topnav-btn" data-page="error" onclick="showPage('error',this)">Error State</button>
+  <button class="topnav-btn" data-page="success" onclick="showPage('success',this)">Success</button>
+  <div class="topnav-sep"></div>
+  <button class="topnav-btn" data-page="guide" onclick="showPage('guide',this)">Brand Guide</button>
+  <button class="theme-toggle" onclick="toggleTheme()">
+    <div class="tt-track"><div class="tt-knob"></div></div>
+    <span id="themeLabel">Light</span>
+  </button>
+</nav>
+
+<!-- ================================================================
+     ADMIN PAGES
+     ================================================================ -->
+
+<!-- ADMIN: LOGIN (Split layout — exact replica of style-clean-minimal) -->
+<div id="pg-admin-login" class="page admin-page active">
+  <div class="split">
+    <div class="panel-left">
+      <div class="pl-grid"></div>
+      <div class="pl-particles" id="pl-particles-admin-login"></div>
+      <div class="pl-pulse"></div><div class="pl-pulse"></div><div class="pl-pulse"></div>
+      <div class="locale"><select><option>English</option><option>Fran&ccedil;ais</option></select></div>
+      <div class="pl-content">
+        <div class="pl-logo">Ecclesia<span class="flow">Flow</span></div>
+        <div class="pl-tagline">Church Management Platform</div>
+        <div class="brand-features">
+          <div class="brand-feature">
+            <div class="brand-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+            <div class="brand-feature-text"><h4>Member Management</h4><p>Track and manage your entire congregation with ease</p></div>
+          </div>
+          <div class="brand-feature">
+            <div class="brand-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            <div class="brand-feature-text"><h4>Event Planning</h4><p>Organize services, events, and schedules seamlessly</p></div>
+          </div>
+          <div class="brand-feature">
+            <div class="brand-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div class="brand-feature-text"><h4>Secure &amp; Private</h4><p>Enterprise-grade security for your community data</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-right">
+      <div class="form-container">
+        <div class="mobile-logo"><div class="logo-text">Ecclesia<span class="flow">Flow</span></div></div>
+        <h2>Sign in</h2>
+        <p class="subtitle">Welcome back to your account</p>
+        <div class="social-row">
+          <button class="btn-social"><svg viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg> Google</button>
+          <button class="btn-social"><svg viewBox="0 0 18 18" fill="#1877F2"><path d="M18 9a9 9 0 10-10.406 8.89v-6.29H5.309V9h2.285V7.017c0-2.255 1.343-3.501 3.4-3.501.984 0 2.014.176 2.014.176v2.215h-1.135c-1.118 0-1.467.694-1.467 1.406V9h2.496l-.399 2.6h-2.097v6.29A9.003 9.003 0 0018 9z"/></svg> Facebook</button>
+        </div>
+        <div class="divider">or</div>
+        <form onsubmit="return false">
+          <div class="field"><label>Email</label><input type="email" placeholder="you@church.org"></div>
+          <div class="field"><label>Password</label><input type="password" placeholder="Enter your password"></div>
+          <div class="form-row">
+            <label><input type="checkbox"> Remember me</label>
+            <a href="#" onclick="showPage('forgot',document.querySelector('[data-page=forgot]'));return false;">Forgot password?</a>
+          </div>
+          <button class="btn btn-primary" type="submit">Sign in</button>
+        </form>
+        <div class="fcard-footer">Don't have an account? <a href="#" onclick="showPage('register',document.querySelector('[data-page=register]'));return false;">Sign up</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN: REGISTER (Split layout — exact replica of style-clean-minimal) -->
+<div id="pg-admin-register" class="page admin-page">
+  <div class="split">
+    <div class="panel-left">
+      <div class="pl-grid"></div>
+      <div class="pl-particles" id="pl-particles-admin-register"></div>
+      <div class="pl-pulse"></div><div class="pl-pulse"></div><div class="pl-pulse"></div>
+      <div class="pl-content">
+        <div class="pl-logo">Ecclesia<span class="flow">Flow</span></div>
+        <div class="pl-tagline">Church Management Platform</div>
+        <div class="brand-features">
+          <div class="brand-feature">
+            <div class="brand-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+            <div class="brand-feature-text"><h4>Member Management</h4><p>Track and manage your entire congregation with ease</p></div>
+          </div>
+          <div class="brand-feature">
+            <div class="brand-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            <div class="brand-feature-text"><h4>Event Planning</h4><p>Organize services, events, and schedules seamlessly</p></div>
+          </div>
+          <div class="brand-feature">
+            <div class="brand-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div class="brand-feature-text"><h4>Secure &amp; Private</h4><p>Enterprise-grade security for your community data</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-right">
+      <div class="fcard">
+        <div class="mobile-logo"><span>Ecclesia<span class="flow">Flow</span></span></div>
+        <h2>Register your church</h2>
+        <p class="sub">Create an administrator account</p>
+        <form onsubmit="return false">
+          <div class="field"><label>Church name</label><input type="text" placeholder="My Church"></div>
+          <div style="display:flex;gap:10px;">
+            <div class="field" style="flex:1;"><label>First name</label><input type="text" placeholder="John"></div>
+            <div class="field" style="flex:1;"><label>Last name</label><input type="text" placeholder="Doe"></div>
+          </div>
+          <div class="field"><label>Email</label><input type="email" placeholder="admin@church.org"></div>
+          <div class="field">
+            <label>Password</label><input type="password" placeholder="Minimum 8 characters">
+            <div class="pw-strength"><div class="pw-bar weak"></div><div class="pw-bar weak"></div><div class="pw-bar"></div><div class="pw-bar"></div></div>
+            <div class="field-hint">Use 8+ characters with uppercase, lowercase, number, and symbol</div>
+          </div>
+          <button class="btn btn-primary" type="submit">Create account</button>
+        </form>
+        <div class="fcard-footer">Already have an account? <a href="#" onclick="showPage('login',document.querySelector('[data-page=login]'));return false;">Sign in</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN: ERROR (Split layout) -->
+<div id="pg-admin-error" class="page admin-page">
+  <div class="split">
+    <div class="panel-left">
+      <div class="pl-grid"></div>
+      <div class="pl-particles" id="pl-particles-admin-error"></div>
+      <div class="pl-pulse"></div><div class="pl-pulse"></div><div class="pl-pulse"></div>
+      <div class="pl-content">
+        <div class="pl-logo">Ecclesia<span class="flow">Flow</span></div>
+        <div class="pl-tagline">Church Management Platform</div>
+      </div>
+    </div>
+    <div class="panel-right">
+      <div class="fcard">
+        <h2>Administration</h2>
+        <p class="sub">Sign in to manage your church</p>
+        <div class="alert alert-error">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"/></svg>
+          Invalid email or password. Please try again.
+        </div>
+        <form onsubmit="return false">
+          <div class="field"><label>Email</label><input type="email" class="error" value="admin@church.org"></div>
+          <div class="field"><label>Password</label><input type="password" class="error" value="wrongpass"></div>
+          <div class="form-row">
+            <label><input type="checkbox"> Remember me</label>
+            <a href="#">Forgot password?</a>
+          </div>
+          <button class="btn btn-primary" type="submit">Sign in</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     USER PAGES
+     ================================================================ -->
+
+<!-- USER: LOGIN (Centered, simple, welcoming) -->
+<div id="pg-user-login" class="page user-page">
+  <div class="user-centered">
+    <div class="user-bg-particles" id="user-particles-login"></div>
+    <div class="user-locale"><select><option>English</option><option>Fran&ccedil;ais</option></select></div>
+    <div class="user-content">
+      <div class="user-logo">Ecclesia<span class="flow">Flow</span></div>
+      <div class="user-welcome">Find and join your church community</div>
+      <div class="user-card">
+        <div class="fcard">
+          <h2>Sign in</h2>
+          <p class="sub">Welcome back</p>
+          <div class="social-row">
+            <button class="btn-social"><svg viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg> Google</button>
+            <button class="btn-social"><svg viewBox="0 0 18 18" fill="#1877F2"><path d="M18 9a9 9 0 10-10.406 8.89v-6.29H5.309V9h2.285V7.017c0-2.255 1.343-3.501 3.4-3.501.984 0 2.014.176 2.014.176v2.215h-1.135c-1.118 0-1.467.694-1.467 1.406V9h2.496l-.399 2.6h-2.097v6.29A9.003 9.003 0 0018 9z"/></svg> Facebook</button>
+          </div>
+          <div class="divider">or</div>
+          <form onsubmit="return false">
+            <div class="field"><label>Email</label><input type="email" placeholder="you@email.com"></div>
+            <div class="field"><label>Password</label><input type="password" placeholder="Enter your password"></div>
+            <div class="form-row">
+              <label><input type="checkbox"> Remember me</label>
+              <a href="#" onclick="showPage('forgot',document.querySelector('[data-page=forgot]'));return false;">Forgot password?</a>
+            </div>
+            <button class="btn btn-primary" type="submit">Sign in</button>
+          </form>
+          <div class="fcard-footer">Don't have an account? <a href="#" onclick="showPage('register',document.querySelector('[data-page=register]'));return false;">Sign up</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USER: REGISTER (Centered, simple) -->
+<div id="pg-user-register" class="page user-page">
+  <div class="user-centered">
+    <div class="user-bg-particles" id="user-particles-register"></div>
+    <div class="user-locale"><select><option>English</option><option>Fran&ccedil;ais</option></select></div>
+    <div class="user-content">
+      <div class="user-logo">Ecclesia<span class="flow">Flow</span></div>
+      <div class="user-welcome">Create your account and discover churches near you</div>
+      <div class="user-card">
+        <div class="fcard">
+          <h2>Create an account</h2>
+          <p class="sub">It only takes a minute</p>
+          <div class="social-row">
+            <button class="btn-social"><svg viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg> Google</button>
+            <button class="btn-social"><svg viewBox="0 0 18 18" fill="#1877F2"><path d="M18 9a9 9 0 10-10.406 8.89v-6.29H5.309V9h2.285V7.017c0-2.255 1.343-3.501 3.4-3.501.984 0 2.014.176 2.014.176v2.215h-1.135c-1.118 0-1.467.694-1.467 1.406V9h2.496l-.399 2.6h-2.097v6.29A9.003 9.003 0 0018 9z"/></svg> Facebook</button>
+          </div>
+          <div class="divider">or</div>
+          <form onsubmit="return false">
+            <div style="display:flex;gap:10px;">
+              <div class="field" style="flex:1;"><label>First name</label><input type="text" placeholder="John"></div>
+              <div class="field" style="flex:1;"><label>Last name</label><input type="text" placeholder="Doe"></div>
+            </div>
+            <div class="field"><label>Email</label><input type="email" placeholder="you@email.com"></div>
+            <div class="field-hint" style="margin-bottom:16px;">After registration, you will receive a confirmation email. Once verified, you will be invited to set your password.</div>
+            <button class="btn btn-primary" type="submit">Create account</button>
+          </form>
+          <div class="fcard-footer">Already have an account? <a href="#" onclick="showPage('login',document.querySelector('[data-page=login]'));return false;">Sign in</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USER: ERROR (Centered with error) -->
+<div id="pg-user-error" class="page user-page">
+  <div class="user-centered">
+    <div class="user-bg-particles" id="user-particles-error"></div>
+    <div class="user-content">
+      <div class="user-logo">Ecclesia<span class="flow">Flow</span></div>
+      <div class="user-welcome">Find and join your church community</div>
+      <div class="user-card">
+        <div class="fcard">
+          <h2>Sign in</h2>
+          <p class="sub">Welcome back</p>
+          <div class="alert alert-error">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"/></svg>
+            Invalid email or password. Please try again.
+          </div>
+          <form onsubmit="return false">
+            <div class="field"><label>Email</label><input type="email" class="error" value="user@example.com"></div>
+            <div class="field"><label>Password</label><input type="password" class="error" value="wrongpass"></div>
+            <div class="form-row">
+              <label><input type="checkbox"> Remember me</label>
+              <a href="#">Forgot password?</a>
+            </div>
+            <button class="btn btn-primary" type="submit">Sign in</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     SHARED PAGES (same for both admin and user)
+     ================================================================ -->
+
+<!-- FORGOT PASSWORD (Centered) -->
+<div id="pg-forgot" class="page shared-page">
+  <div class="centered">
+    <div class="logo-mini">Ecclesia<span class="flow">Flow</span></div>
+    <div class="fcard">
+      <h2>Reset your password</h2>
+      <p class="sub">Enter your email and we'll send you a reset link</p>
+      <form onsubmit="return false">
+        <div class="field"><label>Email</label><input type="email" placeholder="you@email.com"></div>
+        <button class="btn btn-primary" type="submit">Send reset link</button>
+        <button class="btn btn-outline" type="button" onclick="showPage('login',document.querySelector('[data-page=login]'))">Back to sign in</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD (Centered) -->
+<div id="pg-reset" class="page shared-page">
+  <div class="centered">
+    <div class="logo-mini">Ecclesia<span class="flow">Flow</span></div>
+    <div class="fcard">
+      <h2>Set a new password</h2>
+      <p class="sub">Choose a strong password for your account</p>
+      <div class="alert alert-success">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+        Your identity has been verified.
+      </div>
+      <form onsubmit="return false">
+        <div class="field">
+          <label>New password</label><input type="password" placeholder="Minimum 8 characters">
+          <div class="pw-strength"><div class="pw-bar weak"></div><div class="pw-bar weak"></div><div class="pw-bar medium"></div><div class="pw-bar"></div></div>
+          <div class="field-hint">Use 8+ characters with uppercase, lowercase, number, and symbol</div>
+        </div>
+        <div class="field"><label>Confirm password</label><input type="password" placeholder="Repeat your password"></div>
+        <button class="btn btn-primary" type="submit">Update password</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- SET PASSWORD / INITIAL SETUP (Centered) -->
+<div id="pg-setup" class="page shared-page">
+  <div class="centered">
+    <div class="logo-mini">Ecclesia<span class="flow">Flow</span></div>
+    <div class="fcard">
+      <h2>Set up your password</h2>
+      <p class="sub">Welcome! Create a password to activate your account</p>
+      <div class="alert alert-info">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/></svg>
+        Your account has been confirmed. Please set a password to continue.
+      </div>
+      <form onsubmit="return false">
+        <div class="field">
+          <label>New password</label><input type="password" placeholder="Minimum 8 characters">
+          <div class="pw-strength"><div class="pw-bar strong"></div><div class="pw-bar strong"></div><div class="pw-bar strong"></div><div class="pw-bar strong"></div></div>
+          <div class="field-hint">Strong password</div>
+        </div>
+        <div class="field"><label>Confirm password</label><input type="password" placeholder="Repeat your password"></div>
+        <button class="btn btn-primary" type="submit">Activate account</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS STATE (Centered) -->
+<div id="pg-success" class="page shared-page">
+  <div class="centered">
+    <div class="logo-mini">Ecclesia<span class="flow">Flow</span></div>
+    <div class="fcard" style="text-align:center;">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+        <svg width="28" height="28" viewBox="0 0 20 20" fill="#22C55E"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+      </div>
+      <h2>Password updated</h2>
+      <p class="sub">Your password has been changed successfully. You can now sign in with your new password.</p>
+      <button class="btn btn-primary" onclick="showPage('login',document.querySelector('[data-page=login]'))">Back to sign in</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     BRAND GUIDE PAGE
+     ================================================================ -->
+<div id="pg-guide" class="page shared-page">
+  <div class="guide">
+    <section>
+      <h2>Identity</h2>
+      <h3>EcclesiaFlow Brand Guide</h3>
+      <p class="desc">Charte graphique complète du projet. Palette Sapphire & Sacred Gold, typographie Inter, style Clean Minimal.</p>
+
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:24px;">
+        <div style="padding:32px 40px;border-radius:var(--radius-lg);background:#0A0E1A;border:1px solid #1E293B;flex:1;min-width:250px;">
+          <div style="font-size:28px;font-weight:800;letter-spacing:0.04em;color:#F1F5F9;">Ecclesia<span style="color:rgba(241,245,249,0.7);">Flow</span></div>
+          <div style="font-size:11px;color:#475569;margin-top:4px;">Logo on dark</div>
+        </div>
+        <div style="padding:32px 40px;border-radius:var(--radius-lg);background:#FFFFFF;border:1px solid #E2E8F0;flex:1;min-width:250px;">
+          <div style="font-size:28px;font-weight:800;letter-spacing:0.04em;color:#0F172A;">Ecclesia<span style="color:#3B52F6;">Flow</span></div>
+          <div style="font-size:11px;color:#94A3B8;margin-top:4px;">Logo on light</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Color palette</h2>
+      <h3>Sapphire, Gold & Teal</h3>
+      <p class="desc">Sapphire for primary actions, Gold for premium accents, Teal for secondary elements. Semantic colors for states.</p>
+
+      <div class="palette-group">
+        <div class="palette-label">Primary — Sapphire</div>
+        <div class="palette-desc">Buttons, focus, links, key UI elements</div>
+        <div class="palette-row">
+          <div class="swatch"><div class="swatch-color" style="background:#EFF4FF"></div><div class="swatch-info"><div class="swatch-name">50</div><div class="swatch-hex">#EFF4FF</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#BFCEFE"></div><div class="swatch-info"><div class="swatch-name">200</div><div class="swatch-hex">#BFCEFE</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#6078FA"></div><div class="swatch-info"><div class="swatch-name">400</div><div class="swatch-hex">#6078FA</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#3B52F6"></div><div class="swatch-info"><div class="swatch-name">500</div><div class="swatch-hex">#3B52F6</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#2535EB"></div><div class="swatch-info"><div class="swatch-name">600</div><div class="swatch-hex">#2535EB</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#1D27D8"></div><div class="swatch-info"><div class="swatch-name">700</div><div class="swatch-hex">#1D27D8</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#161654"></div><div class="swatch-info"><div class="swatch-name">950</div><div class="swatch-hex">#161654</div></div></div>
+        </div>
+      </div>
+
+      <div class="palette-group">
+        <div class="palette-label">Accent — Sacred Gold</div>
+        <div class="palette-desc">Premium badges, highlights, warm touches</div>
+        <div class="palette-row">
+          <div class="swatch"><div class="swatch-color" style="background:#FFFBEB"></div><div class="swatch-info"><div class="swatch-name">50</div><div class="swatch-hex">#FFFBEB</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#FDE68A"></div><div class="swatch-info"><div class="swatch-name">200</div><div class="swatch-hex">#FDE68A</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#FBBF24"></div><div class="swatch-info"><div class="swatch-name">400</div><div class="swatch-hex">#FBBF24</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#F59E0B"></div><div class="swatch-info"><div class="swatch-name">500</div><div class="swatch-hex">#F59E0B</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#D97706"></div><div class="swatch-info"><div class="swatch-name">600</div><div class="swatch-hex">#D97706</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#B45309"></div><div class="swatch-info"><div class="swatch-name">700</div><div class="swatch-hex">#B45309</div></div></div>
+        </div>
+      </div>
+
+      <div class="palette-group">
+        <div class="palette-label">Secondary — Teal</div>
+        <div class="palette-desc">Secondary actions, info states</div>
+        <div class="palette-row">
+          <div class="swatch"><div class="swatch-color" style="background:#F0FDFA"></div><div class="swatch-info"><div class="swatch-name">50</div><div class="swatch-hex">#F0FDFA</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#5EEAD4"></div><div class="swatch-info"><div class="swatch-name">300</div><div class="swatch-hex">#5EEAD4</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#14B8A6"></div><div class="swatch-info"><div class="swatch-name">500</div><div class="swatch-hex">#14B8A6</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#0D9488"></div><div class="swatch-info"><div class="swatch-name">600</div><div class="swatch-hex">#0D9488</div></div></div>
+        </div>
+      </div>
+
+      <div class="palette-group">
+        <div class="palette-label">Semantic</div>
+        <div class="palette-row">
+          <div class="swatch"><div class="swatch-color" style="background:#22C55E"></div><div class="swatch-info"><div class="swatch-name">Success</div><div class="swatch-hex">#22C55E</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#F59E0B"></div><div class="swatch-info"><div class="swatch-name">Warning</div><div class="swatch-hex">#F59E0B</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#EF4444"></div><div class="swatch-info"><div class="swatch-name">Error</div><div class="swatch-hex">#EF4444</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#3B52F6"></div><div class="swatch-info"><div class="swatch-name">Info</div><div class="swatch-hex">#3B52F6</div></div></div>
+        </div>
+      </div>
+
+      <div class="palette-group">
+        <div class="palette-label">Neutrals — Slate</div>
+        <div class="palette-row">
+          <div class="swatch"><div class="swatch-color" style="background:#F8FAFC"></div><div class="swatch-info"><div class="swatch-name">50</div><div class="swatch-hex">#F8FAFC</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#E2E8F0"></div><div class="swatch-info"><div class="swatch-name">200</div><div class="swatch-hex">#E2E8F0</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#94A3B8"></div><div class="swatch-info"><div class="swatch-name">400</div><div class="swatch-hex">#94A3B8</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#475569"></div><div class="swatch-info"><div class="swatch-name">600</div><div class="swatch-hex">#475569</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#1E293B"></div><div class="swatch-info"><div class="swatch-name">800</div><div class="swatch-hex">#1E293B</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#0F172A"></div><div class="swatch-info"><div class="swatch-name">900</div><div class="swatch-hex">#0F172A</div></div></div>
+          <div class="swatch"><div class="swatch-color" style="background:#020617"></div><div class="swatch-info"><div class="swatch-name">950</div><div class="swatch-hex">#020617</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Typography</h2>
+      <h3>Inter — Type scale</h3>
+      <p class="desc">Inter for all text. JetBrains Mono for code and technical values.</p>
+      <div class="type-scale">
+        <div class="type-row"><div class="type-meta">34px / 800<br>Logo</div><div style="font-size:34px;font-weight:800;letter-spacing:0.04em;">Ecclesia<span style="color:var(--sapphire-500)">Flow</span></div></div>
+        <div class="type-row"><div class="type-meta">24px / 700<br>Page title</div><div style="font-size:24px;font-weight:700;">Dashboard Overview</div></div>
+        <div class="type-row"><div class="type-meta">22px / 700<br>Card title</div><div style="font-size:22px;font-weight:700;">Sign in</div></div>
+        <div class="type-row"><div class="type-meta">14px / 400<br>Body</div><div style="font-size:14px;">The quick brown fox jumps over the lazy dog.</div></div>
+        <div class="type-row"><div class="type-meta">13px / 500<br>Label</div><div style="font-size:13px;font-weight:500;color:var(--text-2);">Email address</div></div>
+        <div class="type-row"><div class="type-meta">12px / 400<br>Caption</div><div style="font-size:12px;color:var(--text-3);">Last updated 2 hours ago</div></div>
+        <div class="type-row"><div class="type-meta">13px / mono<br>Code</div><div style="font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--sapphire-400);">AUTH_TOKEN_TTL=15</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Components</h2>
+      <h3>UI Elements</h3>
+      <p class="desc">Buttons, inputs, alerts, badges — all using the design tokens above.</p>
+      <div class="comp-grid">
+        <div class="comp-card">
+          <h4>Buttons</h4>
+          <button class="btn btn-primary">Primary action</button>
+          <button class="btn btn-outline">Secondary action</button>
+        </div>
+        <div class="comp-card">
+          <h4>Inputs</h4>
+          <div class="field"><label>Email</label><input type="email" placeholder="you@church.org"></div>
+          <div class="field"><label>With error</label><input type="text" class="error" value="invalid@"></div>
+        </div>
+        <div class="comp-card">
+          <h4>Alerts</h4>
+          <div class="alert alert-success"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg> Success message</div>
+          <div class="alert alert-error"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"/></svg> Error message</div>
+          <div class="alert alert-warning"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/></svg> Warning message</div>
+          <div class="alert alert-info"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/></svg> Info message</div>
+        </div>
+        <div class="comp-card">
+          <h4>Badges</h4>
+          <div class="badges-row" style="margin-bottom:10px;">
+            <span class="badge badge-sapphire">Admin</span>
+            <span class="badge badge-gold">Premium</span>
+            <span class="badge badge-teal">Active</span>
+            <span class="badge badge-success">Verified</span>
+          </div>
+          <div class="badges-row">
+            <span class="badge badge-error">Expired</span>
+            <span class="badge badge-neutral">Draft</span>
+            <span class="badge badge-sapphire">Pastor</span>
+            <span class="badge badge-gold">Elder</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Layout patterns</h2>
+      <h3>Page structures</h3>
+      <p class="desc">Two layout patterns: Split for admin, Centered card for user. Both share the same design tokens.</p>
+      <div class="comp-grid">
+        <div class="comp-card">
+          <h4>Admin — Split layout</h4>
+          <p style="font-size:13px;color:var(--text-2);margin-bottom:8px;">Used for: <strong>Admin Login, Admin Register</strong></p>
+          <div style="display:flex;height:120px;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+            <div style="flex:1;background:#0A0E1A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+              <span style="font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;">Brand panel</span>
+              <span style="font-size:8px;color:rgba(255,255,255,0.25);">Features list</span>
+            </div>
+            <div style="flex:1;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:10px;color:var(--text-3);">Form</span>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card">
+          <h4>User — Centered card</h4>
+          <p style="font-size:13px;color:var(--text-2);margin-bottom:8px;">Used for: <strong>User Login, User Register, Forgot, Reset, Setup</strong></p>
+          <div style="height:120px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--bg-surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+            <span style="font-size:9px;font-weight:700;color:var(--text-2);">EcclesiaFlow</span>
+            <div style="width:55%;height:50%;border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:10px;color:var(--text-3);">Form card</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>User flow</h2>
+      <h3>Authentication journey</h3>
+      <p class="desc">Two distinct experiences based on role. Admin sees the full brand pitch; users get a simple, welcoming interface.</p>
+      <div class="comp-grid">
+        <div class="comp-card">
+          <h4>Admin flow</h4>
+          <div style="font-size:13px;color:var(--text-2);line-height:1.8;">
+            1. Admin registers church<br>
+            2. Configures services & groups<br>
+            3. Accepts member requests<br>
+            4. Manages private church data
+          </div>
+        </div>
+        <div class="comp-card">
+          <h4>User flow</h4>
+          <div style="font-size:13px;color:var(--text-2);line-height:1.8;">
+            1. User creates account<br>
+            2. Confirms email + sets password<br>
+            3. Browses churches & public programs<br>
+            4. Requests membership to a church<br>
+            5. Admin accepts → full access
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ================================================================
+     SCRIPTS
+     ================================================================ -->
+<script>
+  let currentExperience = 'admin';
+  let currentPage = 'login';
+
+  function switchExperience(exp, btn) {
+    currentExperience = exp;
+    document.querySelectorAll('.theme-selector-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    showPage(currentPage);
+  }
+
+  function showPage(name, btn) {
+    currentPage = name;
+
+    // Hide all pages
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+    // Update nav buttons
+    if (btn) {
+      document.querySelectorAll('.topnav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    } else {
+      // Find and activate the correct nav button
+      document.querySelectorAll('.topnav-btn').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-page') === name);
+      });
+    }
+
+    // Pages that have admin/user variants
+    const dualPages = ['login', 'register', 'error'];
+
+    if (dualPages.includes(name)) {
+      const pageId = 'pg-' + currentExperience + '-' + name;
+      const el = document.getElementById(pageId);
+      if (el) el.classList.add('active');
+    } else {
+      // Shared pages
+      const el = document.getElementById('pg-' + name);
+      if (el) el.classList.add('active');
+    }
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    document.getElementById('themeLabel').textContent = isDark ? 'Dark' : 'Light';
+  }
+
+  function createParticles(id, count) {
+    const c = document.getElementById(id);
+    if (!c) return;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'pl-particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (12 + Math.random() * 18) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+      c.appendChild(p);
+    }
+  }
+
+  function createUserParticles(id, count) {
+    const c = document.getElementById(id);
+    if (!c) return;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'user-bg-particle';
+      p.style.left = (Math.random() * 100) + '%';
+      p.style.top = (Math.random() * 100) + '%';
+      p.style.width = p.style.height = (40 + Math.random() * 80) + 'px';
+      p.style.animationDuration = (15 + Math.random() * 15) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      c.appendChild(p);
+    }
+  }
+
+  // Admin particles
+  createParticles('pl-particles-admin-login', 15);
+  createParticles('pl-particles-admin-register', 15);
+  createParticles('pl-particles-admin-error', 15);
+
+  // User particles
+  createUserParticles('user-particles-login', 6);
+  createUserParticles('user-particles-register', 6);
+  createUserParticles('user-particles-error', 6);
+</script>
+</body>
+</html>
