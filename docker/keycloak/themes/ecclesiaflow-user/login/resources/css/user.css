@@ -1,6 +1,6 @@
 /* ================================================================
-   EcclesiaFlow User — Centered Card Layout
-   Simple, welcoming interface with subtle background particles.
+   EcclesiaFlow User — Centered Card Layout (Redesigned)
+   Grid background, orbit decorations, trust indicators.
    ================================================================ */
 
 /* ================================================================
@@ -8,49 +8,137 @@
    ================================================================ */
 .user-centered {
     min-height: 100vh;
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 40px 20px;
     background: var(--bg-page);
-    position: relative;
     overflow: hidden;
 }
 
-.user-centered::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(circle at 50% 0%, rgba(59, 82, 246, 0.04) 0%, transparent 60%),
-        radial-gradient(circle at 80% 80%, rgba(59, 82, 246, 0.02) 0%, transparent 40%);
+/* Grid lines (lighter for user page) */
+.user-centered .grid-lines {
+    background-image:
+        linear-gradient(rgba(59, 82, 246, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 82, 246, 0.06) 1px, transparent 1px) !important;
+    background-size: 60px 60px !important;
 }
 
-/* Background floating particles */
-.user-bg-particles {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
+[data-theme="dark"] .user-centered .grid-lines {
+    background-image:
+        linear-gradient(rgba(59, 82, 246, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 82, 246, 0.04) 1px, transparent 1px) !important;
 }
 
-.user-bg-particle {
+/* ----------------------------------------------------------------
+   Decorative orbit rings around card area
+   ---------------------------------------------------------------- */
+.usr-orbit {
     position: absolute;
     border-radius: 50%;
-    background: rgba(59, 82, 246, 0.06);
-    animation: userfloat 20s ease-in-out infinite;
+    pointer-events: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
-@keyframes userfloat {
-    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-    33%      { transform: translate(15px, -20px) scale(1.1); opacity: 0.5; }
-    66%      { transform: translate(-10px, 10px) scale(0.95); opacity: 0.3; }
+.usr-orbit-1 {
+    width: 600px;
+    height: 600px;
+    border: 1px solid rgba(59, 82, 246, 0.06);
 }
 
-/* Content wrapper */
+.usr-orbit-2 {
+    width: 800px;
+    height: 800px;
+    border: 1px dashed rgba(59, 82, 246, 0.03);
+}
+
+[data-theme="dark"] .usr-orbit-1 { border-color: rgba(59, 82, 246, 0.05); }
+[data-theme="dark"] .usr-orbit-2 { border-color: rgba(59, 82, 246, 0.025); }
+
+/* Orbit traveling dots */
+.usr-orbit-dot {
+    position: absolute;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform-origin: 0 0;
+}
+
+.usr-orbit-dot.d1 {
+    width: 6px;
+    height: 6px;
+    background: var(--sapphire-500);
+    box-shadow: 0 0 10px rgba(59, 82, 246, 0.3);
+    animation: orbitSpin1 25s linear infinite;
+}
+
+@keyframes orbitSpin1 {
+    0%   { transform: rotate(0deg) translateX(300px) rotate(0deg); }
+    100% { transform: rotate(360deg) translateX(300px) rotate(-360deg); }
+}
+
+.usr-orbit-dot.d2 {
+    width: 4px;
+    height: 4px;
+    background: var(--gold-500);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+    animation: orbitSpin2 35s linear infinite;
+}
+
+@keyframes orbitSpin2 {
+    0%   { transform: rotate(180deg) translateX(400px) rotate(-180deg); }
+    100% { transform: rotate(540deg) translateX(400px) rotate(-540deg); }
+}
+
+/* ----------------------------------------------------------------
+   Side decorative elements (fill horizontal space)
+   ---------------------------------------------------------------- */
+.usr-side-left,
+.usr-side-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    opacity: 0.6;
+}
+
+.usr-side-left  { left: 8%; }
+.usr-side-right { right: 8%; }
+
+.usr-side-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(59, 82, 246, 0.15), transparent);
+    animation: sideLinePulse 3s ease-in-out infinite;
+}
+
+@keyframes sideLinePulse {
+    0%, 100% { opacity: 0.3; width: 60px; }
+    50%      { opacity: 1;   width: 100px; }
+}
+
+.usr-side-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(59, 82, 246, 0.25);
+    align-self: center;
+}
+
+[data-theme="dark"] .usr-side-left,
+[data-theme="dark"] .usr-side-right { opacity: 0.4; }
+
+/* ----------------------------------------------------------------
+   Content wrapper
+   ---------------------------------------------------------------- */
 .user-content {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -58,11 +146,11 @@
 
 /* Logo */
 .user-logo {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 800;
-    letter-spacing: 0.04em;
+    letter-spacing: -0.02em;
     color: var(--text-1);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .user-logo .flow { color: var(--sapphire-500); }
@@ -77,27 +165,81 @@
     line-height: 1.5;
 }
 
-/* Card */
+/* ----------------------------------------------------------------
+   Card
+   ---------------------------------------------------------------- */
 .user-card {
     width: 464px;
     max-width: 100%;
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 32px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.04);
+    padding: 36px;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 32px rgba(0, 0, 0, 0.06);
     transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 
-/* Dark mode card shadow */
-[data-theme="dark"] .user-card {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.15);
+/* Gradient glow on hover */
+.user-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 17px;
+    background: linear-gradient(135deg, rgba(59, 82, 246, 0.15), transparent 40%, transparent 60%, rgba(20, 184, 166, 0.1));
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
-/* Allow fcard to fill the card */
+.user-card:hover::before { opacity: 1; }
+
+[data-theme="dark"] .user-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
 .user-card .fcard { max-width: 100%; }
 
-/* Locale selector */
+/* ----------------------------------------------------------------
+   Trust indicators (below card)
+   ---------------------------------------------------------------- */
+.usr-trust {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.usr-trust-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-3);
+}
+
+.usr-trust-item svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0.6;
+}
+
+/* Bottom tagline */
+.usr-bottom-tag {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--text-3);
+    opacity: 0.5;
+}
+
+/* ----------------------------------------------------------------
+   Locale selector
+   ---------------------------------------------------------------- */
 .user-locale {
     position: absolute;
     top: 20px;
@@ -115,4 +257,22 @@
     font-size: 11px;
     cursor: pointer;
     outline: none;
+}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 768px) {
+    .usr-orbit,
+    .usr-orbit-dot,
+    .usr-side-left,
+    .usr-side-right { display: none; }
+
+    .usr-trust { gap: 16px; flex-wrap: wrap; justify-content: center; }
+
+    .user-card { padding: 24px; }
+}
+
+@media (max-width: 480px) {
+    .usr-trust { flex-direction: column; gap: 8px; }
 }

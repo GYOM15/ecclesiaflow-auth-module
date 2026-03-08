@@ -24,11 +24,31 @@
     <div class="split">
         <!-- Left branding panel -->
         <div class="panel-left">
-            <div class="pl-grid"></div>
-            <div class="pl-particles" id="pl-particles"></div>
-            <div class="pl-pulse"></div>
-            <div class="pl-pulse"></div>
-            <div class="pl-pulse"></div>
+            <div class="grid-bg">
+                <div class="grid-lines"></div>
+                <!-- Traveling light beams -->
+                <div class="grid-beam-h" style="top: 120px; animation-duration: 7s; animation-delay: 0s;"></div>
+                <div class="grid-beam-h" style="top: 300px; animation-duration: 9s; animation-delay: 3s;"></div>
+                <div class="grid-beam-h gold" style="top: 480px; animation-duration: 11s; animation-delay: 6s;"></div>
+                <div class="grid-beam-h teal" style="top: 180px; animation-duration: 12s; animation-delay: 8s;"></div>
+                <div class="grid-beam-v" style="left: 120px; animation-duration: 8s; animation-delay: 1s;"></div>
+                <div class="grid-beam-v" style="left: 300px; animation-duration: 10s; animation-delay: 4s;"></div>
+                <div class="grid-beam-v gold" style="left: 60px; animation-duration: 13s; animation-delay: 7s;"></div>
+                <div class="grid-beam-v" style="left: 420px; animation-duration: 9s; animation-delay: 2s;"></div>
+                <!-- Grid intersection nodes -->
+                <div class="grid-node" style="top: 120px; left: 120px; animation-delay: 0s;"></div>
+                <div class="grid-node" style="top: 120px; left: 300px; animation-delay: 1.5s;"></div>
+                <div class="grid-node" style="top: 300px; left: 120px; animation-delay: 0.8s;"></div>
+                <div class="grid-node" style="top: 300px; left: 300px; animation-delay: 2.2s;"></div>
+                <div class="grid-node" style="top: 480px; left: 60px; animation-delay: 3s;"></div>
+                <div class="grid-node" style="top: 180px; left: 420px; animation-delay: 1.2s;"></div>
+                <!-- Subtle cross -->
+                <div class="grid-cross" style="top: 25%; left: 70%;">
+                    <div class="cross-v"></div>
+                    <div class="cross-h"></div>
+                    <div class="cross-center"></div>
+                </div>
+            </div>
 
             <#if realm.internationalizationEnabled && locale.supported?size gt 1>
                 <div class="locale">
@@ -49,6 +69,9 @@
 
         <!-- Right form panel -->
         <div class="panel-right">
+            <div class="corner-tl"></div>
+            <div class="corner-br"></div>
+
             <div class="form-container">
                 <div class="mobile-logo">
                     <div class="logo-text">Ecclesia<span class="flow">Flow</span></div>
@@ -91,22 +114,7 @@
     <script>
     function toggleTheme(){var h=document.documentElement;var t=h.getAttribute('data-theme')==='dark'?'light':'dark';h.setAttribute('data-theme',t);localStorage.setItem('ef-theme',t);}
     /* Password visibility toggle */
-    document.querySelectorAll('.pw-toggle').forEach(function(btn){btn.addEventListener('click',function(){var input=document.getElementById(this.getAttribute('data-target'));if(input.type==='password'){input.type='text';this.classList.add('is-visible');this.setAttribute('aria-label','Masquer le mot de passe');}else{input.type='password';this.classList.remove('is-visible');this.setAttribute('aria-label','Afficher le mot de passe');}});});
-    (function() {
-        var c = document.getElementById('pl-particles');
-        if (!c) return;
-        for (var i = 0; i < 15; i++) {
-            var p = document.createElement('div');
-            p.className = 'pl-particle';
-            p.style.left = Math.random() * 100 + '%';
-            p.style.animationDuration = (12 + Math.random() * 18) + 's';
-            p.style.animationDelay = (Math.random() * 10) + 's';
-            var s = (1 + Math.random() * 2) + 'px';
-            p.style.width = s;
-            p.style.height = s;
-            c.appendChild(p);
-        }
-    })();
+    document.querySelectorAll('.pw-toggle').forEach(function(btn){btn.addEventListener('click',function(){var input=document.getElementById(this.getAttribute('data-target'));if(input.type==='password'){input.type='text';this.classList.add('is-visible');this.setAttribute('aria-label','Hide password');}else{input.type='password';this.classList.remove('is-visible');this.setAttribute('aria-label','Show password');}});});
     </script>
 </body>
 </html>

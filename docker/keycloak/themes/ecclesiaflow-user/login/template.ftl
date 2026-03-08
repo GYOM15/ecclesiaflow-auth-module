@@ -22,7 +22,47 @@
 </head>
 <body class="${bodyClass}">
     <div class="user-centered">
-        <div class="user-bg-particles" id="user-particles"></div>
+        <!-- Animated grid background -->
+        <div class="grid-bg">
+            <div class="grid-lines"></div>
+            <div class="grid-beam-h" style="top: 25%; animation-duration: 9s; animation-delay: 0s;"></div>
+            <div class="grid-beam-h" style="top: 65%; animation-duration: 11s; animation-delay: 4s;"></div>
+            <div class="grid-beam-h gold" style="top: 40%; animation-duration: 13s; animation-delay: 7s;"></div>
+            <div class="grid-beam-v" style="left: 30%; animation-duration: 10s; animation-delay: 2s;"></div>
+            <div class="grid-beam-v" style="left: 70%; animation-duration: 8s; animation-delay: 5s;"></div>
+            <div class="grid-beam-v teal" style="left: 50%; animation-duration: 14s; animation-delay: 9s;"></div>
+            <div class="grid-node" style="top: 25%; left: 30%; animation-delay: 0.5s;"></div>
+            <div class="grid-node" style="top: 65%; left: 70%; animation-delay: 2s;"></div>
+            <div class="grid-node" style="top: 40%; left: 50%; animation-delay: 3.5s;"></div>
+            <!-- Subtle cross -->
+            <div class="grid-cross" style="top: 20%; left: 80%;">
+                <div class="cross-v"></div>
+                <div class="cross-h"></div>
+                <div class="cross-center"></div>
+            </div>
+        </div>
+
+        <!-- Decorative orbits -->
+        <div class="usr-orbit usr-orbit-1"></div>
+        <div class="usr-orbit usr-orbit-2"></div>
+        <div class="usr-orbit-dot d1"></div>
+        <div class="usr-orbit-dot d2"></div>
+
+        <!-- Side decorative elements -->
+        <div class="usr-side-left">
+            <div class="usr-side-line" style="animation-delay: 0s;"></div>
+            <div class="usr-side-dot"></div>
+            <div class="usr-side-line" style="animation-delay: 1s;"></div>
+            <div class="usr-side-dot"></div>
+            <div class="usr-side-line" style="animation-delay: 2s;"></div>
+        </div>
+        <div class="usr-side-right">
+            <div class="usr-side-line" style="animation-delay: 0.5s;"></div>
+            <div class="usr-side-dot"></div>
+            <div class="usr-side-line" style="animation-delay: 1.5s;"></div>
+            <div class="usr-side-dot"></div>
+            <div class="usr-side-line" style="animation-delay: 2.5s;"></div>
+        </div>
 
         <#if realm.internationalizationEnabled && locale.supported?size gt 1>
             <div class="user-locale">
@@ -67,6 +107,25 @@
                     </#if>
                 </div>
             </div>
+
+            <!-- Trust indicators -->
+            <div class="usr-trust">
+                <div class="usr-trust-item">
+                    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+                    ${msg("trustEncrypted")}
+                </div>
+                <div class="usr-trust-item">
+                    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/></svg>
+                    ${msg("trustSecure")}
+                </div>
+                <div class="usr-trust-item">
+                    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                    ${msg("trustAvailable")}
+                </div>
+            </div>
+
+            <!-- Bottom tagline -->
+            <div class="usr-bottom-tag">${msg("brandSlogan")}</div>
         </div>
     </div>
 
@@ -79,23 +138,7 @@
     <script>
     function toggleTheme(){var h=document.documentElement;var t=h.getAttribute('data-theme')==='dark'?'light':'dark';h.setAttribute('data-theme',t);localStorage.setItem('ef-theme',t);}
     /* Password visibility toggle */
-    document.querySelectorAll('.pw-toggle').forEach(function(btn){btn.addEventListener('click',function(){var input=document.getElementById(this.getAttribute('data-target'));if(input.type==='password'){input.type='text';this.classList.add('is-visible');this.setAttribute('aria-label','Masquer le mot de passe');}else{input.type='password';this.classList.remove('is-visible');this.setAttribute('aria-label','Afficher le mot de passe');}});});
-    (function() {
-        var c = document.getElementById('user-particles');
-        if (!c) return;
-        for (var i = 0; i < 6; i++) {
-            var p = document.createElement('div');
-            p.className = 'user-bg-particle';
-            p.style.left = (Math.random() * 100) + '%';
-            p.style.top = (Math.random() * 100) + '%';
-            var size = (40 + Math.random() * 80) + 'px';
-            p.style.width = size;
-            p.style.height = size;
-            p.style.animationDuration = (15 + Math.random() * 15) + 's';
-            p.style.animationDelay = (Math.random() * 10) + 's';
-            c.appendChild(p);
-        }
-    })();
+    document.querySelectorAll('.pw-toggle').forEach(function(btn){btn.addEventListener('click',function(){var input=document.getElementById(this.getAttribute('data-target'));if(input.type==='password'){input.type='text';this.classList.add('is-visible');this.setAttribute('aria-label','Hide password');}else{input.type='password';this.classList.remove('is-visible');this.setAttribute('aria-label','Show password');}});});
     </script>
 </body>
 </html>

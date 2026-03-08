@@ -500,3 +500,138 @@ input[type="submit"].btn {
     .social-row { flex-direction: column; }
     .field-row { flex-direction: column; gap: 0; }
 }
+
+/* ================================================================
+   ANIMATED GRID SYSTEM
+   Shared by both admin and user themes.
+   ================================================================ */
+
+/* Container */
+.grid-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* Static grid lines */
+.grid-bg .grid-lines {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(59, 82, 246, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 82, 246, 0.06) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 70%);
+}
+
+/* Traveling light beams — horizontal */
+.grid-beam-h {
+    position: absolute;
+    height: 1px;
+    width: 120px;
+    background: linear-gradient(90deg, transparent, rgba(59, 82, 246, 0.5), transparent);
+    animation: beamH 8s linear infinite;
+    opacity: 0;
+}
+
+@keyframes beamH {
+    0%   { left: -120px; opacity: 0; }
+    5%   { opacity: 1; }
+    95%  { opacity: 1; }
+    100% { left: calc(100% + 120px); opacity: 0; }
+}
+
+/* Traveling light beams — vertical */
+.grid-beam-v {
+    position: absolute;
+    width: 1px;
+    height: 120px;
+    background: linear-gradient(180deg, transparent, rgba(59, 82, 246, 0.5), transparent);
+    animation: beamV 10s linear infinite;
+    opacity: 0;
+}
+
+@keyframes beamV {
+    0%   { top: -120px; opacity: 0; }
+    5%   { opacity: 1; }
+    95%  { opacity: 1; }
+    100% { top: calc(100% + 120px); opacity: 0; }
+}
+
+/* Gold accent beams */
+.grid-beam-h.gold {
+    background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.4), transparent);
+    width: 80px;
+}
+
+.grid-beam-v.gold {
+    background: linear-gradient(180deg, transparent, rgba(245, 158, 11, 0.4), transparent);
+    height: 80px;
+}
+
+/* Teal accent beams */
+.grid-beam-h.teal {
+    background: linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.35), transparent);
+    width: 90px;
+}
+
+.grid-beam-v.teal {
+    background: linear-gradient(180deg, transparent, rgba(20, 184, 166, 0.35), transparent);
+    height: 90px;
+}
+
+/* Grid intersection glow nodes */
+.grid-node {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(59, 82, 246, 0.3);
+    box-shadow: 0 0 8px rgba(59, 82, 246, 0.15);
+    animation: nodePulse 4s ease-in-out infinite;
+}
+
+@keyframes nodePulse {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50%      { opacity: 0.8; transform: scale(1.5); }
+}
+
+/* Subtle cross formed by two intersecting brighter grid lines */
+.grid-cross {
+    position: absolute;
+    pointer-events: none;
+}
+
+.grid-cross .cross-v {
+    position: absolute;
+    left: 50%;
+    top: -60px;
+    transform: translateX(-50%);
+    width: 1px;
+    height: 120px;
+    background: linear-gradient(180deg, transparent, rgba(59, 82, 246, 0.12), transparent);
+}
+
+.grid-cross .cross-h {
+    position: absolute;
+    top: 50%;
+    left: -40px;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(59, 82, 246, 0.12), transparent);
+}
+
+.grid-cross .cross-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(59, 82, 246, 0.2);
+    box-shadow: 0 0 12px rgba(59, 82, 246, 0.1);
+}
