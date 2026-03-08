@@ -222,6 +222,25 @@ if [ "$IS_DEV" = "true" ]; then
 
   echo "[init-realm] Social auto-provision flow configured"
 
+  # -----------------------------------------------------------------------
+  # Assign custom themes to the ecclesiaflow realm
+  # -----------------------------------------------------------------------
+  echo "[init-realm] Assigning custom themes..."
+
+  $KCADM update realms/"$REALM" \
+    -s loginTheme=ecclesiaflow-user \
+    -s emailTheme=ecclesiaflow-base \
+    -s resetPasswordAllowed=true 2>&1 && \
+    echo "[init-realm] Realm themes: login=ecclesiaflow-user, email=ecclesiaflow-base"
+
+  # Assign admin theme to the admin-service client (if needed)
+  $KCADM update clients/"$($KCADM get clients -r "$REALM" -q clientId=ecclesiaflow-frontend --fields id 2>/dev/null | grep '"id"' | sed 's/.*: "//;s/".*//')" \
+    -r "$REALM" \
+    -s 'attributes.login_theme=ecclesiaflow-user' 2>&1 && \
+    echo "[init-realm] ecclesiaflow-frontend client → ecclesiaflow-user theme"
+
+  echo "[init-realm] Theme configuration complete"
+
   wait $KC_PID
 else
   # --- PRODUCTION MODE ----------------------------------------------------

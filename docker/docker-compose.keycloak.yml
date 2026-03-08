@@ -55,11 +55,18 @@ services:
     command:
       - start-dev
       - --import-realm
+      - --spi-theme-static-max-age=-1
+      - --spi-theme-cache-themes=false
+      - --spi-theme-cache-templates=false
     ports:
       - "${KEYCLOAK_HOST_PORT:-8180}:8080"
     volumes:
       - ./keycloak/realm-ecclesiaflow.json:/opt/keycloak/data/template/realm-ecclesiaflow.json:ro
       - ./keycloak/init-realm.sh:/opt/keycloak/scripts/init-realm.sh:ro
+      # Custom login themes
+      - ./keycloak/themes/ecclesiaflow-base:/opt/keycloak/themes/ecclesiaflow-base:ro
+      - ./keycloak/themes/ecclesiaflow-admin:/opt/keycloak/themes/ecclesiaflow-admin:ro
+      - ./keycloak/themes/ecclesiaflow-user:/opt/keycloak/themes/ecclesiaflow-user:ro
     depends_on:
       keycloak-db:
         condition: service_healthy

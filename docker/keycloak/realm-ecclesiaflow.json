@@ -9,6 +9,8 @@
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
+  "loginTheme": "ecclesiaflow-user",
+  "emailTheme": "ecclesiaflow-base",
   "bruteForceProtected": true,
   "permanentLockout": false,
   "maxFailureWaitSeconds": 900,
