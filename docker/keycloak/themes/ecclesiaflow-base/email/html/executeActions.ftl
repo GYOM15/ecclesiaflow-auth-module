@@ -1,12 +1,12 @@
 <#import "template.ftl" as layout>
 <@layout.emailLayout>
-<!-- Accent strip: sapphire -->
-<tr><td style="height: 5px; background: linear-gradient(90deg, #3B52F6, #6078FA); font-size: 0; line-height: 0;">&nbsp;</td></tr>
+<!-- Accent strip: indigo -->
+<tr><td style="height: 5px; background: linear-gradient(90deg, #6366F1, #818CF8); font-size: 0; line-height: 0;">&nbsp;</td></tr>
 <tr>
-    <td style="padding: 36px 36px 32px;">
+    <td style="padding: 28px 24px 24px;">
         <!-- Icon -->
         <table cellpadding="0" cellspacing="0" border="0"><tr>
-            <td style="width: 56px; height: 56px; background: linear-gradient(135deg, rgba(59,82,246,0.12), rgba(59,82,246,0.06)); border: 1px solid rgba(59,82,246,0.15); border-radius: 16px; text-align: center; vertical-align: middle;">
+            <td style="width: 56px; height: 56px; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(99,102,241,0.06)); border: 1px solid rgba(99,102,241,0.15); border-radius: 16px; text-align: center; vertical-align: middle;">
                 <span style="font-size: 24px;">&#8505;&#65039;</span>
             </td>
         </tr></table>
@@ -17,7 +17,7 @@
         <!-- Actions list box -->
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 16px 0 24px;">
             <tr>
-                <td style="padding: 18px 20px; background: linear-gradient(135deg, #eff6ff, #f5f8ff); border: 1px solid #bfdbfe; border-left: 4px solid #3B52F6; border-radius: 12px;">
+                <td style="padding: 18px 20px; background: linear-gradient(135deg, #eff6ff, #f5f8ff); border: 1px solid #bfdbfe; border-left: 4px solid #6366F1; border-radius: 12px;">
                     <p style="font-size: 14px; color: #1e40af; font-weight: 600; margin: 0 0 8px;">${msg("executeActionsListTitle","Required actions:")}</p>
                     <#if requiredActions??>
                         <#list requiredActions as reqAction>
@@ -32,7 +32,7 @@
 
         <!-- CTA Button -->
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding: 8px 0 24px;">
-            <a href="${link}" style="display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #3B52F6 0%, #5469F7 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 15px; letter-spacing: 0.2px; box-shadow: 0 4px 14px rgba(59,82,246,0.3);">${msg("executeActionsBtn","Complete actions")}</a>
+            <a href="${link}" style="display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #6366F1 0%, #818CF8 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 15px; letter-spacing: 0.2px; box-shadow: 0 4px 14px rgba(99,102,241,0.3);">${msg("executeActionsBtn","Complete actions")}</a>
         </td></tr></table>
 
         <!-- Divider -->

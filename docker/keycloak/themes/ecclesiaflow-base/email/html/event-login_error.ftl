@@ -3,7 +3,7 @@
 <!-- Accent strip: red -->
 <tr><td style="height: 5px; background: linear-gradient(90deg, #dc2626, #ef4444); font-size: 0; line-height: 0;">&nbsp;</td></tr>
 <tr>
-    <td style="padding: 36px 36px 32px;">
+    <td style="padding: 28px 24px 24px;">
         <!-- Icon -->
         <table cellpadding="0" cellspacing="0" border="0"><tr>
             <td style="width: 56px; height: 56px; background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.06)); border: 1px solid rgba(239,68,68,0.15); border-radius: 16px; text-align: center; vertical-align: middle;">
