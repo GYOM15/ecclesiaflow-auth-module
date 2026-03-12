@@ -201,6 +201,30 @@
 .user-card .fcard { max-width: 100%; }
 
 /* ----------------------------------------------------------------
+   Back to home link (top of page, matches landing /inscription style)
+   ---------------------------------------------------------------- */
+.usr-back-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    font-size: 14px;
+    color: var(--text-3);
+    text-decoration: none;
+    margin-bottom: 24px;
+    transition: color 0.2s;
+}
+
+.usr-back-home:hover {
+    color: var(--text-1);
+}
+
+.usr-back-home svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ----------------------------------------------------------------
    Trust indicators (below card)
    ---------------------------------------------------------------- */
 .usr-trust {

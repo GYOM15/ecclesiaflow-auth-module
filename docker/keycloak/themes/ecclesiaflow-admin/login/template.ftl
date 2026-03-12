@@ -101,6 +101,14 @@
                 <#if displayInfo>
                     <#nested "info">
                 </#if>
+
+                <!-- Back to home link -->
+                <div class="admin-back-home-wrap">
+                    <a href="${msg("landingUrl")}" class="admin-back-home">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                        ${msg("backToHome")}
+                    </a>
+                </div>
             </div>
         </div>
     </div>

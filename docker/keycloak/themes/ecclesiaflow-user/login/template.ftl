@@ -75,6 +75,12 @@
         </#if>
 
         <div class="user-content">
+            <!-- Back to home link -->
+            <a href="${msg("landingUrl")}" class="usr-back-home">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                ${msg("backToHome")}
+            </a>
+
             <div class="user-logo">Ecclesia<span class="flow">Flow</span></div>
 
             <#nested "welcome">
