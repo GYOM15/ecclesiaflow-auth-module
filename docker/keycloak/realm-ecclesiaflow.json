@@ -80,13 +80,13 @@
     {
       "clientId": "ecclesiaflow-admin-service",
       "name": "EcclesiaFlow Admin Service",
-      "description": "Service account used by Auth Module to call Keycloak Admin API",
+      "description": "Service account used by Auth Module to call Keycloak Admin API and authenticate users via Direct Grant (server-to-server only, for initial password setup)",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
       "serviceAccountsEnabled": true,
       "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "implicitFlowEnabled": false,
       "clientAuthenticatorType": "client-secret",
       "secret": "__KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET__"
@@ -94,12 +94,14 @@
     {
       "clientId": "ecclesiaflow-frontend",
       "name": "EcclesiaFlow Frontend Application",
-      "description": "Public client for frontend SPA with PKCE",
+      "description": "Confidential client for Next.js BFF (server-side). Supports OIDC Authorization Code + PKCE and Direct Grant for password-setup auto-login.",
       "enabled": true,
-      "publicClient": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "__KEYCLOAK_FRONTEND_CLIENT_SECRET__",
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "protocol": "openid-connect",
       "redirectUris": [
@@ -221,6 +223,14 @@
       }
     }
   ],
+  "eventsEnabled": true,
+  "eventsListeners": ["jboss-logging", "email"],
+  "enabledEventTypes": [
+    "UPDATE_PASSWORD",
+    "RESET_PASSWORD",
+    "LOGIN_ERROR"
+  ],
+  "eventsExpiration": 604800,
   "internationalizationEnabled": true,
   "supportedLocales": ["en", "fr"],
   "defaultLocale": "en"

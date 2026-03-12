@@ -3,6 +3,7 @@ package com.ecclesiaflow.springsecurity.web.controller;
 import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
 import com.ecclesiaflow.springsecurity.business.domain.token.SetupToken;
 import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakAdminClient;
+import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakTokenResponse;
 import com.ecclesiaflow.springsecurity.io.persistence.jpa.SetupTokenEntity;
 import com.ecclesiaflow.springsecurity.io.persistence.repositories.SetupTokenJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,6 +67,8 @@ class PasswordControllerIntegrationTest {
     private static final String EMAIL = "httptest@ecclesiaflow.com";
     private static final UUID MEMBER_ID = UUID.randomUUID();
     private static final String KEYCLOAK_USER_ID = "kc-" + UUID.randomUUID();
+    private static final KeycloakTokenResponse MOCK_TOKEN_RESPONSE = new KeycloakTokenResponse(
+            "access-token", "refresh-token", 300, 1800, "Bearer", "openid");
 
     @TestConfiguration
     static class MockDeps {
@@ -122,6 +125,8 @@ class PasswordControllerIntegrationTest {
             when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
             when(keycloakAdminClient.createUser(anyString(), anyString(), anyBoolean()))
                     .thenReturn(KEYCLOAK_USER_ID);
+            when(keycloakAdminClient.authenticateUser(anyString(), anyString()))
+                    .thenReturn(MOCK_TOKEN_RESPONSE);
 
             mockMvc.perform(post(SETUP_ENDPOINT)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -188,6 +193,8 @@ class PasswordControllerIntegrationTest {
             when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
             when(keycloakAdminClient.createUser(anyString(), anyString(), anyBoolean()))
                     .thenReturn(KEYCLOAK_USER_ID);
+            when(keycloakAdminClient.authenticateUser(anyString(), anyString()))
+                    .thenReturn(MOCK_TOKEN_RESPONSE);
 
             mockMvc.perform(post(SETUP_ENDPOINT)
                             .contentType(MediaType.APPLICATION_JSON)

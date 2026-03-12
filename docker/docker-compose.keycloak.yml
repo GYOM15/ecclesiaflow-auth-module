@@ -28,6 +28,7 @@ services:
       # Realm template secrets (consumed by init-realm.sh)
       KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET}
       KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET: ${KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_FRONTEND_CLIENT_SECRET: ${KEYCLOAK_FRONTEND_CLIENT_SECRET}
 
       # SMTP (consumed by init-realm.sh for Keycloak email features)
       KEYCLOAK_SMTP_FROM: ${KEYCLOAK_SMTP_FROM:-noreply@ecclesiaflow.com}

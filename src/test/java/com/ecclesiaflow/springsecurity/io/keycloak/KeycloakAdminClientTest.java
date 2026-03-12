@@ -38,6 +38,8 @@ class KeycloakAdminClientTest {
     private static final String REALM = "test-realm";
     private static final String ADMIN_CLIENT_ID = "admin-client";
     private static final String ADMIN_CLIENT_SECRET = "admin-secret";
+    private static final String DIRECT_GRANT_CLIENT_ID = "ecclesiaflow-frontend";
+    private static final String DIRECT_GRANT_CLIENT_SECRET = "frontend-secret";
     private static final String EMAIL = "user@test.com";
     private static final String PASSWORD = "StrongPassword123!";
     private static final String KEYCLOAK_USER_ID = "keycloak-user-123";
@@ -48,6 +50,8 @@ class KeycloakAdminClientTest {
         ReflectionTestUtils.setField(keycloakAdminClient, "realm", REALM);
         ReflectionTestUtils.setField(keycloakAdminClient, "adminClientId", ADMIN_CLIENT_ID);
         ReflectionTestUtils.setField(keycloakAdminClient, "adminClientSecret", ADMIN_CLIENT_SECRET);
+        ReflectionTestUtils.setField(keycloakAdminClient, "directGrantClientId", DIRECT_GRANT_CLIENT_ID);
+        ReflectionTestUtils.setField(keycloakAdminClient, "directGrantClientSecret", DIRECT_GRANT_CLIENT_SECRET);
         ReflectionTestUtils.setField(keycloakAdminClient, "cachedAccessToken", null);
         ReflectionTestUtils.setField(keycloakAdminClient, "tokenExpiresAt", 0L);
     }
@@ -186,8 +190,10 @@ class KeycloakAdminClientTest {
         @Test
         @DisplayName("Should throw KeycloakException when token acquisition fails")
         void shouldThrowExceptionWhenTokenAcquisitionFails() {
+            KeycloakTokenResponse emptyResponse = new KeycloakTokenResponse(
+                    null, null, 0, 0, null, null);
             when(tokenClient.getToken(eq(REALM), any(MultiValueMap.class)))
-                    .thenReturn(Map.of());
+                    .thenReturn(emptyResponse);
 
             assertThatThrownBy(() -> keycloakAdminClient.createUser(EMAIL, PASSWORD, true))
                     .isInstanceOf(KeycloakAdminClient.KeycloakException.class)
@@ -349,10 +355,8 @@ class KeycloakAdminClientTest {
         @Test
         @DisplayName("Should refresh token when expired")
         void shouldRefreshTokenWhenExpired() {
-            Map<String, Object> tokenResponse = Map.of(
-                    "access_token", ACCESS_TOKEN,
-                    "expires_in", 0
-            );
+            KeycloakTokenResponse tokenResponse = new KeycloakTokenResponse(
+                    ACCESS_TOKEN, null, 0, 0, "Bearer", null);
             when(tokenClient.getToken(eq(REALM), any(MultiValueMap.class)))
                     .thenReturn(tokenResponse);
 
@@ -379,10 +383,8 @@ class KeycloakAdminClientTest {
         @Test
         @DisplayName("Should use cached token before expiration")
         void shouldUseCachedTokenBeforeExpiration() {
-            Map<String, Object> tokenResponse = Map.of(
-                    "access_token", ACCESS_TOKEN,
-                    "expires_in", 3600
-            );
+            KeycloakTokenResponse tokenResponse = new KeycloakTokenResponse(
+                    ACCESS_TOKEN, null, 3600, 0, "Bearer", null);
             when(tokenClient.getToken(eq(REALM), any(MultiValueMap.class)))
                     .thenReturn(tokenResponse);
 
@@ -431,9 +433,10 @@ class KeycloakAdminClientTest {
     class TokenAcquisitionEdgeCasesTests {
 
         @Test
-        @DisplayName("Should use default expiration when expires_in is missing")
+        @DisplayName("Should use default expiration when expires_in is zero")
         void shouldUseDefaultExpirationWhenMissing() {
-            Map<String, Object> tokenResponse = Map.of("access_token", ACCESS_TOKEN);
+            KeycloakTokenResponse tokenResponse = new KeycloakTokenResponse(
+                    ACCESS_TOKEN, null, 0, 0, "Bearer", null);
             when(tokenClient.getToken(eq(REALM), any(MultiValueMap.class)))
                     .thenReturn(tokenResponse);
 
@@ -463,7 +466,8 @@ class KeycloakAdminClientTest {
         @Test
         @DisplayName("Should throw exception when access_token is missing")
         void shouldThrowExceptionWhenAccessTokenMissing() {
-            Map<String, Object> tokenResponse = Map.of("expires_in", 3600);
+            KeycloakTokenResponse tokenResponse = new KeycloakTokenResponse(
+                    null, null, 3600, 0, null, null);
             when(tokenClient.getToken(eq(REALM), any(MultiValueMap.class)))
                     .thenReturn(tokenResponse);
 
@@ -475,11 +479,8 @@ class KeycloakAdminClientTest {
         @Test
         @DisplayName("Should use cached token in synchronized block when still valid")
         void shouldUseCachedTokenInSynchronizedBlock() throws Exception {
-            // First call to cache
-            Map<String, Object> tokenResponse = Map.of(
-                    "access_token", ACCESS_TOKEN,
-                    "expires_in", 3600
-            );
+            KeycloakTokenResponse tokenResponse = new KeycloakTokenResponse(
+                    ACCESS_TOKEN, null, 3600, 0, "Bearer", null);
             when(tokenClient.getToken(eq(REALM), any(MultiValueMap.class)))
                     .thenReturn(tokenResponse);
 
@@ -502,10 +503,8 @@ class KeycloakAdminClientTest {
     }
 
     private void mockTokenAcquisition() {
-        Map<String, Object> tokenResponse = Map.of(
-                "access_token", ACCESS_TOKEN,
-                "expires_in", 3600
-        );
+        KeycloakTokenResponse tokenResponse = new KeycloakTokenResponse(
+                ACCESS_TOKEN, null, 3600, 0, "Bearer", null);
         when(tokenClient.getToken(eq(REALM), any(MultiValueMap.class)))
                 .thenReturn(tokenResponse);
     }

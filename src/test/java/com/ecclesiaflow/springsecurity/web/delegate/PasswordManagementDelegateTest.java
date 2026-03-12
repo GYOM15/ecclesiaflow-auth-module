@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.delegate;
 
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.services.PasswordService;
 import com.ecclesiaflow.springsecurity.web.constants.Messages;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
@@ -14,6 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,6 +34,7 @@ class PasswordManagementDelegateTest {
 
     private static final String SETUP_TOKEN = "setup-token-abc123";
     private static final String PASSWORD = "StrongPassword123!";
+    private static final UserTokens MOCK_TOKENS = new UserTokens("access-token", "refresh-token", 300);
 
     @Nested
     @DisplayName("setupPassword - Success scenarios")
@@ -39,7 +43,7 @@ class PasswordManagementDelegateTest {
         @Test
         @DisplayName("Should setup password successfully and return 200 OK")
         void shouldSetupPasswordSuccessfully() {
-            doNothing().when(passwordService).setupPassword(SETUP_TOKEN, PASSWORD);
+            when(passwordService.setupPassword(SETUP_TOKEN, PASSWORD)).thenReturn(Optional.of(MOCK_TOKENS));
 
             ResponseEntity<PasswordManagementResponse> response = 
                     passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD);
@@ -54,7 +58,7 @@ class PasswordManagementDelegateTest {
         @Test
         @DisplayName("Should call passwordService with correct parameters")
         void shouldCallPasswordServiceWithCorrectParameters() {
-            doNothing().when(passwordService).setupPassword(SETUP_TOKEN, PASSWORD);
+            when(passwordService.setupPassword(SETUP_TOKEN, PASSWORD)).thenReturn(Optional.of(MOCK_TOKENS));
 
             passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD);
 
@@ -64,13 +68,32 @@ class PasswordManagementDelegateTest {
         @Test
         @DisplayName("Should return response with success message")
         void shouldReturnResponseWithSuccessMessage() {
-            doNothing().when(passwordService).setupPassword(SETUP_TOKEN, PASSWORD);
+            when(passwordService.setupPassword(SETUP_TOKEN, PASSWORD)).thenReturn(Optional.of(MOCK_TOKENS));
 
             ResponseEntity<PasswordManagementResponse> response = 
                     passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD);
 
             assertThat(response.getBody()).isNotNull();
             assertThat(response.getBody().getMessage()).contains("successfully");
+        }
+    }
+
+    @Nested
+    @DisplayName("setupPassword - Direct Grant fallback")
+    class SetupPasswordDirectGrantFallbackTests {
+
+        @Test
+        @DisplayName("Should return 200 OK with success message even when Direct Grant fails")
+        void shouldReturn200EvenWhenDirectGrantFails() {
+            when(passwordService.setupPassword(SETUP_TOKEN, PASSWORD)).thenReturn(Optional.empty());
+
+            ResponseEntity<PasswordManagementResponse> response =
+                    passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getMessage()).isEqualTo(Messages.PASSWORD_SETUP_SUCCESS);
+            assertThat(response.getBody().getAccessToken()).isNull();
         }
     }
 
@@ -155,7 +178,7 @@ class PasswordManagementDelegateTest {
         @DisplayName("Should handle long token")
         void shouldHandleLongToken() {
             String longToken = "a".repeat(500);
-            doNothing().when(passwordService).setupPassword(longToken, PASSWORD);
+            when(passwordService.setupPassword(longToken, PASSWORD)).thenReturn(Optional.of(MOCK_TOKENS));
 
             ResponseEntity<PasswordManagementResponse> response = 
                     passwordManagementDelegate.setupPassword(longToken, PASSWORD);
@@ -168,7 +191,7 @@ class PasswordManagementDelegateTest {
         @DisplayName("Should handle special characters in token")
         void shouldHandleSpecialCharactersInToken() {
             String tokenWithSpecialChars = "token-with_special.chars+123";
-            doNothing().when(passwordService).setupPassword(tokenWithSpecialChars, PASSWORD);
+            when(passwordService.setupPassword(tokenWithSpecialChars, PASSWORD)).thenReturn(Optional.of(MOCK_TOKENS));
 
             ResponseEntity<PasswordManagementResponse> response = 
                     passwordManagementDelegate.setupPassword(tokenWithSpecialChars, PASSWORD);
@@ -181,7 +204,7 @@ class PasswordManagementDelegateTest {
         @DisplayName("Should handle complex password")
         void shouldHandleComplexPassword() {
             String complexPassword = "C0mpl3x!P@ssw0rd#With$Special%Chars";
-            doNothing().when(passwordService).setupPassword(SETUP_TOKEN, complexPassword);
+            when(passwordService.setupPassword(SETUP_TOKEN, complexPassword)).thenReturn(Optional.of(MOCK_TOKENS));
 
             ResponseEntity<PasswordManagementResponse> response = 
                     passwordManagementDelegate.setupPassword(SETUP_TOKEN, complexPassword);
@@ -198,7 +221,7 @@ class PasswordManagementDelegateTest {
         @Test
         @DisplayName("Should return non-null response body")
         void shouldReturnNonNullResponseBody() {
-            doNothing().when(passwordService).setupPassword(SETUP_TOKEN, PASSWORD);
+            when(passwordService.setupPassword(SETUP_TOKEN, PASSWORD)).thenReturn(Optional.of(MOCK_TOKENS));
 
             ResponseEntity<PasswordManagementResponse> response = 
                     passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD);
@@ -209,7 +232,7 @@ class PasswordManagementDelegateTest {
         @Test
         @DisplayName("Should return response with message field")
         void shouldReturnResponseWithMessageField() {
-            doNothing().when(passwordService).setupPassword(SETUP_TOKEN, PASSWORD);
+            when(passwordService.setupPassword(SETUP_TOKEN, PASSWORD)).thenReturn(Optional.of(MOCK_TOKENS));
 
             ResponseEntity<PasswordManagementResponse> response = 
                     passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD);
@@ -222,7 +245,7 @@ class PasswordManagementDelegateTest {
         @Test
         @DisplayName("Should return 200 OK status code")
         void shouldReturn200StatusCode() {
-            doNothing().when(passwordService).setupPassword(SETUP_TOKEN, PASSWORD);
+            when(passwordService.setupPassword(SETUP_TOKEN, PASSWORD)).thenReturn(Optional.of(MOCK_TOKENS));
 
             ResponseEntity<PasswordManagementResponse> response = 
                     passwordManagementDelegate.setupPassword(SETUP_TOKEN, PASSWORD);

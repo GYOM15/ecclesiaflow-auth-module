@@ -1,8 +1,10 @@
 package com.ecclesiaflow.springsecurity.business.services.impl;
 
 import com.ecclesiaflow.springsecurity.business.domain.token.SetupToken;
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.services.SetupTokenService;
 import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakAdminClient;
+import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakTokenResponse;
 import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
 import com.ecclesiaflow.springsecurity.business.exceptions.CompensationFailedException;
 import com.ecclesiaflow.springsecurity.business.exceptions.InvalidTokenException;
@@ -18,8 +20,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
@@ -44,6 +48,11 @@ class PasswordServiceImplTest {
     private static final String SETUP_TOKEN = "setup-token-abc123";
     private static final UUID MEMBER_ID = UUID.randomUUID();
     private static final String KEYCLOAK_USER_ID = "keycloak-user-123";
+    private static final String ACCESS_TOKEN = "access-token-abc";
+    private static final String REFRESH_TOKEN = "refresh-token-xyz";
+    private static final int EXPIRES_IN = 300;
+    private static final KeycloakTokenResponse MOCK_TOKEN_RESPONSE = new KeycloakTokenResponse(
+            ACCESS_TOKEN, REFRESH_TOKEN, EXPIRES_IN, 1800, "Bearer", "openid");
 
     private SetupToken validToken;
 
@@ -72,14 +81,20 @@ class PasswordServiceImplTest {
                     .thenReturn(validToken);
             when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
             when(keycloakAdminClient.createUser(EMAIL, PASSWORD, true)).thenReturn(KEYCLOAK_USER_ID);
+            when(keycloakAdminClient.authenticateUser(EMAIL, PASSWORD)).thenReturn(MOCK_TOKEN_RESPONSE);
 
-            passwordService.setupPassword(SETUP_TOKEN, PASSWORD);
+            Optional<UserTokens> result = passwordService.setupPassword(SETUP_TOKEN, PASSWORD);
 
+            assertThat(result).isPresent();
+            assertThat(result.get().accessToken()).isEqualTo(ACCESS_TOKEN);
+            assertThat(result.get().refreshToken()).isEqualTo(REFRESH_TOKEN);
+            assertThat(result.get().expiresIn()).isEqualTo(EXPIRES_IN);
             verify(setupTokenService).validate(SETUP_TOKEN, SetupToken.TokenPurpose.PASSWORD_SETUP);
             verify(membersClient).isEmailNotConfirmed(EMAIL);
             verify(keycloakAdminClient).createUser(EMAIL, PASSWORD, true);
             verify(membersClient).notifyAccountActivated(MEMBER_ID, KEYCLOAK_USER_ID);
             verify(setupTokenService).deleteToken(validToken);
+            verify(keycloakAdminClient).authenticateUser(EMAIL, PASSWORD);
         }
 
         @Test
@@ -89,6 +104,7 @@ class PasswordServiceImplTest {
                     .thenReturn(validToken);
             when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
             when(keycloakAdminClient.createUser(EMAIL, PASSWORD, true)).thenReturn(KEYCLOAK_USER_ID);
+            when(keycloakAdminClient.authenticateUser(EMAIL, PASSWORD)).thenReturn(MOCK_TOKEN_RESPONSE);
 
             passwordService.setupPassword(SETUP_TOKEN, PASSWORD);
 
@@ -212,6 +228,7 @@ class PasswordServiceImplTest {
                     .thenReturn(validToken);
             when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
             when(keycloakAdminClient.createUser(EMAIL, PASSWORD, true)).thenReturn(KEYCLOAK_USER_ID);
+            when(keycloakAdminClient.authenticateUser(EMAIL, PASSWORD)).thenReturn(MOCK_TOKEN_RESPONSE);
 
             passwordService.setupPassword(SETUP_TOKEN, PASSWORD);
 
@@ -221,8 +238,48 @@ class PasswordServiceImplTest {
             inOrder.verify(keycloakAdminClient).createUser(EMAIL, PASSWORD, true);
             inOrder.verify(membersClient).notifyAccountActivated(MEMBER_ID, KEYCLOAK_USER_ID);
             inOrder.verify(setupTokenService).deleteToken(validToken);
+            inOrder.verify(keycloakAdminClient).authenticateUser(EMAIL, PASSWORD);
         }
 
+    }
+
+    @Nested
+    @DisplayName("setupPassword - Direct Grant (auto-login)")
+    class SetupPasswordDirectGrantTests {
+
+        @Test
+        @DisplayName("Should return empty Optional when Direct Grant fails")
+        void shouldReturnEmptyWhenDirectGrantFails() {
+            when(setupTokenService.validate(SETUP_TOKEN, SetupToken.TokenPurpose.PASSWORD_SETUP))
+                    .thenReturn(validToken);
+            when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
+            when(keycloakAdminClient.createUser(EMAIL, PASSWORD, true)).thenReturn(KEYCLOAK_USER_ID);
+            when(keycloakAdminClient.authenticateUser(EMAIL, PASSWORD))
+                    .thenThrow(new RuntimeException("Direct Grant not enabled"));
+
+            Optional<UserTokens> result = passwordService.setupPassword(SETUP_TOKEN, PASSWORD);
+
+            assertThat(result).isEmpty();
+            verify(keycloakAdminClient, never()).deleteUser(anyString());
+            verify(setupTokenService).deleteToken(validToken);
+        }
+
+        @Test
+        @DisplayName("Should NOT compensate Keycloak user when Direct Grant fails")
+        void shouldNotCompensateWhenDirectGrantFails() {
+            when(setupTokenService.validate(SETUP_TOKEN, SetupToken.TokenPurpose.PASSWORD_SETUP))
+                    .thenReturn(validToken);
+            when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
+            when(keycloakAdminClient.createUser(EMAIL, PASSWORD, true)).thenReturn(KEYCLOAK_USER_ID);
+            when(keycloakAdminClient.authenticateUser(EMAIL, PASSWORD))
+                    .thenThrow(new KeycloakAdminClient.KeycloakException("401 Unauthorized"));
+
+            Optional<UserTokens> result = passwordService.setupPassword(SETUP_TOKEN, PASSWORD);
+
+            assertThat(result).isEmpty();
+            verify(keycloakAdminClient, never()).deleteUser(anyString());
+            verify(membersClient).notifyAccountActivated(MEMBER_ID, KEYCLOAK_USER_ID);
+        }
     }
 
     @Nested
@@ -240,6 +297,7 @@ class PasswordServiceImplTest {
                     .thenReturn(tokenWithUpperCaseEmail);
             when(membersClient.isEmailNotConfirmed("USER@TEST.COM")).thenReturn(false);
             when(keycloakAdminClient.createUser("USER@TEST.COM", PASSWORD, true)).thenReturn(KEYCLOAK_USER_ID);
+            when(keycloakAdminClient.authenticateUser("USER@TEST.COM", PASSWORD)).thenReturn(MOCK_TOKEN_RESPONSE);
 
             passwordService.setupPassword(SETUP_TOKEN, PASSWORD);
 
@@ -253,6 +311,7 @@ class PasswordServiceImplTest {
                     .thenReturn(validToken);
             when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
             when(keycloakAdminClient.createUser(EMAIL, PASSWORD, true)).thenReturn(KEYCLOAK_USER_ID);
+            when(keycloakAdminClient.authenticateUser(EMAIL, PASSWORD)).thenReturn(MOCK_TOKEN_RESPONSE);
 
             passwordService.setupPassword(SETUP_TOKEN, PASSWORD);
 

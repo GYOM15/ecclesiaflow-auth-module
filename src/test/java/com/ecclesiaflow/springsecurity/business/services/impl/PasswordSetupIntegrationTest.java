@@ -3,6 +3,7 @@ package com.ecclesiaflow.springsecurity.business.services.impl;
 import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
 import com.ecclesiaflow.springsecurity.business.domain.token.SetupToken;
 import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakAdminClient;
+import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakTokenResponse;
 import com.ecclesiaflow.springsecurity.io.persistence.jpa.SetupTokenEntity;
 import com.ecclesiaflow.springsecurity.io.persistence.repositories.SetupTokenJpaRepository;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
@@ -65,6 +66,8 @@ class PasswordSetupIntegrationTest {
     private static final UUID MEMBER_ID = UUID.randomUUID();
     private static final String KEYCLOAK_USER_ID = "kc-user-" + UUID.randomUUID();
     private static final String PASSWORD = "SecurePassword123!";
+    private static final KeycloakTokenResponse MOCK_TOKEN_RESPONSE = new KeycloakTokenResponse(
+            "access-token", "refresh-token", 300, 1800, "Bearer", "openid");
 
     @TestConfiguration
     static class MockExternalDependencies {
@@ -120,12 +123,14 @@ class PasswordSetupIntegrationTest {
             createIssuedToken(RAW_TOKEN, LocalDateTime.now().plusHours(24));
             when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
             when(keycloakAdminClient.createUser(EMAIL, PASSWORD, true)).thenReturn(KEYCLOAK_USER_ID);
+            when(keycloakAdminClient.authenticateUser(EMAIL, PASSWORD)).thenReturn(MOCK_TOKEN_RESPONSE);
 
             passwordService.setupPassword(RAW_TOKEN, PASSWORD);
 
             verify(membersClient).isEmailNotConfirmed(EMAIL);
             verify(keycloakAdminClient).createUser(EMAIL, PASSWORD, true);
             verify(membersClient).notifyAccountActivated(MEMBER_ID, KEYCLOAK_USER_ID);
+            verify(keycloakAdminClient).authenticateUser(EMAIL, PASSWORD);
             assertThat(tokenJpaRepository.findAll()).isEmpty();
         }
 
@@ -136,6 +141,7 @@ class PasswordSetupIntegrationTest {
             when(membersClient.isEmailNotConfirmed(EMAIL)).thenReturn(false);
             when(keycloakAdminClient.createUser(anyString(), anyString(), anyBoolean()))
                     .thenReturn(KEYCLOAK_USER_ID);
+            when(keycloakAdminClient.authenticateUser(anyString(), anyString())).thenReturn(MOCK_TOKEN_RESPONSE);
 
             passwordService.setupPassword(RAW_TOKEN, PASSWORD);
 

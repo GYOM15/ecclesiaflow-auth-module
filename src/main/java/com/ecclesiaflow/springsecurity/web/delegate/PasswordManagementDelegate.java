@@ -1,5 +1,6 @@
 package com.ecclesiaflow.springsecurity.web.delegate;
 
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.services.PasswordService;
 import com.ecclesiaflow.springsecurity.web.constants.Messages;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
@@ -8,6 +9,8 @@ import com.ecclesiaflow.springsecurity.web.model.SetupPasswordRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 /**
  * Delegate for password management - Delegate pattern with OpenAPI Generator.
@@ -41,10 +44,15 @@ public class PasswordManagementDelegate {
             throw new InvalidRequestException("Setup token is required");
         }
 
-        passwordService.setupPassword(xSetupToken, password);
+        Optional<UserTokens> tokens = passwordService.setupPassword(xSetupToken, password);
 
         PasswordManagementResponse response = new PasswordManagementResponse()
                 .message(Messages.PASSWORD_SETUP_SUCCESS);
+
+        tokens.ifPresent(t -> response
+                .accessToken(t.accessToken())
+                .refreshToken(t.refreshToken())
+                .expiresIn(t.expiresIn()));
 
         return ResponseEntity.ok(response);
     }

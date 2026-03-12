@@ -32,14 +32,8 @@ public final class Messages {
 
     // === Password ===
     public static final String PASSWORD_SETUP_SUCCESS = "Your password has been successfully set. You are now signed in.";
-    public static final String PASSWORD_RESET_SUCCESS = "Your password has been successfully reset. You are now signed in.";
-    public static final String PASSWORD_CHANGE_SUCCESS = "Your password has been successfully changed.";
     public static final String PASSWORD_INVALID_CURRENT = "The current password is incorrect.";
     public static final String PASSWORD_POLICY_VIOLATION = "The password does not meet the required security criteria.";
     public static final String PASSWORD_UPDATE_ERROR = "An error occurred while updating the password.";
-
-    // === Email / Reset ===
-    public static final String RESET_EMAIL_SENT = "A password reset link has been sent.";
-    public static final String EMAIL_SEND_ERROR = "An error occurred while sending the reset email.";
 
 }

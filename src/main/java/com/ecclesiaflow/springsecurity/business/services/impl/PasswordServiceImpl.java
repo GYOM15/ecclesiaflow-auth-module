@@ -2,16 +2,20 @@ package com.ecclesiaflow.springsecurity.business.services.impl;
 
 import com.ecclesiaflow.springsecurity.business.domain.member.MembersClient;
 import com.ecclesiaflow.springsecurity.business.domain.token.SetupToken;
+import com.ecclesiaflow.springsecurity.business.domain.token.UserTokens;
 import com.ecclesiaflow.springsecurity.business.exceptions.CompensationFailedException;
 import com.ecclesiaflow.springsecurity.business.exceptions.InvalidTokenException;
 import com.ecclesiaflow.springsecurity.business.services.PasswordService;
 import com.ecclesiaflow.springsecurity.business.services.SetupTokenService;
 import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakAdminClient;
+import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakTokenResponse;
 import com.ecclesiaflow.springsecurity.web.constants.Messages;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 
 @Service
@@ -24,8 +28,8 @@ public class PasswordServiceImpl implements PasswordService {
 
     @Override
     @Transactional
-    public void setupPassword(String setupToken, String password) {
-        SetupToken token = null;
+    public Optional<UserTokens> setupPassword(String setupToken, String password) {
+        SetupToken token;
         String keycloakUserId = null;
         try {
             token = setupTokenService.validate(
@@ -54,6 +58,20 @@ public class PasswordServiceImpl implements PasswordService {
                 compensateKeycloakUser(keycloakUserId);
             }
             throw new InvalidRequestException(Messages.PASSWORD_SETUP_ERROR);
+        }
+
+        // Direct Grant: best-effort auto-login after successful setup.
+        // Outside compensation scope — setup already succeeded above.
+        // If this fails, frontend falls back to standard Keycloak login.
+        try {
+            KeycloakTokenResponse tokenResponse = keycloakAdminClient.authenticateUser(
+                    token.getEmail(), password);
+            return Optional.of(new UserTokens(
+                    tokenResponse.accessToken(),
+                    tokenResponse.refreshToken(),
+                    tokenResponse.expiresIn()));
+        } catch (Exception e) {
+            return Optional.empty();
         }
     }
 

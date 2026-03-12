@@ -30,6 +30,12 @@ public class KeycloakAdminClient {
     @Value("${keycloak.admin.service.client-secret}")
     private String adminClientSecret;
 
+    @Value("${keycloak.direct-grant.client-id}")
+    private String directGrantClientId;
+
+    @Value("${keycloak.direct-grant.client-secret}")
+    private String directGrantClientSecret;
+
     private volatile String cachedAccessToken;
     private volatile long tokenExpiresAt = 0;
 
@@ -143,6 +149,33 @@ public class KeycloakAdminClient {
     }
 
     /**
+     * Authenticates a user via Direct Grant (Resource Owner Password Credentials).
+     * Used server-to-server only, for initial password setup auto-login.
+     * NOT for regular login — use OIDC/PKCE via frontend for that.
+     *
+     * @param email    user email (username)
+     * @param password user password
+     * @return Keycloak token response with access_token, refresh_token, expires_in
+     * @throws KeycloakException if authentication fails
+     */
+    public KeycloakTokenResponse authenticateUser(String email, String password) {
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "password");
+        form.add("client_id", directGrantClientId);
+        form.add("client_secret", directGrantClientSecret);
+        form.add("username", email);
+        form.add("password", password);
+
+        KeycloakTokenResponse response = tokenClient.getToken(realm, form);
+
+        if (response != null && response.accessToken() != null) {
+            return response;
+        }
+
+        throw new KeycloakException("Failed to authenticate user via Direct Grant");
+    }
+
+    /**
      * Gets admin access token with caching.
      * Reuses cached token if not expired, otherwise fetches new one.
      *
@@ -166,14 +199,11 @@ public class KeycloakAdminClient {
             form.add("client_id", adminClientId);
             form.add("client_secret", adminClientSecret);
 
-            Map<String, Object> response = tokenClient.getToken(realm, form);
+            KeycloakTokenResponse response = tokenClient.getToken(realm, form);
 
-            if (response != null && response.containsKey("access_token")) {
-                cachedAccessToken = (String) response.get("access_token");
-                int expiresIn = response.containsKey("expires_in")
-                        ? ((Number) response.get("expires_in")).intValue()
-                        : 300;
-                tokenExpiresAt = now + (expiresIn * 1000L);
+            if (response != null && response.accessToken() != null) {
+                cachedAccessToken = response.accessToken();
+                tokenExpiresAt = now + (response.expiresIn() * 1000L);
                 return cachedAccessToken;
             }
 

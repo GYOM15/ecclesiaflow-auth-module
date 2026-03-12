@@ -33,7 +33,7 @@ class GrpcClientConfigTest {
     void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
         config = new GrpcClientConfig();
-        
+
         // Default values configuration
         ReflectionTestUtils.setField(config, "membersServiceHost", "localhost");
         ReflectionTestUtils.setField(config, "membersServicePort", 9091);
@@ -61,7 +61,7 @@ class GrpcClientConfigTest {
         assertNotNull(channel, "The channel must not be null");
         assertFalse(channel.isShutdown(), "The channel must be active after creation");
         assertFalse(channel.isTerminated(), "The channel must not be terminated after creation");
-        
+
         // Cleanup
         channel.shutdownNow();
     }
@@ -78,7 +78,7 @@ class GrpcClientConfigTest {
 
         // Then
         assertNotNull(channel);
-        
+
         // Cleanup
         channel.shutdownNow();
     }
@@ -92,7 +92,6 @@ class GrpcClientConfigTest {
     void shutdownShouldHandleNullChannel() {
         // Given
         ReflectionTestUtils.setField(config, "membersChannel", null);
-        ReflectionTestUtils.setField(config, "emailChannel", null);
 
         // When/Then - Should not throw an exception
         assertDoesNotThrow(() -> config.shutdown());
@@ -104,7 +103,6 @@ class GrpcClientConfigTest {
         // Given
         when(mockChannel.isShutdown()).thenReturn(true);
         ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
-        ReflectionTestUtils.setField(config, "emailChannel", null);
 
         // When
         config.shutdown();
@@ -121,7 +119,6 @@ class GrpcClientConfigTest {
         when(mockChannel.isShutdown()).thenReturn(false);
         when(mockChannel.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
         ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
-        ReflectionTestUtils.setField(config, "emailChannel", null);
         ReflectionTestUtils.setField(config, "shutdownTimeoutSeconds", 5);
 
         // When
@@ -142,7 +139,6 @@ class GrpcClientConfigTest {
         when(mockChannel.awaitTermination(5, TimeUnit.SECONDS)).thenReturn(false);
         when(mockChannel.awaitTermination(1, TimeUnit.SECONDS)).thenReturn(true);
         ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
-        ReflectionTestUtils.setField(config, "emailChannel", null);
         ReflectionTestUtils.setField(config, "shutdownTimeoutSeconds", 5);
 
         // When
@@ -164,7 +160,6 @@ class GrpcClientConfigTest {
         when(mockChannel.awaitTermination(anyLong(), any(TimeUnit.class)))
                 .thenThrow(new InterruptedException("Test interruption"));
         ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
-        ReflectionTestUtils.setField(config, "emailChannel", null);
 
         // When/Then
         assertThrows(InterruptedException.class, () -> config.shutdown());
@@ -178,7 +173,6 @@ class GrpcClientConfigTest {
         when(mockChannel.awaitTermination(0, TimeUnit.SECONDS)).thenReturn(false);
         when(mockChannel.awaitTermination(1, TimeUnit.SECONDS)).thenReturn(true);
         ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
-        ReflectionTestUtils.setField(config, "emailChannel", null);
         ReflectionTestUtils.setField(config, "shutdownTimeoutSeconds", 0);
 
         // When
@@ -186,175 +180,5 @@ class GrpcClientConfigTest {
 
         // Then
         verify(mockChannel).shutdownNow(); // Should immediately force shutdown
-    }
-
-    // =====================================================
-    // Email Channel tests
-    // =====================================================
-
-    @Test
-    @DisplayName("Should create an emailGrpcChannel with the correct configuration")
-    void shouldCreateEmailGrpcChannel() {
-        // Given
-        ReflectionTestUtils.setField(config, "emailServiceHost", "localhost");
-        ReflectionTestUtils.setField(config, "emailServicePort", 9093);
-
-        // When
-        ManagedChannel channel = config.emailGrpcChannel();
-
-        // Then
-        assertNotNull(channel, "The email channel must not be null");
-        assertFalse(channel.isShutdown(), "The channel must be active after creation");
-        assertFalse(channel.isTerminated(), "The channel must not be terminated after creation");
-        
-        // Cleanup
-        channel.shutdownNow();
-    }
-
-    @Test
-    @DisplayName("Should use the configured host and port for email")
-    void shouldUseConfiguredHostAndPortForEmail() {
-        // Given
-        ReflectionTestUtils.setField(config, "emailServiceHost", "email-service");
-        ReflectionTestUtils.setField(config, "emailServicePort", 8093);
-
-        // When
-        ManagedChannel channel = config.emailGrpcChannel();
-
-        // Then
-        assertNotNull(channel);
-        
-        // Cleanup
-        channel.shutdownNow();
-    }
-
-    // =====================================================
-    // Shutdown tests with both channels
-    // =====================================================
-
-    @Test
-    @DisplayName("Shutdown should close both channels (members and email)")
-    void shutdownShouldCloseBothChannels() throws InterruptedException {
-        // Given
-        ManagedChannel mockEmailChannel = mock(ManagedChannel.class);
-        
-        when(mockChannel.isShutdown()).thenReturn(false);
-        when(mockChannel.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
-        
-        when(mockEmailChannel.isShutdown()).thenReturn(false);
-        when(mockEmailChannel.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
-        
-        ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
-        ReflectionTestUtils.setField(config, "emailChannel", mockEmailChannel);
-        ReflectionTestUtils.setField(config, "shutdownTimeoutSeconds", 5);
-
-        // When
-        config.shutdown();
-
-        // Then
-        verify(mockChannel).shutdown();
-        verify(mockChannel).awaitTermination(5, TimeUnit.SECONDS);
-        
-        verify(mockEmailChannel).shutdown();
-        verify(mockEmailChannel).awaitTermination(5, TimeUnit.SECONDS);
-    }
-
-    @Test
-    @DisplayName("Shutdown should handle an already shutdown email channel")
-    void shutdownShouldHandleAlreadyShutdownEmailChannel() throws InterruptedException {
-        // Given
-        ManagedChannel mockEmailChannel = mock(ManagedChannel.class);
-        
-        when(mockChannel.isShutdown()).thenReturn(false);
-        when(mockChannel.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
-        
-        when(mockEmailChannel.isShutdown()).thenReturn(true);
-        
-        ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
-        ReflectionTestUtils.setField(config, "emailChannel", mockEmailChannel);
-
-        // When
-        config.shutdown();
-
-        // Then
-        verify(mockChannel).shutdown();
-        verify(mockEmailChannel, never()).shutdown(); // Should not call shutdown again on email
-    }
-
-    @Test
-    @DisplayName("Shutdown should force email channel shutdown if timeout exceeded")
-    void shutdownShouldForceStopEmailChannelOnTimeout() throws InterruptedException {
-        // Given
-        ManagedChannel mockEmailChannel = mock(ManagedChannel.class);
-        
-        when(mockChannel.isShutdown()).thenReturn(false);
-        when(mockChannel.awaitTermination(5, TimeUnit.SECONDS)).thenReturn(true);
-        
-        when(mockEmailChannel.isShutdown()).thenReturn(false);
-        when(mockEmailChannel.awaitTermination(5, TimeUnit.SECONDS)).thenReturn(false);
-        when(mockEmailChannel.awaitTermination(1, TimeUnit.SECONDS)).thenReturn(true);
-        
-        ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
-        ReflectionTestUtils.setField(config, "emailChannel", mockEmailChannel);
-        ReflectionTestUtils.setField(config, "shutdownTimeoutSeconds", 5);
-
-        // When
-        config.shutdown();
-
-        // Then
-        verify(mockEmailChannel).shutdown();
-        verify(mockEmailChannel).shutdownNow(); // Should force shutdown du canal email
-    }
-
-    @Test
-    @DisplayName("Shutdown should continue even if members channel fails")
-    void shutdownShouldContinueEvenIfMembersChannelFails() throws InterruptedException {
-        // Given
-        ManagedChannel mockEmailChannel = mock(ManagedChannel.class);
-        
-        when(mockChannel.isShutdown()).thenReturn(false);
-        when(mockChannel.awaitTermination(anyLong(), any(TimeUnit.class)))
-                .thenThrow(new InterruptedException("Members channel interrupted"));
-        
-        when(mockEmailChannel.isShutdown()).thenReturn(false);
-        when(mockEmailChannel.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
-        
-        ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
-        ReflectionTestUtils.setField(config, "emailChannel", mockEmailChannel);
-
-        // When/Then - Should propagate the exception
-        assertThrows(InterruptedException.class, () -> config.shutdown());
-        
-        // But members channel should still have attempted shutdown
-        verify(mockChannel).shutdown();
-    }
-
-    @Test
-    @DisplayName("Shutdown should do nothing if both channels are null")
-    void shutdownShouldDoNothingIfBothChannelsAreNull() {
-        // Given
-        ReflectionTestUtils.setField(config, "membersChannel", null);
-        ReflectionTestUtils.setField(config, "emailChannel", null);
-
-        // When/Then - Should not throw an exception
-        assertDoesNotThrow(() -> config.shutdown());
-    }
-
-    @Test
-    @DisplayName("Shutdown should handle null email channel with active members channel")
-    void shutdownShouldHandleNullEmailChannelWithActiveMembersChannel() throws InterruptedException {
-        // Given
-        when(mockChannel.isShutdown()).thenReturn(false);
-        when(mockChannel.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(true);
-        
-        ReflectionTestUtils.setField(config, "membersChannel", mockChannel);
-        ReflectionTestUtils.setField(config, "emailChannel", null);
-
-        // When
-        config.shutdown();
-
-        // Then
-        verify(mockChannel).shutdown();
-        verify(mockChannel).awaitTermination(5, TimeUnit.SECONDS);
     }
 }

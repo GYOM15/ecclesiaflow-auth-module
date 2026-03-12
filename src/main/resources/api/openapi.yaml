@@ -313,7 +313,29 @@ components:
         message:
           type: string
           description: Success or status message
-          example: "If an account exists with this email, you will receive a reset link."
+          example: "Your password has been successfully set."
+        accessToken:
+          type: string
+          nullable: true
+          description: |
+            Keycloak access token (JWT) for immediate auto-login after initial password setup.
+            Only returned on POST /password/setup. Null on reset or forgot-password.
+            Obtained via Direct Grant (server-to-server, admin-service client).
+          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refreshToken:
+          type: string
+          nullable: true
+          description: |
+            Keycloak refresh token for session renewal.
+            Only returned alongside accessToken on initial password setup.
+          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        expiresIn:
+          type: integer
+          nullable: true
+          description: |
+            Access token lifetime in seconds (e.g., 300 = 5 minutes).
+            Only returned alongside accessToken.
+          example: 300
 
     # ==========================================
     # Common Schemas

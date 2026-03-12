@@ -26,6 +26,7 @@ fi
 MISSING=""
 [ -z "${KEYCLOAK_BACKEND_CLIENT_SECRET:-}" ]      && MISSING="$MISSING KEYCLOAK_BACKEND_CLIENT_SECRET"
 [ -z "${KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET:-}" ] && MISSING="$MISSING KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET"
+[ -z "${KEYCLOAK_FRONTEND_CLIENT_SECRET:-}" ]      && MISSING="$MISSING KEYCLOAK_FRONTEND_CLIENT_SECRET"
 [ -z "${KEYCLOAK_SMTP_PASSWORD:-}" ]               && MISSING="$MISSING KEYCLOAK_SMTP_PASSWORD"
 
 if [ -n "$MISSING" ]; then
@@ -42,6 +43,7 @@ mkdir -p "$(dirname "$OUTPUT")"
 sed \
   -e "s|__KEYCLOAK_BACKEND_CLIENT_SECRET__|${KEYCLOAK_BACKEND_CLIENT_SECRET}|g" \
   -e "s|__KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET__|${KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET}|g" \
+  -e "s|__KEYCLOAK_FRONTEND_CLIENT_SECRET__|${KEYCLOAK_FRONTEND_CLIENT_SECRET}|g" \
   -e "s|__FRONTEND_REDIRECT_URI_1__|${FRONTEND_REDIRECT_URI_1:-http://localhost:3000/*}|g" \
   -e "s|__FRONTEND_REDIRECT_URI_2__|${FRONTEND_REDIRECT_URI_2:-http://localhost:4200/*}|g" \
   -e "s|__FRONTEND_REDIRECT_URI_3__|${FRONTEND_REDIRECT_URI_3:-http://localhost:5173/*}|g" \
@@ -240,6 +242,21 @@ if [ "$IS_DEV" = "true" ]; then
     echo "[init-realm] ecclesiaflow-frontend client → ecclesiaflow-user theme"
 
   echo "[init-realm] Theme configuration complete"
+
+  # -----------------------------------------------------------------------
+  # Patch ecclesiaflow-frontend: confidential + Direct Grant
+  # (--import-realm does NOT update existing clients, so we patch via CLI)
+  # -----------------------------------------------------------------------
+  FRONTEND_ID=$($KCADM get clients -r "$REALM" -q clientId=ecclesiaflow-frontend --fields id 2>/dev/null | grep '"id"' | sed 's/.*: "//;s/".*//')
+  if [ -n "$FRONTEND_ID" ]; then
+    echo "[init-realm] Patching ecclesiaflow-frontend → confidential + Direct Grant..."
+    $KCADM update "clients/$FRONTEND_ID" -r "$REALM" \
+      -s publicClient=false \
+      -s clientAuthenticatorType=client-secret \
+      -s "secret=${KEYCLOAK_FRONTEND_CLIENT_SECRET}" \
+      -s directAccessGrantsEnabled=true 2>&1 && \
+      echo "[init-realm] ecclesiaflow-frontend → confidential + Direct Grant enabled"
+  fi
 
   wait $KC_PID
 else
