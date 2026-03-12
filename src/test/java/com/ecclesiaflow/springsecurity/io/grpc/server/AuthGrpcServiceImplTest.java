@@ -1,8 +1,8 @@
 package com.ecclesiaflow.springsecurity.io.grpc.server;
 
-import com.ecclesiaflow.grpc.auth.TemporaryTokenRequest;
-import com.ecclesiaflow.grpc.auth.TemporaryTokenResponse;
+import com.ecclesiaflow.grpc.auth.*;
 import com.ecclesiaflow.springsecurity.business.services.SetupTokenService;
+import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakAdminClient;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
@@ -30,7 +30,13 @@ class AuthGrpcServiceImplTest {
     private SetupTokenService setupTokenService;
 
     @Mock
+    private KeycloakAdminClient keycloakAdminClient;
+
+    @Mock
     private StreamObserver<TemporaryTokenResponse> responseObserver;
+
+    @Mock
+    private StreamObserver<DeleteKeycloakUserResponse> deleteResponseObserver;
 
     private AuthGrpcServiceImpl authGrpcService;
 
@@ -42,7 +48,7 @@ class AuthGrpcServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        authGrpcService = new AuthGrpcServiceImpl(setupTokenService);
+        authGrpcService = new AuthGrpcServiceImpl(setupTokenService, keycloakAdminClient);
         ReflectionTestUtils.setField(authGrpcService, "setupTokenTtlHours", TTL_HOURS);
         ReflectionTestUtils.setField(authGrpcService, "passwordSetupEndpoint", PASSWORD_ENDPOINT);
     }
@@ -266,6 +272,73 @@ class AuthGrpcServiceImplTest {
                     .doesNotThrowAnyException();
 
             verify(responseObserver).onError(any(StatusRuntimeException.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteKeycloakUser")
+    class DeleteKeycloakUserTests {
+
+        private static final String TEST_KEYCLOAK_USER_ID = "kc-user-123";
+
+        @Test
+        @DisplayName("Should delete Keycloak user successfully")
+        void shouldDeleteKeycloakUserSuccessfully() {
+            DeleteKeycloakUserRequest request = DeleteKeycloakUserRequest.newBuilder()
+                    .setKeycloakUserId(TEST_KEYCLOAK_USER_ID)
+                    .build();
+
+            authGrpcService.deleteKeycloakUser(request, deleteResponseObserver);
+
+            verify(keycloakAdminClient).deleteUser(TEST_KEYCLOAK_USER_ID);
+
+            ArgumentCaptor<DeleteKeycloakUserResponse> captor =
+                    ArgumentCaptor.forClass(DeleteKeycloakUserResponse.class);
+            verify(deleteResponseObserver).onNext(captor.capture());
+            verify(deleteResponseObserver).onCompleted();
+            verify(deleteResponseObserver, never()).onError(any());
+
+            assertThat(captor.getValue().getSuccess()).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should reject empty keycloak_user_id")
+        void shouldRejectEmptyKeycloakUserId() {
+            DeleteKeycloakUserRequest request = DeleteKeycloakUserRequest.newBuilder()
+                    .setKeycloakUserId("")
+                    .build();
+
+            authGrpcService.deleteKeycloakUser(request, deleteResponseObserver);
+
+            ArgumentCaptor<StatusRuntimeException> errorCaptor =
+                    ArgumentCaptor.forClass(StatusRuntimeException.class);
+            verify(deleteResponseObserver).onError(errorCaptor.capture());
+            verify(deleteResponseObserver, never()).onNext(any());
+            verify(keycloakAdminClient, never()).deleteUser(any());
+
+            assertThat(errorCaptor.getValue().getStatus().getCode())
+                    .isEqualTo(Status.Code.INVALID_ARGUMENT);
+        }
+
+        @Test
+        @DisplayName("Should return INTERNAL when Keycloak call fails")
+        void shouldReturnInternalWhenKeycloakFails() {
+            DeleteKeycloakUserRequest request = DeleteKeycloakUserRequest.newBuilder()
+                    .setKeycloakUserId(TEST_KEYCLOAK_USER_ID)
+                    .build();
+
+            doThrow(new RuntimeException("Keycloak error"))
+                    .when(keycloakAdminClient).deleteUser(TEST_KEYCLOAK_USER_ID);
+
+            authGrpcService.deleteKeycloakUser(request, deleteResponseObserver);
+
+            ArgumentCaptor<StatusRuntimeException> errorCaptor =
+                    ArgumentCaptor.forClass(StatusRuntimeException.class);
+            verify(deleteResponseObserver).onError(errorCaptor.capture());
+            verify(deleteResponseObserver, never()).onNext(any());
+
+            assertThat(errorCaptor.getValue().getStatus().getCode())
+                    .isEqualTo(Status.Code.INTERNAL);
         }
     }
 }

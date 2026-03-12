@@ -2,6 +2,7 @@ package com.ecclesiaflow.springsecurity.io.grpc.server;
 
 import com.ecclesiaflow.grpc.auth.*;
 import com.ecclesiaflow.springsecurity.business.services.SetupTokenService;
+import com.ecclesiaflow.springsecurity.io.keycloak.KeycloakAdminClient;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,7 @@ import java.util.UUID;
 
 /**
  * gRPC service implementation for Auth module.
- * Handles token generation requests from Members module.
+ * Handles token generation and Keycloak user management requests from Members module.
  *
  * @author EcclesiaFlow Team
  * @since 2.0.0
@@ -24,6 +25,7 @@ import java.util.UUID;
 public class AuthGrpcServiceImpl extends AuthServiceGrpc.AuthServiceImplBase {
 
     private final SetupTokenService setupTokenService;
+    private final KeycloakAdminClient keycloakAdminClient;
 
     @Value("${auth.token.setup.ttl-hours:24}")
     private int setupTokenTtlHours;
@@ -79,6 +81,41 @@ public class AuthGrpcServiceImpl extends AuthServiceGrpc.AuthServiceImplBase {
         responseObserver.onError(Status.INVALID_ARGUMENT
                 .withDescription(e.getMessage())
                 .asRuntimeException());
+    }
+
+    /**
+     * Deletes a Keycloak user by their Keycloak user ID.
+     * Called by Members module before deleting a member from the database.
+     */
+    @Override
+    public void deleteKeycloakUser(
+            DeleteKeycloakUserRequest request,
+            StreamObserver<DeleteKeycloakUserResponse> responseObserver) {
+
+        String keycloakUserId = request.getKeycloakUserId();
+
+        try {
+            if (keycloakUserId == null || keycloakUserId.isBlank()) {
+                throw new IllegalArgumentException("keycloak_user_id cannot be empty");
+            }
+
+            keycloakAdminClient.deleteUser(keycloakUserId);
+
+            responseObserver.onNext(DeleteKeycloakUserResponse.newBuilder()
+                    .setSuccess(true)
+                    .setMessage("Keycloak user deleted")
+                    .build());
+            responseObserver.onCompleted();
+
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription("Failed to delete Keycloak user")
+                    .asRuntimeException());
+        }
     }
 
     // ========================================================================
