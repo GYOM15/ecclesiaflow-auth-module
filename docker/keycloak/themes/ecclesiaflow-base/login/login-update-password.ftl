@@ -68,22 +68,63 @@
             </#if>
         </form>
 
+        <div id="pw-mismatch-msg" class="alert alert-error" style="display:none;">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"/></svg>
+            <span>${msg("passwordMismatch")}</span>
+        </div>
+
         <script>
-            document.querySelectorAll('.pw-toggle').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var targetId = this.getAttribute('data-target');
-                    var input = document.getElementById(targetId);
-                    if (input.type === 'password') {
-                        input.type = 'text';
-                        this.classList.add('is-visible');
-                        this.setAttribute('aria-label', 'Masquer le mot de passe');
-                    } else {
-                        input.type = 'password';
-                        this.classList.remove('is-visible');
-                        this.setAttribute('aria-label', 'Afficher le mot de passe');
-                    }
-                });
-            });
+            /* Password strength meter */
+            (function() {
+                var pwInput = document.getElementById('password-new');
+                var bars = document.querySelectorAll('.pw-bar');
+
+                if (pwInput && bars.length) {
+                    pwInput.addEventListener('input', function() {
+                        var val = this.value;
+                        var score = 0;
+                        if (val.length >= 8) score++;
+                        if (/[a-z]/.test(val) && /[A-Z]/.test(val)) score++;
+                        if (/\d/.test(val)) score++;
+                        if (/[^a-zA-Z0-9]/.test(val)) score++;
+
+                        bars.forEach(function(bar, i) {
+                            bar.className = 'pw-bar';
+                            if (i < score) {
+                                if (score <= 1) bar.classList.add('weak');
+                                else if (score <= 2) bar.classList.add('medium');
+                                else bar.classList.add('strong');
+                            }
+                        });
+                    });
+                }
+
+                /* Client-side confirmation mismatch check */
+                var confirmInput = document.getElementById('password-confirm');
+                var mismatchMsg = document.getElementById('pw-mismatch-msg');
+                var form = document.getElementById('kc-passwd-update-form');
+
+                if (confirmInput && mismatchMsg && form) {
+                    confirmInput.addEventListener('input', function() {
+                        if (this.value && pwInput.value && this.value !== pwInput.value) {
+                            mismatchMsg.style.display = 'flex';
+                            confirmInput.classList.add('error');
+                        } else {
+                            mismatchMsg.style.display = 'none';
+                            confirmInput.classList.remove('error');
+                        }
+                    });
+
+                    form.addEventListener('submit', function(e) {
+                        if (pwInput.value !== confirmInput.value) {
+                            e.preventDefault();
+                            mismatchMsg.style.display = 'flex';
+                            confirmInput.classList.add('error');
+                            confirmInput.focus();
+                        }
+                    });
+                }
+            })();
         </script>
     </#if>
 
