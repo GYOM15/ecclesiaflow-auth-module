@@ -225,6 +225,48 @@ if [ "$IS_DEV" = "true" ]; then
   echo "[init-realm] Social auto-provision flow configured"
 
   # -----------------------------------------------------------------------
+  # Ensure identity_provider claim is in the frontend client JWT
+  # -----------------------------------------------------------------------
+  echo "[init-realm] Ensuring identity-provider-mapper on ecclesiaflow-frontend..."
+
+  FRONTEND_CID=$($KCADM get clients -r "$REALM" -q clientId=ecclesiaflow-frontend --fields id 2>/dev/null \
+    | grep '"id"' | sed 's/.*: "//;s/".*//')
+
+  if [ -n "$FRONTEND_CID" ]; then
+    # Check if mapper already exists (avoid duplicate on restart)
+    EXISTING=$($KCADM get "clients/$FRONTEND_CID/protocol-mappers/models" -r "$REALM" 2>/dev/null \
+      | grep '"identity-provider-mapper"' || true)
+
+    if [ -z "$EXISTING" ]; then
+      $KCADM create "clients/$FRONTEND_CID/protocol-mappers/models" \
+        -r "$REALM" \
+        -s name=identity-provider-mapper \
+        -s protocol=openid-connect \
+        -s protocolMapper=oidc-usersessionmodel-note-mapper \
+        -s consentRequired=false \
+        -s 'config."user.session.note"=identity_provider' \
+        -s 'config."id.token.claim"=true' \
+        -s 'config."access.token.claim"=true' \
+        -s 'config."userinfo.token.claim"=false' \
+        -s 'config."claim.name"=identity_provider' \
+        -s 'config."jsonType.label"=String' 2>&1 && \
+        echo "[init-realm]   identity-provider-mapper created" || \
+        echo "[init-realm]   WARNING: Could not create identity-provider-mapper" >&2
+    else
+      echo "[init-realm]   identity-provider-mapper already exists — skipping"
+    fi
+  fi
+
+  # -----------------------------------------------------------------------
+  # Password policy: enforce strength + history
+  # -----------------------------------------------------------------------
+  echo "[init-realm] Setting password policy..."
+
+  $KCADM update realms/"$REALM" \
+    -s 'passwordPolicy=length(8) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(3)' 2>&1 && \
+    echo "[init-realm] Password policy: 8+ chars, mixed case, digit, special, history(3)"
+
+  # -----------------------------------------------------------------------
   # Assign custom themes to the ecclesiaflow realm
   # -----------------------------------------------------------------------
   echo "[init-realm] Assigning custom themes..."
