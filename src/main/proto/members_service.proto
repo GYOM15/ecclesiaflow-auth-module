@@ -6,57 +6,36 @@ option java_outer_classname = "MembersServiceProto";
 
 package ecclesiaflow.members;
 
-/**
- * EcclesiaFlow member management service for inter-module communication.
- * 
- * This gRPC service allows other modules (notably Auth) to query
- * member status without directly exposing the database.
- *
- * Architecture: Synchronous communication between Auth Module and Members Module
- * Security: JWT in metadata for inter-service authentication
- */
 service MembersService {
   rpc GetMemberConfirmationStatus(ConfirmationStatusRequest) returns (ConfirmationStatusResponse);
   rpc NotifyAccountActivated(AccountActivatedRequest) returns (AccountActivatedResponse);
+  rpc NotifyLocalCredentialsAdded(LocalCredentialsAddedRequest) returns (LocalCredentialsAddedResponse);
 }
 
-// ============================================================================
-// Request/Response Messages
-// ============================================================================
-
-/**
- * Request to get a member's confirmation status.
- */
 message ConfirmationStatusRequest {
-  // Email of the member to verify
   string email = 1;
 }
 
 message ConfirmationStatusResponse {
   bool member_exists = 1;
-  
-  // Indicates whether the member's email has been confirmed
   bool is_confirmed = 2;
 }
 
-/**
- * Request to notify that a member account has been activated.
- */
 message AccountActivatedRequest {
-  // Member ID (UUID string)
   string member_id = 1;
-  
-  // Keycloak user ID assigned to this member
   string keycloak_user_id = 2;
 }
 
-/**
- * Response confirming account activation notification.
- */
 message AccountActivatedResponse {
-  // Whether the notification was processed successfully
   bool success = 1;
-  
-  // Optional message (error details if success=false)
+  string message = 2;
+}
+
+message LocalCredentialsAddedRequest {
+  string keycloak_user_id = 1;
+}
+
+message LocalCredentialsAddedResponse {
+  bool success = 1;
   string message = 2;
 }

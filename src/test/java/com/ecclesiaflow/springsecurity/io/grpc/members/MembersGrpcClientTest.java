@@ -151,4 +151,38 @@ class MembersGrpcClientTest {
         assertFalse(success, "The response should indicate a failure");
         assertEquals("Member not found", response.getMessage());
     }
+
+    @Test
+    @DisplayName("Protobuf request construction - LocalCredentialsAddedRequest")
+    void shouldConstructLocalCredentialsAddedRequest() {
+        LocalCredentialsAddedRequest request = LocalCredentialsAddedRequest.newBuilder()
+                .setKeycloakUserId("keycloak-user-123")
+                .build();
+
+        assertEquals("keycloak-user-123", request.getKeycloakUserId());
+    }
+
+    @Test
+    @DisplayName("Protobuf response parsing - notifyLocalCredentialsAdded success")
+    void shouldParseLocalCredentialsAddedSuccess() {
+        LocalCredentialsAddedResponse response = LocalCredentialsAddedResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage("Credentials updated")
+                .build();
+
+        assertTrue(response.getSuccess());
+        assertEquals("Credentials updated", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Protobuf response parsing - notifyLocalCredentialsAdded failure")
+    void shouldParseLocalCredentialsAddedFailure() {
+        LocalCredentialsAddedResponse response = LocalCredentialsAddedResponse.newBuilder()
+                .setSuccess(false)
+                .setMessage("Member not found")
+                .build();
+
+        assertFalse(response.getSuccess());
+        assertEquals("Member not found", response.getMessage());
+    }
 }

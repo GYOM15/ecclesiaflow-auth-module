@@ -49,4 +49,12 @@ public interface MembersClient {
      * @throws RuntimeException if communication with the Members module fails
      */
     boolean notifyAccountActivated(UUID memberId, String keycloakUserId);
+
+    /**
+     * Notifies the Members module that an SSO user has added local credentials.
+     *
+     * @param keycloakUserId the Keycloak user ID
+     * @return true if notification was processed successfully
+     */
+    boolean notifyLocalCredentialsAdded(String keycloakUserId);
 }

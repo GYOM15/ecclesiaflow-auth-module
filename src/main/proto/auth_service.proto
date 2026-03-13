@@ -10,6 +10,8 @@ package ecclesiaflow.auth;
 service AuthService {
   rpc GenerateTemporaryToken(TemporaryTokenRequest) returns (TemporaryTokenResponse);
   rpc DeleteKeycloakUser(DeleteKeycloakUserRequest) returns (DeleteKeycloakUserResponse);
+  rpc DisableKeycloakUser(DisableKeycloakUserRequest) returns (DisableKeycloakUserResponse);
+  rpc UpdateKeycloakUserEmail(UpdateKeycloakUserEmailRequest) returns (UpdateKeycloakUserEmailResponse);
 }
 
 // ============================================================================
@@ -44,6 +46,33 @@ message DeleteKeycloakUserRequest {
 }
 
 message DeleteKeycloakUserResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// ============================================================================
+// Disable Keycloak User
+// ============================================================================
+
+message DisableKeycloakUserRequest {
+  string keycloak_user_id = 1;
+}
+
+message DisableKeycloakUserResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// ============================================================================
+// Update Keycloak User Email
+// ============================================================================
+
+message UpdateKeycloakUserEmailRequest {
+  string keycloak_user_id = 1;
+  string new_email = 2;
+}
+
+message UpdateKeycloakUserEmailResponse {
   bool success = 1;
   string message = 2;
 }

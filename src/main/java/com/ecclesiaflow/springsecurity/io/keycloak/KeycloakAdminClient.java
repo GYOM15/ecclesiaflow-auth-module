@@ -218,6 +218,20 @@ public class KeycloakAdminClient {
      * @param keycloakUserId Keycloak user ID to delete
      * @throws KeycloakException if deletion fails
      */
+    /** Disables a Keycloak user (sets enabled=false). */
+    public void disableUser(String keycloakUserId) {
+        String accessToken = getAdminAccessToken();
+        adminClient.updateUser("Bearer " + accessToken, realm, keycloakUserId,
+                Map.of("enabled", false));
+    }
+
+    /** Updates a Keycloak user's email and username. */
+    public void updateUserEmail(String keycloakUserId, String newEmail) {
+        String accessToken = getAdminAccessToken();
+        adminClient.updateUser("Bearer " + accessToken, realm, keycloakUserId,
+                Map.of("email", newEmail, "username", newEmail));
+    }
+
     public void deleteUser(String keycloakUserId) {
         String accessToken = getAdminAccessToken();
         adminClient.deleteUser("Bearer " + accessToken, realm, keycloakUserId);

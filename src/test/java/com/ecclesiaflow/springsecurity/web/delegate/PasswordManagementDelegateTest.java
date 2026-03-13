@@ -5,6 +5,7 @@ import com.ecclesiaflow.springsecurity.business.services.PasswordService;
 import com.ecclesiaflow.springsecurity.web.constants.Messages;
 import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
 import com.ecclesiaflow.springsecurity.web.model.PasswordManagementResponse;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,7 +16,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -252,6 +257,61 @@ class PasswordManagementDelegateTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getStatusCode().value()).isEqualTo(200);
+        }
+    }
+
+    @Nested
+    @DisplayName("addLocalCredentials")
+    class AddLocalCredentialsTests {
+
+        private static final String KEYCLOAK_USER_ID = "keycloak-user-123";
+
+        @BeforeEach
+        void setUpSecurityContext() {
+            Jwt jwt = Jwt.withTokenValue("mock-token")
+                    .header("alg", "RS256")
+                    .subject(KEYCLOAK_USER_ID)
+                    .claim("email", "user@test.com")
+                    .issuedAt(Instant.now())
+                    .expiresAt(Instant.now().plusSeconds(300))
+                    .build();
+            JwtAuthenticationToken auth = new JwtAuthenticationToken(jwt);
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+
+        @AfterEach
+        void clearSecurityContext() {
+            SecurityContextHolder.clearContext();
+        }
+
+        @Test
+        @DisplayName("Should return 201 Created on success")
+        void shouldReturn201OnSuccess() {
+            ResponseEntity<PasswordManagementResponse> response =
+                    passwordManagementDelegate.addLocalCredentials(PASSWORD);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getMessage()).contains("password added");
+            verify(passwordService).addLocalCredentials(KEYCLOAK_USER_ID, PASSWORD);
+        }
+
+        @Test
+        @DisplayName("Should extract keycloakUserId from JWT sub claim")
+        void shouldExtractKeycloakUserIdFromJwt() {
+            passwordManagementDelegate.addLocalCredentials(PASSWORD);
+
+            verify(passwordService).addLocalCredentials(KEYCLOAK_USER_ID, PASSWORD);
+        }
+
+        @Test
+        @DisplayName("Should propagate service exception")
+        void shouldPropagateServiceException() {
+            doThrow(new RuntimeException("Keycloak error"))
+                    .when(passwordService).addLocalCredentials(KEYCLOAK_USER_ID, PASSWORD);
+
+            assertThatThrownBy(() -> passwordManagementDelegate.addLocalCredentials(PASSWORD))
+                    .isInstanceOf(RuntimeException.class);
         }
     }
 }

@@ -17,4 +17,13 @@ public interface PasswordService {
      * @throws com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException if token is invalid or email not confirmed
      */
     Optional<UserTokens> setupPassword(String setupToken, String password);
+
+    /**
+     * Adds a local password to an SSO user's Keycloak account
+     * and notifies the Members module.
+     *
+     * @param keycloakUserId Keycloak user ID (JWT sub claim)
+     * @param password       new local password
+     */
+    void addLocalCredentials(String keycloakUserId, String password);
 }

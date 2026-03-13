@@ -402,4 +402,52 @@ class PasswordServiceImplTest {
                     .doesNotContain("User exists");
         }
     }
+
+    @Nested
+    @DisplayName("addLocalCredentials")
+    class AddLocalCredentialsTests {
+
+        @Test
+        @DisplayName("Should add password in Keycloak and notify Members module")
+        void shouldAddPasswordAndNotifyMembers() {
+            passwordService.addLocalCredentials(KEYCLOAK_USER_ID, PASSWORD);
+
+            verify(keycloakAdminClient).updatePassword(KEYCLOAK_USER_ID, PASSWORD);
+            verify(membersClient).notifyLocalCredentialsAdded(KEYCLOAK_USER_ID);
+        }
+
+        @Test
+        @DisplayName("Should call Keycloak before notifying Members")
+        void shouldCallKeycloakBeforeMembers() {
+            passwordService.addLocalCredentials(KEYCLOAK_USER_ID, PASSWORD);
+
+            var inOrder = inOrder(keycloakAdminClient, membersClient);
+            inOrder.verify(keycloakAdminClient).updatePassword(KEYCLOAK_USER_ID, PASSWORD);
+            inOrder.verify(membersClient).notifyLocalCredentialsAdded(KEYCLOAK_USER_ID);
+        }
+
+        @Test
+        @DisplayName("Should propagate Keycloak exception")
+        void shouldPropagateKeycloakException() {
+            doThrow(new KeycloakAdminClient.KeycloakException("Password update failed"))
+                    .when(keycloakAdminClient).updatePassword(KEYCLOAK_USER_ID, PASSWORD);
+
+            assertThatThrownBy(() -> passwordService.addLocalCredentials(KEYCLOAK_USER_ID, PASSWORD))
+                    .isInstanceOf(KeycloakAdminClient.KeycloakException.class);
+
+            verify(membersClient, never()).notifyLocalCredentialsAdded(anyString());
+        }
+
+        @Test
+        @DisplayName("Should propagate Members notification failure")
+        void shouldPropagateMembersNotificationFailure() {
+            doThrow(new RuntimeException("gRPC unavailable"))
+                    .when(membersClient).notifyLocalCredentialsAdded(KEYCLOAK_USER_ID);
+
+            assertThatThrownBy(() -> passwordService.addLocalCredentials(KEYCLOAK_USER_ID, PASSWORD))
+                    .isInstanceOf(RuntimeException.class);
+
+            verify(keycloakAdminClient).updatePassword(KEYCLOAK_USER_ID, PASSWORD);
+        }
+    }
 }

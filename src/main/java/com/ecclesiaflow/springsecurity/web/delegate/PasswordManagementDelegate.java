@@ -7,7 +7,10 @@ import com.ecclesiaflow.springsecurity.web.exception.InvalidRequestException;
 import com.ecclesiaflow.springsecurity.web.model.PasswordManagementResponse;
 import com.ecclesiaflow.springsecurity.web.model.SetupPasswordRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -55,5 +58,17 @@ public class PasswordManagementDelegate {
                 .expiresIn(t.expiresIn()));
 
         return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<PasswordManagementResponse> addLocalCredentials(String password) {
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext()
+                .getAuthentication().getCredentials();
+        String keycloakUserId = jwt.getSubject();
+
+        passwordService.addLocalCredentials(keycloakUserId, password);
+
+        PasswordManagementResponse response = new PasswordManagementResponse()
+                .message("Local password added successfully");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

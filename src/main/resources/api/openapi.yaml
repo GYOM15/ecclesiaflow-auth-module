@@ -101,6 +101,42 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /ecclesiaflow/auth/credentials:
+    post:
+      tags:
+        - Password Management
+      summary: Add local password for SSO user
+      description: |
+        Allows SSO-authenticated users (Google, Microsoft, Facebook) to add a local password.
+        Required before changing email address.
+
+        **Process:**
+        1. Extract keycloakUserId from JWT sub claim
+        2. Add password credential to existing Keycloak user
+        3. Notify Members module to update hasLocalCredentials flag
+      operationId: Auth.AddLocalCredentials
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCredentialsRequest'
+      responses:
+        '201':
+          description: Password added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordManagementResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /ecclesiaflow/auth/password/setup:
     post:
       tags:
@@ -305,6 +341,22 @@ components:
           maxLength: 128
           pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,128}$"
 
+    AddCredentialsRequest:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+          format: password
+          description: |
+            Local password to add to the SSO account.
+            Same validation rules as SetupPasswordRequest.
+          example: SecurePassword123!
+          minLength: 8
+          maxLength: 128
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,128}$"
+
     PasswordManagementResponse:
       type: object
       required:
@@ -478,3 +530,4 @@ tags:
     description: |
       Password management via Keycloak Admin API:
       - Initial password setup after email confirmation
+      - Local credentials for SSO users

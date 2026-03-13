@@ -45,6 +45,14 @@ public interface KeycloakAdminFeignClient {
             @RequestParam("exact") boolean exact
     );
 
+    @PutMapping(value = "/admin/realms/{realm}/users/{userId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    void updateUser(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable String realm,
+            @PathVariable String userId,
+            @RequestBody Map<String, Object> userRepresentation
+    );
+
     @DeleteMapping("/admin/realms/{realm}/users/{userId}")
     void deleteUser(
             @RequestHeader("Authorization") String authorization,

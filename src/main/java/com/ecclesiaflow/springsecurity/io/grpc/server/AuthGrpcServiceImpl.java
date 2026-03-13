@@ -118,6 +118,72 @@ public class AuthGrpcServiceImpl extends AuthServiceGrpc.AuthServiceImplBase {
         }
     }
 
+    /** Disables a Keycloak user (sets enabled=false). Called during member deactivation. */
+    @Override
+    public void disableKeycloakUser(
+            DisableKeycloakUserRequest request,
+            StreamObserver<DisableKeycloakUserResponse> responseObserver) {
+
+        String keycloakUserId = request.getKeycloakUserId();
+
+        try {
+            if (keycloakUserId == null || keycloakUserId.isBlank()) {
+                throw new IllegalArgumentException("keycloak_user_id cannot be empty");
+            }
+
+            keycloakAdminClient.disableUser(keycloakUserId);
+
+            responseObserver.onNext(DisableKeycloakUserResponse.newBuilder()
+                    .setSuccess(true)
+                    .setMessage("Keycloak user disabled")
+                    .build());
+            responseObserver.onCompleted();
+
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription("Failed to disable Keycloak user")
+                    .asRuntimeException());
+        }
+    }
+
+    /** Updates a Keycloak user's email. Called during email change confirmation. */
+    @Override
+    public void updateKeycloakUserEmail(
+            UpdateKeycloakUserEmailRequest request,
+            StreamObserver<UpdateKeycloakUserEmailResponse> responseObserver) {
+
+        String keycloakUserId = request.getKeycloakUserId();
+        String newEmail = request.getNewEmail();
+
+        try {
+            if (keycloakUserId == null || keycloakUserId.isBlank()) {
+                throw new IllegalArgumentException("keycloak_user_id cannot be empty");
+            }
+            validateEmail(newEmail);
+
+            keycloakAdminClient.updateUserEmail(keycloakUserId, newEmail);
+
+            responseObserver.onNext(UpdateKeycloakUserEmailResponse.newBuilder()
+                    .setSuccess(true)
+                    .setMessage("Keycloak user email updated")
+                    .build());
+            responseObserver.onCompleted();
+
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription("Failed to update Keycloak user email")
+                    .asRuntimeException());
+        }
+    }
+
     // ========================================================================
     // Private utility methods
     // ========================================================================

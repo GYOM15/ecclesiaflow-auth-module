@@ -2,6 +2,7 @@ package com.ecclesiaflow.springsecurity.web.controller;
 
 import com.ecclesiaflow.springsecurity.business.domain.password.PasswordManagement;
 import com.ecclesiaflow.springsecurity.web.delegate.PasswordManagementDelegate;
+import com.ecclesiaflow.springsecurity.web.model.AddCredentialsRequest;
 import com.ecclesiaflow.springsecurity.web.model.PasswordManagementResponse;
 import com.ecclesiaflow.springsecurity.web.model.SetupPasswordRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -263,6 +264,47 @@ class PasswordControllerTest {
             passwordController._authSetInitialPassword(SETUP_TOKEN, setupPasswordRequest);
 
             verify(passwordManagementDelegate).setupPassword(SETUP_TOKEN, PASSWORD);
+        }
+    }
+
+    @Nested
+    @DisplayName("_authAddLocalCredentials")
+    class AddLocalCredentialsTests {
+
+        @Test
+        @DisplayName("Should delegate to PasswordManagementDelegate")
+        void shouldDelegateToPasswordManagementDelegate() {
+            AddCredentialsRequest request = new AddCredentialsRequest();
+            request.setPassword(PASSWORD);
+
+            PasswordManagementResponse response = new PasswordManagementResponse()
+                    .message("Local password added successfully");
+            when(passwordManagementDelegate.addLocalCredentials(PASSWORD))
+                    .thenReturn(ResponseEntity.status(HttpStatus.CREATED).body(response));
+
+            ResponseEntity<PasswordManagementResponse> result =
+                    passwordController._authAddLocalCredentials(request);
+
+            assertThat(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+            assertThat(result.getBody()).isNotNull();
+            assertThat(result.getBody().getMessage()).contains("password added");
+            verify(passwordManagementDelegate).addLocalCredentials(PASSWORD);
+        }
+
+        @Test
+        @DisplayName("Should extract password from request body")
+        void shouldExtractPasswordFromRequestBody() {
+            String complexPassword = "C0mpl3x!P@ss#123";
+            AddCredentialsRequest request = new AddCredentialsRequest();
+            request.setPassword(complexPassword);
+
+            when(passwordManagementDelegate.addLocalCredentials(complexPassword))
+                    .thenReturn(ResponseEntity.status(HttpStatus.CREATED)
+                            .body(new PasswordManagementResponse().message("ok")));
+
+            passwordController._authAddLocalCredentials(request);
+
+            verify(passwordManagementDelegate).addLocalCredentials(complexPassword);
         }
     }
 }

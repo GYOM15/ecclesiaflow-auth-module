@@ -95,6 +95,36 @@ public class MembersGrpcClient implements MembersClient {
         }
     }
 
+    @Override
+    @Retryable(
+            retryFor = StatusRuntimeException.class,
+            noRetryFor = IllegalArgumentException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
+    public boolean notifyLocalCredentialsAdded(String keycloakUserId) {
+        MembersServiceGrpc.MembersServiceBlockingStub stub = MembersServiceGrpc
+                .newBlockingStub(membersGrpcChannel)
+                .withDeadlineAfter(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+        try {
+            LocalCredentialsAddedRequest request = LocalCredentialsAddedRequest.newBuilder()
+                    .setKeycloakUserId(keycloakUserId)
+                    .build();
+
+            LocalCredentialsAddedResponse response = stub.notifyLocalCredentialsAdded(request);
+
+            if (!response.getSuccess()) {
+                throw new RuntimeException("Members module rejected credentials update: " + response.getMessage());
+            }
+
+            return true;
+
+        } catch (StatusRuntimeException e) {
+            throw handleGrpcException(e, "notifyLocalCredentialsAdded");
+        }
+    }
+
     /**
      * Maps gRPC exceptions to appropriate business exceptions.
      */

@@ -75,6 +75,12 @@ public class PasswordServiceImpl implements PasswordService {
         }
     }
 
+    @Override
+    public void addLocalCredentials(String keycloakUserId, String password) {
+        keycloakAdminClient.updatePassword(keycloakUserId, password);
+        membersClient.notifyLocalCredentialsAdded(keycloakUserId);
+    }
+
     private void compensateKeycloakUser(String keycloakUserId) {
         try {
             keycloakAdminClient.deleteUser(keycloakUserId);

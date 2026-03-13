@@ -3,6 +3,7 @@ package com.ecclesiaflow.springsecurity.web.controller;
 import com.ecclesiaflow.springsecurity.business.domain.password.PasswordManagement;
 import com.ecclesiaflow.springsecurity.web.api.PasswordManagementApi;
 import com.ecclesiaflow.springsecurity.web.delegate.PasswordManagementDelegate;
+import com.ecclesiaflow.springsecurity.web.model.AddCredentialsRequest;
 import com.ecclesiaflow.springsecurity.web.model.PasswordManagementResponse;
 import com.ecclesiaflow.springsecurity.web.model.SetupPasswordRequest;
 import lombok.RequiredArgsConstructor;
@@ -28,5 +29,11 @@ public class PasswordController implements PasswordManagementApi {
         PasswordManagement passwordManagement = new PasswordManagement(
                 setupPasswordRequest.getPassword(), xSetupToken);
         return passwordManagementDelegate.setupPassword(passwordManagement.xSetupToken(), passwordManagement.password());
+    }
+
+    @Override
+    public ResponseEntity<PasswordManagementResponse> _authAddLocalCredentials(
+            AddCredentialsRequest addCredentialsRequest) {
+        return passwordManagementDelegate.addLocalCredentials(addCredentialsRequest.getPassword());
     }
 }
