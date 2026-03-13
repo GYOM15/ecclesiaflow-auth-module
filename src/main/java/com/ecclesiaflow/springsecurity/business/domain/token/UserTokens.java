@@ -7,4 +7,10 @@ public record UserTokens(
         String accessToken,
         String refreshToken,
         int expiresIn
-) {}
+) {
+
+    @Override
+    public String toString() {
+        return "UserTokens[accessToken=****, refreshToken=****, expiresIn=" + expiresIn + "]";
+    }
+}

@@ -28,4 +28,10 @@ public record KeycloakTokenResponse(
         @JsonProperty("scope")
         String scope
 ) {
+
+    @Override
+    public String toString() {
+        return "KeycloakTokenResponse[accessToken=****, refreshToken=****, expiresIn=" + expiresIn
+                + ", tokenType=" + tokenType + ", scope=" + scope + "]";
+    }
 }

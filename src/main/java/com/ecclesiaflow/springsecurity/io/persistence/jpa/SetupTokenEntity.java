@@ -1,10 +1,7 @@
 package com.ecclesiaflow.springsecurity.io.persistence.jpa;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -23,10 +20,13 @@ import java.util.UUID;
     @Index(name = "idx_member_id", columnList = "member_id"),
     @Index(name = "idx_expires_at", columnList = "expires_at")
 })
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"tokenHash", "email"})
+@EqualsAndHashCode(of = "id")
 public class SetupTokenEntity {
 
     @Id

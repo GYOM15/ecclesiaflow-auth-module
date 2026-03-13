@@ -69,8 +69,8 @@ class PasswordManagementTest {
     }
 
     @Test
-    @DisplayName("Should have a readable toString representation")
-    void shouldHaveReadableToString() {
+    @DisplayName("Should mask sensitive fields in toString")
+    void shouldMaskSensitiveFieldsInToString() {
         // Given
         PasswordManagement passwordManagement = new PasswordManagement("myPassword", "myToken");
 
@@ -79,8 +79,9 @@ class PasswordManagementTest {
 
         // Then
         assertThat(toString).contains("PasswordManagement");
-        assertThat(toString).contains("myPassword");
-        assertThat(toString).contains("myToken");
+        assertThat(toString).doesNotContain("myPassword");
+        assertThat(toString).doesNotContain("myToken");
+        assertThat(toString).contains("****");
     }
 
     @Test

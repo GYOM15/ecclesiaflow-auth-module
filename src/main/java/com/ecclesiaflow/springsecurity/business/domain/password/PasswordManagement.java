@@ -22,4 +22,9 @@ package com.ecclesiaflow.springsecurity.business.domain.password;
  * @since 1.0.0
  */
 public record PasswordManagement(String password, String xSetupToken) {
+
+    @Override
+    public String toString() {
+        return "PasswordManagement[password=****, xSetupToken=****]";
+    }
 }

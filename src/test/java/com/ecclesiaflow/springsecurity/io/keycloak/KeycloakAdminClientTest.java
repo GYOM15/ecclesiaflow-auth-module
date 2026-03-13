@@ -93,12 +93,12 @@ class KeycloakAdminClientTest {
             verify(adminClient).createUser(anyString(), eq(REALM), argThat(user ->
                     user.getUsername().equals(EMAIL) &&
                     user.getEmail().equals(EMAIL) &&
-                    user.isEmailVerified() &&
-                    user.isEnabled() &&
+                    Boolean.TRUE.equals(user.getEmailVerified()) &&
+                    Boolean.TRUE.equals(user.getEnabled()) &&
                     user.getCredentials().size() == 1 &&
                     user.getCredentials().get(0).getType().equals("password") &&
                     user.getCredentials().get(0).getValue().equals(PASSWORD) &&
-                    !user.getCredentials().get(0).isTemporary()
+                    !user.getCredentials().get(0).getTemporary()
             ));
         }
 
@@ -116,7 +116,7 @@ class KeycloakAdminClientTest {
             keycloakAdminClient.createUser(EMAIL, PASSWORD, false);
 
             verify(adminClient).createUser(anyString(), eq(REALM), argThat(user ->
-                    !user.isEmailVerified()
+                    !Boolean.TRUE.equals(user.getEmailVerified())
             ));
         }
 
@@ -151,7 +151,7 @@ class KeycloakAdminClientTest {
 
             assertThat(userId).isEqualTo(KEYCLOAK_USER_ID);
             verify(adminClient).createUser(anyString(), eq(REALM), argThat(user ->
-                    user.isEmailVerified()
+                    Boolean.TRUE.equals(user.getEmailVerified())
             ));
         }
     }
@@ -220,7 +220,7 @@ class KeycloakAdminClientTest {
                     argThat(credential ->
                             credential.getType().equals("password") &&
                             credential.getValue().equals(newPassword) &&
-                            !credential.isTemporary()
+                            !Boolean.TRUE.equals(credential.getTemporary())
                     )
             );
         }
@@ -233,7 +233,7 @@ class KeycloakAdminClientTest {
             keycloakAdminClient.updatePassword(KEYCLOAK_USER_ID, PASSWORD);
 
             verify(adminClient).resetPassword(anyString(), eq(REALM), eq(KEYCLOAK_USER_ID),
-                    argThat(credential -> !credential.isTemporary()));
+                    argThat(credential -> !Boolean.TRUE.equals(credential.getTemporary())));
         }
     }
 
