@@ -116,7 +116,8 @@
       ],
       "attributes": {
         "access.token.lifespan": "300",
-        "pkce.code.challenge.method": "S256"
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "__FRONTEND_POST_LOGOUT_REDIRECT_URI__"
       },
       "protocolMappers": [
         {

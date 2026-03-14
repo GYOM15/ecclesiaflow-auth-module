@@ -57,6 +57,7 @@ sed \
   -e "s|__GOOGLE_CLIENT_SECRET__|${GOOGLE_CLIENT_SECRET:-DISABLED}|g" \
   -e "s|__FACEBOOK_CLIENT_ID__|${FACEBOOK_CLIENT_ID:-DISABLED}|g" \
   -e "s|__FACEBOOK_CLIENT_SECRET__|${FACEBOOK_CLIENT_SECRET:-DISABLED}|g" \
+  -e "s|__FRONTEND_POST_LOGOUT_REDIRECT_URI__|${FRONTEND_POST_LOGOUT_REDIRECT_URI:-http://localhost:3000}|g" \
   -e "s|__SSL_REQUIRED__|${SSL_REQUIRED:-none}|g" \
   "$TEMPLATE" > "$OUTPUT"
 
@@ -296,8 +297,9 @@ if [ "$IS_DEV" = "true" ]; then
       -s publicClient=false \
       -s clientAuthenticatorType=client-secret \
       -s "secret=${KEYCLOAK_FRONTEND_CLIENT_SECRET}" \
-      -s directAccessGrantsEnabled=true 2>&1 && \
-      echo "[init-realm] ecclesiaflow-frontend → confidential + Direct Grant enabled"
+      -s directAccessGrantsEnabled=true \
+      -s "attributes.post.logout.redirect.uris=${FRONTEND_POST_LOGOUT_REDIRECT_URI:-http://localhost:3000}" 2>&1 && \
+      echo "[init-realm] ecclesiaflow-frontend → confidential + Direct Grant + post-logout URI"
   fi
 
   wait $KC_PID
