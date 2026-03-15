@@ -21,7 +21,7 @@
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                         <tr>
                             <td style="font-size: 14px; color: #64748b; padding: 4px 0;">${msg("eventDate","Date")}</td>
-                            <td align="right" style="font-size: 14px; color: #0f172a; font-weight: 600; padding: 4px 0;">${event.date}</td>
+                            <td align="right" style="font-size: 14px; color: #0f172a; font-weight: 600; padding: 4px 0;">${event.date?datetime?string("dd/MM/yyyy HH:mm")}</td>
                         </tr>
                         <tr>
                             <td style="font-size: 14px; color: #64748b; padding: 4px 0;">${msg("eventIpAddress","IP Address")}</td>

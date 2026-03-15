@@ -2,7 +2,7 @@ ${msg("eventLoginErrorTitle","Failed login attempt")}
 
 ${msg("eventLoginErrorSubtitle","We detected an unsuccessful login attempt on your EcclesiaFlow account.")}
 
-${msg("eventDate","Date")}: ${event.date}
+${msg("eventDate","Date")}: ${event.date?datetime?string("dd/MM/yyyy HH:mm")}
 ${msg("eventIpAddress","IP Address")}: ${event.ipAddress}
 
 ${msg("eventLoginErrorBody","If this was you, no action is needed. If you don't recognize this activity, we strongly recommend changing your password immediately.")}

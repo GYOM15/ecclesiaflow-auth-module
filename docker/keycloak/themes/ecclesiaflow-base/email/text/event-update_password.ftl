@@ -2,7 +2,7 @@ ${msg("eventUpdatePasswordTitle","Password updated")}
 
 ${msg("eventUpdatePasswordSubtitle","Your EcclesiaFlow password was successfully changed.")}
 
-${msg("eventDate","Date")}: ${event.date}
+${msg("eventDate","Date")}: ${event.date?datetime?string("dd/MM/yyyy HH:mm")}
 ${msg("eventIpAddress","IP Address")}: ${event.ipAddress}
 
 ${msg("eventUpdatePasswordOk","If you made this change, no further action is needed.")}
