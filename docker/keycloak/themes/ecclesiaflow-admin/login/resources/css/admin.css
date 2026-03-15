@@ -1,235 +1,12 @@
 /* ================================================================
-   EcclesiaFlow Admin — Split Layout (Redesigned)
-   Dark branding panel (left) + form panel (right).
-   Animated grid with traveling light beams.
+   EcclesiaFlow Admin — Split Layout Overrides
+   Admin-specific styles: feature cards, form typography, back link.
+   Split layout base is in base.css (shared with user theme).
    ================================================================ */
 
-/* ================================================================
-   SPLIT LAYOUT
-   ================================================================ */
-.split {
-    display: flex;
-    min-height: 100vh;
-}
-
 /* ----------------------------------------------------------------
-   Left branding panel (always dark)
+   Form container typography (admin-specific sizes)
    ---------------------------------------------------------------- */
-.panel-left {
-    flex: 1;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 40px;
-    overflow: hidden;
-    background: #070B14;
-}
-
-/* Ambient glow */
-.panel-left::before {
-    content: '';
-    position: absolute;
-    top: 30%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, rgba(59, 82, 246, 0.06) 0%, transparent 70%);
-    pointer-events: none;
-}
-
-[data-theme="dark"] .panel-left { background: #050810; }
-
-/* Admin-specific grid opacity */
-.panel-left .grid-lines {
-    background-image:
-        linear-gradient(rgba(59, 82, 246, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59, 82, 246, 0.05) 1px, transparent 1px) !important;
-    background-size: 60px 60px !important;
-    mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 20%, transparent 70%) !important;
-    -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 20%, transparent 70%) !important;
-}
-
-/* Locale selector (on dark panel) */
-.locale {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    z-index: 3;
-}
-
-.locale select {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.4);
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-family: 'Inter', sans-serif;
-    font-size: 11px;
-    cursor: pointer;
-    outline: none;
-}
-
-/* ----------------------------------------------------------------
-   Left panel content
-   ---------------------------------------------------------------- */
-.pl-content {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    max-width: 340px;
-}
-
-.pl-logo {
-    font-size: 32px;
-    font-weight: 800;
-    color: #FFFFFF;
-    letter-spacing: -0.02em;
-    margin-bottom: 2px;
-}
-
-.pl-logo .flow { color: #3B52F6; }
-
-.pl-tagline {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.35);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 48px;
-    font-weight: 500;
-}
-
-/* Feature list — redesigned cards */
-.brand-features {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    text-align: left;
-}
-
-.brand-feature {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    transition: all 0.3s;
-}
-
-.brand-feature:hover {
-    background: rgba(59, 82, 246, 0.06);
-    border-color: rgba(59, 82, 246, 0.15);
-}
-
-.brand-feature-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    flex-shrink: 0;
-    background: rgba(59, 82, 246, 0.1);
-    border: 1px solid rgba(59, 82, 246, 0.15);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.brand-feature-icon svg {
-    width: 18px;
-    height: 18px;
-    color: #7B8FFF;
-}
-
-.brand-feature-text h4 {
-    font-size: 13px;
-    font-weight: 600;
-    color: #E2E8F0;
-    margin-bottom: 1px;
-}
-
-.brand-feature-text p {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
-    line-height: 1.4;
-}
-
-/* ----------------------------------------------------------------
-   Right form panel
-   ---------------------------------------------------------------- */
-.panel-right {
-    flex: 1;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 60px 40px;
-    background: var(--bg-page);
-}
-
-/* Corner decorative accents */
-.panel-right .corner-tl {
-    position: absolute;
-    top: 40px;
-    left: 40px;
-}
-
-.panel-right .corner-tl::before {
-    content: '';
-    display: block;
-    width: 30px;
-    height: 1px;
-    background: linear-gradient(90deg, rgba(59, 82, 246, 0.2), transparent);
-}
-
-.panel-right .corner-tl::after {
-    content: '';
-    display: block;
-    width: 1px;
-    height: 30px;
-    background: linear-gradient(180deg, rgba(59, 82, 246, 0.2), transparent);
-}
-
-.panel-right .corner-br {
-    position: absolute;
-    bottom: 40px;
-    right: 40px;
-}
-
-.panel-right .corner-br::before {
-    content: '';
-    display: block;
-    width: 30px;
-    height: 1px;
-    background: linear-gradient(270deg, rgba(59, 82, 246, 0.2), transparent);
-    margin-left: auto;
-}
-
-.panel-right .corner-br::after {
-    content: '';
-    display: block;
-    width: 1px;
-    height: 30px;
-    background: linear-gradient(0deg, rgba(59, 82, 246, 0.2), transparent);
-    margin-left: auto;
-}
-
-[data-theme="dark"] .panel-right .corner-tl::before,
-[data-theme="dark"] .panel-right .corner-tl::after,
-[data-theme="dark"] .panel-right .corner-br::before,
-[data-theme="dark"] .panel-right .corner-br::after {
-    opacity: 0.6;
-}
-
-/* Form container */
-.form-container {
-    width: 100%;
-    max-width: 380px;
-}
-
 .form-container h2 {
     font-size: 24px;
     font-weight: 700;
@@ -244,30 +21,86 @@
 
 .form-container .fcard { max-width: 100%; }
 
-/* Mobile logo (shown when left panel hidden) */
-.mobile-logo {
-    display: none;
-    text-align: center;
-    margin-bottom: 32px;
+/* ----------------------------------------------------------------
+   Feature list (admin left panel)
+   ---------------------------------------------------------------- */
+.brand-features {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    text-align: left;
 }
 
-.mobile-logo .logo-text {
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+.brand-feature {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    transition: all 0.3s;
+}
+
+.brand-feature:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.brand-feature-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-feature-icon svg {
+    width: 18px;
+    height: 18px;
+    color: var(--sapphire-300);
+}
+
+.brand-feature-text h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #F1F5F9;
+    margin-bottom: 1px;
+}
+
+.brand-feature-text p {
+    font-size: 12px;
+    color: #CBD5E1;
+    line-height: 1.4;
+}
+
+/* ----------------------------------------------------------------
+   Back to home link (admin)
+   ---------------------------------------------------------------- */
+.admin-back-home-wrap {
+    margin-top: 24px;
+    text-align: center;
+}
+
+.admin-back-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--text-3);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.admin-back-home:hover {
     color: var(--text-1);
 }
 
-.mobile-logo .logo-text .flow { color: var(--sapphire-500); }
-
-/* ================================================================
-   RESPONSIVE
-   ================================================================ */
-@media (max-width: 768px) {
-    .split { flex-direction: column; }
-    .panel-left { display: none; }
-    .mobile-logo { display: block !important; }
-    .panel-right { padding: 40px 20px; }
-    .panel-right .corner-tl,
-    .panel-right .corner-br { display: none; }
+.admin-back-home svg {
+    width: 16px;
+    height: 16px;
 }

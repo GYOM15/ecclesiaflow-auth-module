@@ -1,10 +1,61 @@
 /* ================================================================
-   EcclesiaFlow User — Centered Card Layout (Redesigned)
-   Grid background, orbit decorations, trust indicators.
+   EcclesiaFlow User — Dual Layout
+   Split layout (login) + Centered card (other pages).
+   Canvas background animation, trust indicators.
    ================================================================ */
 
 /* ================================================================
-   CENTERED LAYOUT
+   SPLIT LAYOUT OVERRIDES (user-specific)
+   Base split layout (.split, .panel-left, .panel-right, etc.)
+   is defined in base.css.
+   ================================================================ */
+
+/* Trust indicators in left panel (vertical layout) */
+.pl-trust {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pl-trust-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #E2E8F0;
+}
+
+.pl-trust-item svg {
+    width: 16px;
+    height: 16px;
+    color: #5EEAD4;
+    opacity: 0.8;
+}
+
+/* Form container typography (user split) */
+.form-container h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.form-container .sub {
+    font-size: 14px;
+    color: var(--text-2);
+    margin-bottom: 24px;
+}
+
+.form-container .fcard { max-width: 100%; }
+
+/* Back to home in right panel */
+.usr-back-home-wrap {
+    margin-top: 24px;
+    text-align: center;
+}
+
+/* ================================================================
+   CENTERED LAYOUT (reset password, other pages)
    ================================================================ */
 .user-centered {
     min-height: 100vh;
@@ -17,121 +68,6 @@
     background: var(--bg-page);
     overflow: hidden;
 }
-
-/* Grid lines (lighter for user page) */
-.user-centered .grid-lines {
-    background-image:
-        linear-gradient(rgba(59, 82, 246, 0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59, 82, 246, 0.06) 1px, transparent 1px) !important;
-    background-size: 60px 60px !important;
-}
-
-[data-theme="dark"] .user-centered .grid-lines {
-    background-image:
-        linear-gradient(rgba(59, 82, 246, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59, 82, 246, 0.04) 1px, transparent 1px) !important;
-}
-
-/* ----------------------------------------------------------------
-   Decorative orbit rings around card area
-   ---------------------------------------------------------------- */
-.usr-orbit {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.usr-orbit-1 {
-    width: 600px;
-    height: 600px;
-    border: 1px solid rgba(59, 82, 246, 0.06);
-}
-
-.usr-orbit-2 {
-    width: 800px;
-    height: 800px;
-    border: 1px dashed rgba(59, 82, 246, 0.03);
-}
-
-[data-theme="dark"] .usr-orbit-1 { border-color: rgba(59, 82, 246, 0.05); }
-[data-theme="dark"] .usr-orbit-2 { border-color: rgba(59, 82, 246, 0.025); }
-
-/* Orbit traveling dots */
-.usr-orbit-dot {
-    position: absolute;
-    border-radius: 50%;
-    top: 50%;
-    left: 50%;
-    transform-origin: 0 0;
-}
-
-.usr-orbit-dot.d1 {
-    width: 6px;
-    height: 6px;
-    background: var(--sapphire-500);
-    box-shadow: 0 0 10px rgba(59, 82, 246, 0.3);
-    animation: orbitSpin1 25s linear infinite;
-}
-
-@keyframes orbitSpin1 {
-    0%   { transform: rotate(0deg) translateX(300px) rotate(0deg); }
-    100% { transform: rotate(360deg) translateX(300px) rotate(-360deg); }
-}
-
-.usr-orbit-dot.d2 {
-    width: 4px;
-    height: 4px;
-    background: var(--gold-500);
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
-    animation: orbitSpin2 35s linear infinite;
-}
-
-@keyframes orbitSpin2 {
-    0%   { transform: rotate(180deg) translateX(400px) rotate(-180deg); }
-    100% { transform: rotate(540deg) translateX(400px) rotate(-540deg); }
-}
-
-/* ----------------------------------------------------------------
-   Side decorative elements (fill horizontal space)
-   ---------------------------------------------------------------- */
-.usr-side-left,
-.usr-side-right {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    opacity: 0.6;
-}
-
-.usr-side-left  { left: 8%; }
-.usr-side-right { right: 8%; }
-
-.usr-side-line {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(59, 82, 246, 0.15), transparent);
-    animation: sideLinePulse 3s ease-in-out infinite;
-}
-
-@keyframes sideLinePulse {
-    0%, 100% { opacity: 0.3; width: 60px; }
-    50%      { opacity: 1;   width: 100px; }
-}
-
-.usr-side-dot {
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    background: rgba(59, 82, 246, 0.25);
-    align-self: center;
-}
-
-[data-theme="dark"] .usr-side-left,
-[data-theme="dark"] .usr-side-right { opacity: 0.4; }
 
 /* ----------------------------------------------------------------
    Content wrapper
@@ -186,7 +122,7 @@
     position: absolute;
     inset: -1px;
     border-radius: 17px;
-    background: linear-gradient(135deg, rgba(59, 82, 246, 0.15), transparent 40%, transparent 60%, rgba(20, 184, 166, 0.1));
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), transparent 40%, transparent 60%, rgba(20, 184, 166, 0.1));
     z-index: -1;
     opacity: 0;
     transition: opacity 0.3s;
@@ -194,14 +130,10 @@
 
 .user-card:hover::before { opacity: 1; }
 
-[data-theme="dark"] .user-card {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
 .user-card .fcard { max-width: 100%; }
 
 /* ----------------------------------------------------------------
-   Back to home link (top of page, matches landing /inscription style)
+   Back to home link
    ---------------------------------------------------------------- */
 .usr-back-home {
     display: inline-flex;
@@ -211,7 +143,6 @@
     font-size: 14px;
     color: var(--text-3);
     text-decoration: none;
-    margin-bottom: 24px;
     transition: color 0.2s;
 }
 
@@ -225,7 +156,7 @@
 }
 
 /* ----------------------------------------------------------------
-   Trust indicators (below card)
+   Trust indicators (below card, centered layout)
    ---------------------------------------------------------------- */
 .usr-trust {
     display: flex;
@@ -262,7 +193,7 @@
 }
 
 /* ----------------------------------------------------------------
-   Locale selector
+   Locale selector (centered layout)
    ---------------------------------------------------------------- */
 .user-locale {
     position: absolute;
@@ -287,11 +218,6 @@
    RESPONSIVE
    ================================================================ */
 @media (max-width: 768px) {
-    .usr-orbit,
-    .usr-orbit-dot,
-    .usr-side-left,
-    .usr-side-right { display: none; }
-
     .usr-trust { gap: 16px; flex-wrap: wrap; justify-content: center; }
 
     .user-card { padding: 24px; }

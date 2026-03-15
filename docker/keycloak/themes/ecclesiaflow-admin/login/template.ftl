@@ -6,9 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>${msg("loginTitle",(realm.displayName!''))}</title>
-    <script>
-    (function(){var t=localStorage.getItem('ef-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);})();
-    </script>
     <#if properties.stylesCommon?has_content>
         <#list properties.stylesCommon?split(' ') as style>
             <link href="${url.resourcesCommonPath}/${style}" rel="stylesheet" />
@@ -24,31 +21,7 @@
     <div class="split">
         <!-- Left branding panel -->
         <div class="panel-left">
-            <div class="grid-bg">
-                <div class="grid-lines"></div>
-                <!-- Traveling light beams -->
-                <div class="grid-beam-h" style="top: 120px; animation-duration: 7s; animation-delay: 0s;"></div>
-                <div class="grid-beam-h" style="top: 300px; animation-duration: 9s; animation-delay: 3s;"></div>
-                <div class="grid-beam-h gold" style="top: 480px; animation-duration: 11s; animation-delay: 6s;"></div>
-                <div class="grid-beam-h teal" style="top: 180px; animation-duration: 12s; animation-delay: 8s;"></div>
-                <div class="grid-beam-v" style="left: 120px; animation-duration: 8s; animation-delay: 1s;"></div>
-                <div class="grid-beam-v" style="left: 300px; animation-duration: 10s; animation-delay: 4s;"></div>
-                <div class="grid-beam-v gold" style="left: 60px; animation-duration: 13s; animation-delay: 7s;"></div>
-                <div class="grid-beam-v" style="left: 420px; animation-duration: 9s; animation-delay: 2s;"></div>
-                <!-- Grid intersection nodes -->
-                <div class="grid-node" style="top: 120px; left: 120px; animation-delay: 0s;"></div>
-                <div class="grid-node" style="top: 120px; left: 300px; animation-delay: 1.5s;"></div>
-                <div class="grid-node" style="top: 300px; left: 120px; animation-delay: 0.8s;"></div>
-                <div class="grid-node" style="top: 300px; left: 300px; animation-delay: 2.2s;"></div>
-                <div class="grid-node" style="top: 480px; left: 60px; animation-delay: 3s;"></div>
-                <div class="grid-node" style="top: 180px; left: 420px; animation-delay: 1.2s;"></div>
-                <!-- Subtle cross -->
-                <div class="grid-cross" style="top: 25%; left: 70%;">
-                    <div class="cross-v"></div>
-                    <div class="cross-h"></div>
-                    <div class="cross-center"></div>
-                </div>
-            </div>
+            <canvas id="bg-canvas" class="bg-canvas" aria-hidden="true"></canvas>
 
             <#if realm.internationalizationEnabled && locale.supported?size gt 1>
                 <div class="locale">
@@ -113,17 +86,102 @@
         </div>
     </div>
 
-    <!-- Theme toggle button -->
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light mode">
-        <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/></svg>
-        <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
-    </button>
-
     <script>
-    function toggleTheme(){var h=document.documentElement;var t=h.getAttribute('data-theme')==='dark'?'light':'dark';h.setAttribute('data-theme',t);localStorage.setItem('ef-theme',t);}
     /* Password visibility toggle */
     document.querySelectorAll('.pw-toggle').forEach(function(btn){btn.addEventListener('click',function(){var input=document.getElementById(this.getAttribute('data-target'));if(input.type==='password'){input.type='text';this.classList.add('is-visible');this.setAttribute('aria-label','Hide password');}else{input.type='password';this.classList.remove('is-visible');this.setAttribute('aria-label','Show password');}});});
     </script>
+
+    <#if bodyClass == "page-voiles">
+    <script>
+    /* VoilesAngulaires — diagonal animated panels */
+    (function(){
+      var c=document.getElementById('bg-canvas');if(!c)return;
+      var ctx=c.getContext('2d');if(!ctx)return;
+      var BG='#F8FAFC';
+      var P=[
+        {co:'#C7D2FE',a:-28,x:.30,w:200,s:.4},
+        {co:'#A5B4FC',a:-24,x:.40,w:180,s:.6},
+        {co:'#818CF8',a:-32,x:.50,w:220,s:.35},
+        {co:'#6366F1',a:-26,x:.60,w:250,s:.5},
+        {co:'#4F46E5',a:-30,x:.70,w:200,s:.7},
+        {co:'#4338CA',a:-22,x:.55,w:170,s:.45},
+        {co:'#7C3AED',a:-35,x:.75,w:160,s:.55},
+        {co:'#14B8A6',a:-20,x:.85,w:140,s:.65}
+      ];
+      if(window.matchMedia('(prefers-reduced-motion:reduce)').matches){drawStatic();return;}
+      var aid,st=null;
+      function resize(){var d=window.devicePixelRatio||1;var r=c.getBoundingClientRect();c.width=r.width*d;c.height=r.height*d;ctx.setTransform(d,0,0,d,0,0);}
+      function anim(ts){if(!st)st=ts;var t=ts-st;var r=c.getBoundingClientRect();var w=r.width,h=r.height;
+        ctx.fillStyle=BG;ctx.fillRect(0,0,w,h);
+        P.forEach(function(p,i){
+          var px=w*p.x+Math.sin(t*0.0004*p.s+i*0.8)*60;
+          var rot=(p.a+Math.sin(t*0.00025+i*1.2)*2)*Math.PI/180;
+          var op=0.35+Math.sin(t*0.0003+i*0.6)*0.05;
+          ctx.save();ctx.translate(px,h/2);ctx.rotate(rot);ctx.globalAlpha=op;
+          ctx.fillStyle=p.co;ctx.fillRect(-p.w/2,-h,p.w,h*2);
+          ctx.fillStyle='rgba(0,0,0,0.04)';
+          ctx.fillRect(-p.w/2,-h,3,h*2);ctx.fillRect(-p.w/2+3,-h,3,h*2);
+          ctx.fillRect(p.w/2-6,-h,3,h*2);ctx.fillRect(p.w/2-3,-h,3,h*2);
+          ctx.restore();
+        });
+        aid=requestAnimationFrame(anim);
+      }
+      function drawStatic(){resize();var r=c.getBoundingClientRect();var w=r.width,h=r.height;
+        ctx.fillStyle=BG;ctx.fillRect(0,0,w,h);
+        P.forEach(function(p){var px=w*p.x;var rot=p.a*Math.PI/180;
+          ctx.save();ctx.translate(px,h/2);ctx.rotate(rot);ctx.globalAlpha=0.35;
+          ctx.fillStyle=p.co;ctx.fillRect(-p.w/2,-h,p.w,h*2);
+          ctx.fillStyle='rgba(0,0,0,0.04)';
+          ctx.fillRect(-p.w/2,-h,3,h*2);ctx.fillRect(-p.w/2+3,-h,3,h*2);
+          ctx.fillRect(p.w/2-6,-h,3,h*2);ctx.fillRect(p.w/2-3,-h,3,h*2);
+          ctx.restore();
+        });
+      }
+      resize();aid=requestAnimationFrame(anim);
+      window.addEventListener('resize',resize);
+    })();
+    </script>
+    <#else>
+    <script>
+    /* WaveRibbon — flowing ribbon lines (accentuated for white bg) */
+    (function(){
+      var c=document.getElementById('bg-canvas');if(!c)return;
+      var ctx=c.getContext('2d');if(!ctx)return;
+      if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+      var NUM=65,W=0,H=0;
+      var C=[[45,212,191],[129,140,248],[124,58,237],[79,70,229]];
+      function resize(){var d=window.devicePixelRatio||1;var r=c.getBoundingClientRect();W=r.width;H=r.height;c.width=W*d;c.height=H*d;ctx.setTransform(d,0,0,d,0,0);}
+      function rcy(sx){return H*(0.85-sx*0.13)+(-H*0.45*Math.pow(Math.sin(sx*Math.PI*0.8),1.5))+(H*0.06*Math.sin(sx*Math.PI*1.6));}
+      function rw(sx){return 40+sx*sx*H*0.9;}
+      function frame(time){if(W===0||H===0){requestAnimationFrame(frame);return;}
+        ctx.clearRect(0,0,W,H);var t=time*0.001;
+        for(var i=0;i<NUM;i++){var lt=i/(NUM-1);var off=(lt-0.5)*2;
+          ctx.beginPath();ctx.lineWidth=0.6+(1-Math.abs(off))*0.4;
+          for(var s=0;s<=180;s++){var sx=s/180;var x=sx*W*1.2-W*0.1;
+            var cy=rcy(sx);var w=rw(sx);
+            var tw=Math.sin(sx*Math.PI+t*0.35)*0.25+Math.sin(sx*Math.PI*0.5+t*0.2+1)*0.15;
+            var y=cy+Math.cos(tw)*off*w*0.5;
+            if(s===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+          }
+          var dp=Math.abs(off);var cb=1-dp;var bo=0.08+cb*0.4;var br=0.6+cb*0.4;
+          var fs=H*0.33,fe=H*0.85,my=rcy(0.5);var vf=1;
+          if(my>fs){var pg=Math.min((my-fs)/(fe-fs),1);vf=1-pg*pg;}
+          var g=ctx.createLinearGradient(0,0,W,0);
+          g.addColorStop(0,'rgba('+Math.round(C[0][0]*br)+','+Math.round(C[0][1]*br)+','+Math.round(C[0][2]*br)+','+(bo*0.4*vf)+')');
+          g.addColorStop(0.12,'rgba('+Math.round(C[0][0]*br)+','+Math.round(C[0][1]*br)+','+Math.round(C[0][2]*br)+','+(bo*0.8*vf)+')');
+          g.addColorStop(0.35,'rgba('+Math.round(C[1][0]*br)+','+Math.round(C[1][1]*br)+','+Math.round(C[1][2]*br)+','+(bo*vf)+')');
+          g.addColorStop(0.55,'rgba('+Math.round(C[2][0]*br)+','+Math.round(C[2][1]*br)+','+Math.round(C[2][2]*br)+','+(bo*vf)+')');
+          g.addColorStop(0.8,'rgba('+Math.round(C[3][0]*br)+','+Math.round(C[3][1]*br)+','+Math.round(C[3][2]*br)+','+(bo*0.85*vf)+')');
+          g.addColorStop(1,'rgba('+Math.round(C[3][0]*br)+','+Math.round(C[3][1]*br)+','+Math.round(C[3][2]*br)+','+(bo*0.4*vf)+')');
+          ctx.strokeStyle=g;ctx.stroke();
+        }
+        requestAnimationFrame(frame);
+      }
+      resize();requestAnimationFrame(frame);
+      window.addEventListener('resize',resize);
+    })();
+    </script>
+    </#if>
 </body>
 </html>
 </#macro>

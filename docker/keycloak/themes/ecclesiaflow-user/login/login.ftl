@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=true; section>
+<@layout.registrationLayout bodyClass="page-voiles" displayMessage=!messagesPerField.existsError('username','password') displayInfo=true; section>
 
     <#if section = "welcome">
         <div class="user-welcome">${msg("userLoginWelcome")}</div>
