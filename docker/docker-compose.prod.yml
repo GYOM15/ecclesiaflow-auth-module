@@ -1,0 +1,227 @@
+# =============================================================================
+# EcclesiaFlow Auth Module — Production Docker Compose
+# =============================================================================
+# Usage:
+#   docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d
+#
+# Prerequisites:
+#   - Copy docker/.env.prod.example -> docker/.env.prod and fill in secrets
+#   - Build the auth module image first:  docker compose ... build
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Nginx — Reverse proxy, TLS termination, rate limiting
+  # ---------------------------------------------------------------------------
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ecclesiaflow-nginx
+    entrypoint: ["sh", "/etc/nginx/scripts/init-certs.sh"]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      NGINX_HOST: ${NGINX_HOST:-localhost}
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/init-certs.sh:/etc/nginx/scripts/init-certs.sh:ro
+      - certbot-webroot:/var/www/certbot:ro
+      - certbot-certs:/etc/letsencrypt
+    depends_on:
+      auth-module:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    networks:
+      - ecclesiaflow-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.25"
+
+  # ---------------------------------------------------------------------------
+  # Auth Module — Spring Boot application
+  # ---------------------------------------------------------------------------
+  auth-module:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: ecclesiaflow/auth-module:${APP_VERSION:-latest}
+    container_name: ecclesiaflow-auth-module
+    env_file:
+      - .env.prod
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    expose:
+      - "8081"
+      - "9090"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    networks:
+      - ecclesiaflow-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "1.0"
+        reservations:
+          memory: 256m
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  # ---------------------------------------------------------------------------
+  # MySQL — Auth module database
+  # ---------------------------------------------------------------------------
+  auth-db:
+    image: mysql:8.0
+    container_name: ecclesiaflow-auth-db
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ecclesiaflow_auth}
+      MYSQL_USER: ${MYSQL_USER:-ecclesiaflow}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - auth-db-data:/var/lib/mysql
+    networks:
+      - ecclesiaflow-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Keycloak — Identity provider
+  # ---------------------------------------------------------------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: ecclesiaflow-keycloak
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KEYCLOAK_DB_NAME:-keycloak}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USERNAME:-keycloak}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      # Realm template secrets (consumed by init-realm.sh)
+      KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET}
+      KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET: ${KEYCLOAK_ADMIN_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_SMTP_FROM: ${KEYCLOAK_SMTP_FROM:-noreply@ecclesiaflow.com}
+      KEYCLOAK_SMTP_USER: ${KEYCLOAK_SMTP_USER}
+      KEYCLOAK_SMTP_PASSWORD: ${KEYCLOAK_SMTP_PASSWORD}
+      FRONTEND_REDIRECT_URI_1: ${FRONTEND_REDIRECT_URI_1}
+      FRONTEND_REDIRECT_URI_2: ${FRONTEND_REDIRECT_URI_2}
+      FRONTEND_REDIRECT_URI_3: ${FRONTEND_REDIRECT_URI_3}
+      FRONTEND_ORIGIN_1: ${FRONTEND_ORIGIN_1}
+      FRONTEND_ORIGIN_2: ${FRONTEND_ORIGIN_2}
+      FRONTEND_ORIGIN_3: ${FRONTEND_ORIGIN_3}
+    entrypoint: ["sh", "/opt/keycloak/scripts/init-realm.sh"]
+    command:
+      - start
+      - --import-realm
+    volumes:
+      - ./keycloak/realm-ecclesiaflow.json:/opt/keycloak/data/template/realm-ecclesiaflow.json:ro
+      - ./keycloak/init-realm.sh:/opt/keycloak/scripts/init-realm.sh:ro
+      - ./keycloak/themes:/opt/keycloak/themes:ro
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    networks:
+      - ecclesiaflow-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
+        reservations:
+          memory: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL — Keycloak database
+  # ---------------------------------------------------------------------------
+  keycloak-db:
+    image: postgres:16-alpine
+    container_name: ecclesiaflow-keycloak-db
+    environment:
+      POSTGRES_DB: ${KEYCLOAK_DB_NAME:-keycloak}
+      POSTGRES_USER: ${KEYCLOAK_DB_USERNAME:-keycloak}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+    volumes:
+      - keycloak-db-data:/var/lib/postgresql/data
+    networks:
+      - ecclesiaflow-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_DB_USERNAME:-keycloak} -d ${KEYCLOAK_DB_NAME:-keycloak}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Certbot — Automatic TLS certificate renewal
+  # ---------------------------------------------------------------------------
+  certbot:
+    image: certbot/certbot:latest
+    container_name: ecclesiaflow-certbot
+    volumes:
+      - certbot-webroot:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'"
+    networks:
+      - ecclesiaflow-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+          cpus: "0.1"
+
+volumes:
+  auth-db-data:
+    driver: local
+  keycloak-db-data:
+    driver: local
+  certbot-webroot:
+    driver: local
+  certbot-certs:
+    driver: local
+
+networks:
+  ecclesiaflow-network:
+    driver: bridge
