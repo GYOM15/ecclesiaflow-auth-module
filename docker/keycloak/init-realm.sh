@@ -470,7 +470,7 @@ else
   # 7. Identity provider mapper on frontend client
   # -----------------------------------------------------------------------
   if [ -n "$FRONTEND_CID" ]; then
-    MAPPER_EXISTS=$(kc_get "/admin/realms/$REALM/clients/$FRONTEND_CID/protocol-mappers/models" \
+    MAPPER_EXISTS=$($KCADM get "clients/$FRONTEND_CID/protocol-mappers/models" -r "$REALM" 2>/dev/null \
       | grep '"identity-provider-mapper"' || true)
 
     if [ -z "$MAPPER_EXISTS" ]; then
