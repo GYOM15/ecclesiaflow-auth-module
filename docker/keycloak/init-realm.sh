@@ -305,9 +305,217 @@ if [ "$IS_DEV" = "true" ]; then
   wait $KC_PID
 else
   # --- PRODUCTION MODE ----------------------------------------------------
-  # Straight exec — Keycloak becomes PID 1 for proper signal handling.
-  # No master realm patch needed (production runs behind HTTPS proxy).
+  # Start Keycloak in background, wait for readiness, then configure via
+  # REST API (kcadm.sh silently fails in prod mode on Keycloak 23).
   # -----------------------------------------------------------------------
   echo "[init-realm] Production mode — starting Keycloak..."
-  exec /opt/keycloak/bin/kc.sh "$@"
+
+  /opt/keycloak/bin/kc.sh "$@" &
+  KC_PID=$!
+
+  trap "kill $KC_PID; wait $KC_PID; exit" INT TERM
+
+  echo "[init-realm] Waiting for Keycloak readiness..."
+  ATTEMPTS=0
+  while true; do
+    if sh -c 'exec 3<>/dev/tcp/127.0.0.1/8080' 2>/dev/null; then
+      break
+    fi
+    ATTEMPTS=$((ATTEMPTS + 1))
+    if [ $ATTEMPTS -ge 90 ]; then
+      echo "[init-realm] WARNING: Keycloak not ready after 180s — skipping post-config" >&2
+      wait $KC_PID
+      exit $?
+    fi
+    sleep 2
+  done
+
+  sleep 5
+  echo "[init-realm] Keycloak is ready — running post-startup configuration via REST API..."
+
+  # -----------------------------------------------------------------------
+  # Get admin token
+  # -----------------------------------------------------------------------
+  KC_URL="http://localhost:8080"
+  ADMIN_USER="${KEYCLOAK_ADMIN:-admin}"
+  ADMIN_PASS="${KEYCLOAK_ADMIN_PASSWORD}"
+  REALM="ecclesiaflow"
+
+  get_token() {
+    curl -sf -X POST "$KC_URL/realms/master/protocol/openid-connect/token" \
+      -d "client_id=admin-cli" \
+      -d "username=$ADMIN_USER" \
+      -d "password=$ADMIN_PASS" \
+      -d "grant_type=password" 2>/dev/null | sed 's/.*"access_token":"//;s/".*//'
+  }
+
+  TOKEN=$(get_token)
+  if [ -z "$TOKEN" ]; then
+    echo "[init-realm] WARNING: Could not get admin token — skipping post-config" >&2
+    wait $KC_PID
+    exit $?
+  fi
+
+  # Helper for authenticated API calls
+  kc_put() {
+    curl -sf -X PUT "$KC_URL$1" \
+      -H "Authorization: Bearer $TOKEN" \
+      -H "Content-Type: application/json" \
+      -d "$2" 2>/dev/null
+  }
+
+  kc_get() {
+    curl -sf "$KC_URL$1" -H "Authorization: Bearer $TOKEN" 2>/dev/null
+  }
+
+  # -----------------------------------------------------------------------
+  # 1. SMTP Configuration
+  # -----------------------------------------------------------------------
+  echo "[init-realm] Configuring SMTP..."
+  kc_put "/admin/realms/$REALM" "{\"smtpServer\":{\"host\":\"smtp.gmail.com\",\"port\":\"587\",\"starttls\":\"true\",\"auth\":\"true\",\"from\":\"${KEYCLOAK_SMTP_FROM:-noreply@ecclesiaflow.com}\",\"user\":\"${KEYCLOAK_SMTP_USER}\",\"password\":\"${KEYCLOAK_SMTP_PASSWORD}\"}}" \
+    && echo "[init-realm]   SMTP configured" \
+    || echo "[init-realm]   WARNING: SMTP configuration failed" >&2
+
+  # -----------------------------------------------------------------------
+  # 2. Google OAuth IdP (skip if DISABLED)
+  # -----------------------------------------------------------------------
+  if [ "${GOOGLE_CLIENT_ID:-DISABLED}" != "DISABLED" ] && [ -n "${GOOGLE_CLIENT_SECRET:-}" ]; then
+    echo "[init-realm] Configuring Google IdP..."
+    kc_put "/admin/realms/$REALM/identity-provider/instances/google" \
+      "{\"alias\":\"google\",\"providerId\":\"google\",\"enabled\":true,\"trustEmail\":true,\"config\":{\"clientId\":\"${GOOGLE_CLIENT_ID}\",\"clientSecret\":\"${GOOGLE_CLIENT_SECRET}\",\"defaultScope\":\"openid email profile\",\"syncMode\":\"FORCE\",\"useJwksUrl\":\"true\"}}" \
+      && echo "[init-realm]   Google IdP configured" \
+      || echo "[init-realm]   WARNING: Google IdP configuration failed" >&2
+  else
+    echo "[init-realm]   Google IdP skipped (credentials not provided)"
+  fi
+
+  # -----------------------------------------------------------------------
+  # 3. PKCE + Post-logout redirect URIs on frontend client
+  # -----------------------------------------------------------------------
+  echo "[init-realm] Configuring frontend client..."
+  FRONTEND_CID=$(kc_get "/admin/realms/$REALM/clients?clientId=ecclesiaflow-frontend" \
+    | sed 's/.*"id":"//' | sed 's/".*//')
+
+  if [ -n "$FRONTEND_CID" ]; then
+    kc_put "/admin/realms/$REALM/clients/$FRONTEND_CID" \
+      "{\"publicClient\":false,\"clientAuthenticatorType\":\"client-secret\",\"secret\":\"${KEYCLOAK_FRONTEND_CLIENT_SECRET}\",\"directAccessGrantsEnabled\":true,\"attributes\":{\"pkce.code.challenge.method\":\"\",\"post.logout.redirect.uris\":\"${FRONTEND_REDIRECT_URI_1:-https://app.gyom-tech.com/*}\"}}" \
+      && echo "[init-realm]   Frontend client: confidential + Direct Grant + PKCE disabled + post-logout URI" \
+      || echo "[init-realm]   WARNING: Frontend client configuration failed" >&2
+  fi
+
+  # -----------------------------------------------------------------------
+  # 4. Themes
+  # -----------------------------------------------------------------------
+  echo "[init-realm] Assigning themes..."
+  kc_put "/admin/realms/$REALM" \
+    "{\"loginTheme\":\"ecclesiaflow-user\",\"emailTheme\":\"ecclesiaflow-base\",\"resetPasswordAllowed\":true}" \
+    && echo "[init-realm]   Realm themes: login=ecclesiaflow-user, email=ecclesiaflow-base" \
+    || echo "[init-realm]   WARNING: Theme assignment failed" >&2
+
+  # -----------------------------------------------------------------------
+  # 5. Password policy
+  # -----------------------------------------------------------------------
+  echo "[init-realm] Setting password policy..."
+  kc_put "/admin/realms/$REALM" \
+    "{\"passwordPolicy\":\"length(8) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(3)\"}" \
+    && echo "[init-realm]   Password policy: 8+ chars, mixed case, digit, special, history(3)" \
+    || echo "[init-realm]   WARNING: Password policy failed" >&2
+
+  # -----------------------------------------------------------------------
+  # 6. Social auto-provision flow (via kcadm — flow creation not in REST)
+  # -----------------------------------------------------------------------
+  KCADM="/opt/keycloak/bin/kcadm.sh"
+
+  $KCADM config credentials --server "$KC_URL" --realm master \
+    --user "$ADMIN_USER" --password "$ADMIN_PASS" 2>&1
+
+  # Check if flow already exists
+  FLOW_EXISTS=$($KCADM get authentication/flows -r "$REALM" 2>/dev/null \
+    | grep '"social-auto-provision"' || true)
+
+  if [ -z "$FLOW_EXISTS" ]; then
+    echo "[init-realm] Creating social-auto-provision flow..."
+
+    get_exec_id() {
+      echo "$1" | grep -B4 "\"$2\"" | grep '"id"' | tail -1 | sed 's/.*: "//;s/".*//'
+    }
+
+    set_req() {
+      printf '{"id":"%s","requirement":"%s"}' "$2" "$3" | \
+        $KCADM update "authentication/flows/$1/executions" -r "$REALM" -f - 2>&1
+    }
+
+    $KCADM create authentication/flows -r "$REALM" \
+      -s alias=social-auto-provision -s providerId=basic-flow \
+      -s topLevel=true -s builtIn=false \
+      -s 'description=Silently create or link social login users' 2>&1
+
+    $KCADM create authentication/flows/social-auto-provision/executions/execution \
+      -r "$REALM" -s provider=idp-create-user-if-unique 2>&1
+
+    $KCADM create authentication/flows/social-auto-provision/executions/flow \
+      -r "$REALM" -s alias=social-auto-link -s type=basic-flow \
+      -s provider=registration-page-form \
+      -s 'description=Auto-link social account to existing user by email' 2>&1
+
+    TOP_EXECS=$($KCADM get authentication/flows/social-auto-provision/executions -r "$REALM" 2>/dev/null)
+    EID=$(get_exec_id "$TOP_EXECS" "Create User If Unique")
+    [ -n "$EID" ] && set_req "social-auto-provision" "$EID" "ALTERNATIVE"
+    EID=$(get_exec_id "$TOP_EXECS" "social-auto-link")
+    [ -n "$EID" ] && set_req "social-auto-provision" "$EID" "ALTERNATIVE"
+
+    $KCADM create authentication/flows/social-auto-link/executions/execution \
+      -r "$REALM" -s provider=idp-detect-existing-broker-user 2>&1
+    $KCADM create authentication/flows/social-auto-link/executions/execution \
+      -r "$REALM" -s provider=idp-auto-link 2>&1
+
+    SUB_EXECS=$($KCADM get authentication/flows/social-auto-link/executions -r "$REALM" 2>/dev/null)
+    EID=$(get_exec_id "$SUB_EXECS" "Detect existing broker user")
+    [ -n "$EID" ] && set_req "social-auto-link" "$EID" "REQUIRED"
+    EID=$(get_exec_id "$SUB_EXECS" "Automatically set existing user")
+    [ -n "$EID" ] && set_req "social-auto-link" "$EID" "REQUIRED"
+
+    echo "[init-realm]   social-auto-provision flow created"
+  else
+    echo "[init-realm]   social-auto-provision flow already exists — skipping"
+  fi
+
+  # Point Google IdP to social-auto-provision
+  if [ "${GOOGLE_CLIENT_ID:-DISABLED}" != "DISABLED" ]; then
+    $KCADM update identity-provider/instances/google -r "$REALM" \
+      -s firstBrokerLoginFlowAlias=social-auto-provision 2>&1 \
+      && echo "[init-realm]   Google IdP → social-auto-provision"
+  fi
+
+  # -----------------------------------------------------------------------
+  # 7. Identity provider mapper on frontend client
+  # -----------------------------------------------------------------------
+  if [ -n "$FRONTEND_CID" ]; then
+    MAPPER_EXISTS=$(kc_get "/admin/realms/$REALM/clients/$FRONTEND_CID/protocol-mappers/models" \
+      | grep '"identity-provider-mapper"' || true)
+
+    if [ -z "$MAPPER_EXISTS" ]; then
+      echo "[init-realm] Creating identity-provider-mapper..."
+      $KCADM create "clients/$FRONTEND_CID/protocol-mappers/models" \
+        -r "$REALM" \
+        -s name=identity-provider-mapper \
+        -s protocol=openid-connect \
+        -s protocolMapper=oidc-usersessionmodel-note-mapper \
+        -s consentRequired=false \
+        -s 'config."user.session.note"=identity_provider' \
+        -s 'config."id.token.claim"=true' \
+        -s 'config."access.token.claim"=true' \
+        -s 'config."userinfo.token.claim"=false' \
+        -s 'config."claim.name"=identity_provider' \
+        -s 'config."jsonType.label"=String' 2>&1 \
+        && echo "[init-realm]   identity-provider-mapper created" \
+        || echo "[init-realm]   WARNING: Could not create identity-provider-mapper" >&2
+    else
+      echo "[init-realm]   identity-provider-mapper already exists — skipping"
+    fi
+  fi
+
+  echo "[init-realm] Post-startup configuration complete"
+
+  wait $KC_PID
 fi
