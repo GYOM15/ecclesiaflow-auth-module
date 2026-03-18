@@ -46,6 +46,7 @@ public class PasswordServiceImpl implements PasswordService {
                     true);
 
             membersClient.notifyAccountActivated(token.getMemberId(), keycloakUserId);
+            membersClient.notifyLocalCredentialsAdded(keycloakUserId);
 
             setupTokenService.deleteToken(token);
 
