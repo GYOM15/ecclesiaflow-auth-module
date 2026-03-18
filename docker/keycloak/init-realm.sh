@@ -331,48 +331,31 @@ else
   done
 
   sleep 5
-  echo "[init-realm] Keycloak is ready — running post-startup configuration via REST API..."
+  echo "[init-realm] Keycloak is ready — running post-startup configuration..."
 
   # -----------------------------------------------------------------------
-  # Get admin token
+  # Authenticate kcadm.sh (only tool available — no curl/wget in image)
   # -----------------------------------------------------------------------
   KC_URL="http://localhost:8080"
   ADMIN_USER="${KEYCLOAK_ADMIN:-admin}"
   ADMIN_PASS="${KEYCLOAK_ADMIN_PASSWORD}"
   REALM="ecclesiaflow"
+  KCADM="/opt/keycloak/bin/kcadm.sh"
 
-  get_token() {
-    curl -sf -X POST "$KC_URL/realms/master/protocol/openid-connect/token" \
-      -d "client_id=admin-cli" \
-      -d "username=$ADMIN_USER" \
-      -d "password=$ADMIN_PASS" \
-      -d "grant_type=password" 2>/dev/null | sed 's/.*"access_token":"//;s/".*//'
-  }
-
-  TOKEN=$(get_token)
-  if [ -z "$TOKEN" ]; then
-    echo "[init-realm] WARNING: Could not get admin token — skipping post-config" >&2
+  if ! $KCADM config credentials --server "$KC_URL" --realm master \
+    --user "$ADMIN_USER" --password "$ADMIN_PASS" 2>&1; then
+    echo "[init-realm] WARNING: Could not authenticate kcadm — skipping post-config" >&2
     wait $KC_PID
     exit $?
   fi
 
-  # Helper for authenticated API calls
-  kc_put() {
-    curl -sf -X PUT "$KC_URL$1" \
-      -H "Authorization: Bearer $TOKEN" \
-      -H "Content-Type: application/json" \
-      -d "$2" 2>/dev/null
-  }
-
-  kc_get() {
-    curl -sf "$KC_URL$1" -H "Authorization: Bearer $TOKEN" 2>/dev/null
-  }
-
   # -----------------------------------------------------------------------
-  # 1. SMTP Configuration
+  # 1. SMTP Configuration (use JSON body via stdin)
   # -----------------------------------------------------------------------
   echo "[init-realm] Configuring SMTP..."
-  kc_put "/admin/realms/$REALM" "{\"smtpServer\":{\"host\":\"smtp.gmail.com\",\"port\":\"587\",\"starttls\":\"true\",\"auth\":\"true\",\"from\":\"${KEYCLOAK_SMTP_FROM:-noreply@ecclesiaflow.com}\",\"user\":\"${KEYCLOAK_SMTP_USER}\",\"password\":\"${KEYCLOAK_SMTP_PASSWORD}\"}}" \
+  printf '{"smtpServer":{"host":"smtp.gmail.com","port":"587","starttls":"true","auth":"true","from":"%s","user":"%s","password":"%s"}}' \
+    "${KEYCLOAK_SMTP_FROM:-noreply@ecclesiaflow.com}" "${KEYCLOAK_SMTP_USER}" "${KEYCLOAK_SMTP_PASSWORD}" \
+    | $KCADM update "realms/$REALM" -r master -f - 2>&1 \
     && echo "[init-realm]   SMTP configured" \
     || echo "[init-realm]   WARNING: SMTP configuration failed" >&2
 
@@ -381,8 +364,9 @@ else
   # -----------------------------------------------------------------------
   if [ "${GOOGLE_CLIENT_ID:-DISABLED}" != "DISABLED" ] && [ -n "${GOOGLE_CLIENT_SECRET:-}" ]; then
     echo "[init-realm] Configuring Google IdP..."
-    kc_put "/admin/realms/$REALM/identity-provider/instances/google" \
-      "{\"alias\":\"google\",\"providerId\":\"google\",\"enabled\":true,\"trustEmail\":true,\"config\":{\"clientId\":\"${GOOGLE_CLIENT_ID}\",\"clientSecret\":\"${GOOGLE_CLIENT_SECRET}\",\"defaultScope\":\"openid email profile\",\"syncMode\":\"FORCE\",\"useJwksUrl\":\"true\"}}" \
+    printf '{"alias":"google","providerId":"google","enabled":true,"trustEmail":true,"config":{"clientId":"%s","clientSecret":"%s","defaultScope":"openid email profile","syncMode":"FORCE","useJwksUrl":"true"}}' \
+      "${GOOGLE_CLIENT_ID}" "${GOOGLE_CLIENT_SECRET}" \
+      | $KCADM update "identity-provider/instances/google" -r "$REALM" -f - 2>&1 \
       && echo "[init-realm]   Google IdP configured" \
       || echo "[init-realm]   WARNING: Google IdP configuration failed" >&2
   else
@@ -390,16 +374,17 @@ else
   fi
 
   # -----------------------------------------------------------------------
-  # 3. PKCE + Post-logout redirect URIs on frontend client
+  # 3. Frontend client: confidential + Direct Grant + PKCE disabled + post-logout URI
   # -----------------------------------------------------------------------
   echo "[init-realm] Configuring frontend client..."
-  FRONTEND_CID=$(kc_get "/admin/realms/$REALM/clients?clientId=ecclesiaflow-frontend" \
-    | sed 's/.*"id":"//' | sed 's/".*//')
+  FRONTEND_CID=$($KCADM get clients -r "$REALM" -q clientId=ecclesiaflow-frontend --fields id 2>/dev/null \
+    | grep '"id"' | sed 's/.*: "//;s/".*//')
 
   if [ -n "$FRONTEND_CID" ]; then
-    kc_put "/admin/realms/$REALM/clients/$FRONTEND_CID" \
-      "{\"publicClient\":false,\"clientAuthenticatorType\":\"client-secret\",\"secret\":\"${KEYCLOAK_FRONTEND_CLIENT_SECRET}\",\"directAccessGrantsEnabled\":true,\"attributes\":{\"pkce.code.challenge.method\":\"\",\"post.logout.redirect.uris\":\"${FRONTEND_REDIRECT_URI_1:-https://app.gyom-tech.com/*}\"}}" \
-      && echo "[init-realm]   Frontend client: confidential + Direct Grant + PKCE disabled + post-logout URI" \
+    printf '{"publicClient":false,"clientAuthenticatorType":"client-secret","secret":"%s","directAccessGrantsEnabled":true,"attributes":{"pkce.code.challenge.method":"","post.logout.redirect.uris":"%s"}}' \
+      "${KEYCLOAK_FRONTEND_CLIENT_SECRET}" "${FRONTEND_REDIRECT_URI_1:-https://app.gyom-tech.com/*}" \
+      | $KCADM update "clients/$FRONTEND_CID" -r "$REALM" -f - 2>&1 \
+      && echo "[init-realm]   Frontend client configured" \
       || echo "[init-realm]   WARNING: Frontend client configuration failed" >&2
   fi
 
@@ -407,27 +392,21 @@ else
   # 4. Themes
   # -----------------------------------------------------------------------
   echo "[init-realm] Assigning themes..."
-  kc_put "/admin/realms/$REALM" \
-    "{\"loginTheme\":\"ecclesiaflow-user\",\"emailTheme\":\"ecclesiaflow-base\",\"resetPasswordAllowed\":true}" \
-    && echo "[init-realm]   Realm themes: login=ecclesiaflow-user, email=ecclesiaflow-base" \
+  $KCADM update "realms/$REALM" \
+    -s loginTheme=ecclesiaflow-user \
+    -s emailTheme=ecclesiaflow-base \
+    -s resetPasswordAllowed=true 2>&1 \
+    && echo "[init-realm]   Realm themes assigned" \
     || echo "[init-realm]   WARNING: Theme assignment failed" >&2
 
   # -----------------------------------------------------------------------
   # 5. Password policy
   # -----------------------------------------------------------------------
   echo "[init-realm] Setting password policy..."
-  kc_put "/admin/realms/$REALM" \
-    "{\"passwordPolicy\":\"length(8) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(3)\"}" \
-    && echo "[init-realm]   Password policy: 8+ chars, mixed case, digit, special, history(3)" \
+  $KCADM update "realms/$REALM" \
+    -s 'passwordPolicy=length(8) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and passwordHistory(3)' 2>&1 \
+    && echo "[init-realm]   Password policy set" \
     || echo "[init-realm]   WARNING: Password policy failed" >&2
-
-  # -----------------------------------------------------------------------
-  # 6. Social auto-provision flow (via kcadm — flow creation not in REST)
-  # -----------------------------------------------------------------------
-  KCADM="/opt/keycloak/bin/kcadm.sh"
-
-  $KCADM config credentials --server "$KC_URL" --realm master \
-    --user "$ADMIN_USER" --password "$ADMIN_PASS" 2>&1
 
   # Check if flow already exists
   FLOW_EXISTS=$($KCADM get authentication/flows -r "$REALM" 2>/dev/null \
