@@ -335,11 +335,11 @@ components:
             - At least 1 lowercase letter
             - At least 1 uppercase letter
             - At least 1 digit
-            - At least 1 special character (@$!%*?&)
+            - At least 1 special character (@$!%*?&#^~_\-\.+=/\\|)
           example: SecurePassword123!
           minLength: 8
           maxLength: 128
-          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,128}$"
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#^~_\\-.+=/\\\\|])[A-Za-z\\d@$!%*?&#^~_\\-.+=/\\\\|]{8,128}$"
 
     AddCredentialsRequest:
       type: object
@@ -355,7 +355,7 @@ components:
           example: SecurePassword123!
           minLength: 8
           maxLength: 128
-          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,128}$"
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#^~_\\-.+=/\\\\|])[A-Za-z\\d@$!%*?&#^~_\\-.+=/\\\\|]{8,128}$"
 
     PasswordManagementResponse:
       type: object
