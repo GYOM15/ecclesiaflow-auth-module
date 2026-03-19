@@ -51,7 +51,7 @@ public class SecurityConfiguration {
                         // Password management (unauthenticated flows)
                         .requestMatchers("/ecclesiaflow/auth/password/setup").permitAll()
                         // Actuator - only liveness/readiness probes public
-                        .requestMatchers("/actuator/health/liveness", "/actuator/health/readiness").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/liveness", "/actuator/health/readiness").permitAll()
                         .requestMatchers("/actuator/**").hasAnyRole("SUPER_ADMIN", "SUPPORT")
                         // Swagger - permitAll in dev, should be restricted in prod via profile
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()

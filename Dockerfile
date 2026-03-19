@@ -43,7 +43,7 @@ USER appuser
 EXPOSE 8081 9090
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
-    CMD wget -qO- http://localhost:8081/actuator/health || exit 1
+    CMD wget -qO- http://localhost:8081/actuator/health/liveness || exit 1
 
 ENTRYPOINT ["java", \
     "-XX:+UseContainerSupport", \
