@@ -36,7 +36,7 @@
 
         <!-- CTA Button: red -->
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding: 8px 0 24px;">
-            <a href="${link}" style="display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #dc2626, #ef4444); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 15px; letter-spacing: 0.2px; box-shadow: 0 4px 14px rgba(239,68,68,0.3);">${msg("eventLoginErrorBtn","Secure my account")}</a>
+            <a href="${link!realmUrl!"#"}" style="display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #dc2626, #ef4444); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 15px; letter-spacing: 0.2px; box-shadow: 0 4px 14px rgba(239,68,68,0.3);">${msg("eventLoginErrorBtn","Secure my account")}</a>
         </td></tr></table>
 
         <!-- Divider -->
