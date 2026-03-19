@@ -87,6 +87,8 @@
     letter-spacing: -0.02em;
     color: var(--text-1);
     margin-bottom: 4px;
+    text-decoration: none;
+    display: block;
 }
 
 .user-logo .flow { color: var(--sapphire-500); }
@@ -218,11 +220,54 @@
    RESPONSIVE
    ================================================================ */
 @media (max-width: 768px) {
-    .usr-trust { gap: 16px; flex-wrap: wrap; justify-content: center; }
+    .user-centered {
+        padding: 24px 16px;
+    }
 
-    .user-card { padding: 24px; }
+    .user-logo {
+        font-size: 22px;
+    }
+
+    .user-card {
+        padding: 24px 20px;
+    }
+
+    .usr-trust {
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .usr-back-home {
+        font-size: 13px;
+    }
+
+    .user-locale {
+        top: 12px;
+        right: 12px;
+    }
+
+    .usr-bottom-tag {
+        font-size: 11px;
+    }
 }
 
 @media (max-width: 480px) {
-    .usr-trust { flex-direction: column; gap: 8px; }
+    .user-centered {
+        padding: 20px 12px;
+    }
+
+    .user-card {
+        padding: 20px 16px;
+        border-radius: 12px;
+    }
+
+    .usr-trust {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .usr-back-home-wrap {
+        margin-top: 16px;
+    }
 }

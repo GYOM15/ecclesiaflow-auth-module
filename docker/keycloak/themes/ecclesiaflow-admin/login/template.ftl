@@ -34,7 +34,7 @@
             </#if>
 
             <div class="pl-content">
-                <div class="pl-logo">Ecclesia<span class="flow">Flow</span></div>
+                <a href="${msg("landingUrl")}" class="pl-logo">Ecclesia<span class="flow">Flow</span></a>
                 <div class="pl-tagline">${msg("brandTagline")}</div>
                 <#nested "brand">
             </div>
@@ -47,7 +47,7 @@
 
             <div class="form-container">
                 <div class="mobile-logo">
-                    <div class="logo-text">Ecclesia<span class="flow">Flow</span></div>
+                    <a href="${msg("landingUrl")}" class="logo-text">Ecclesia<span class="flow">Flow</span></a>
                 </div>
 
                 <#nested "header">

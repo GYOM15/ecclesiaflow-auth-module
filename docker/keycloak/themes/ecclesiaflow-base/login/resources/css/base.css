@@ -445,6 +445,16 @@ input[type="submit"].btn {
 @media (max-width: 768px) {
     .social-row { flex-direction: column; }
     .field-row { flex-direction: column; gap: 0; }
+    .fcard { max-width: 100%; }
+    .fcard h2 { font-size: 20px; }
+}
+
+@media (max-width: 480px) {
+    .btn { padding: 10px; font-size: 13px; }
+    .field input[type="text"],
+    .field input[type="password"],
+    .field input[type="email"] { padding: 9px 12px; font-size: 13px; }
+    .field label { font-size: 12px; }
 }
 
 /* ================================================================
@@ -519,6 +529,8 @@ input[type="submit"].btn {
     letter-spacing: -0.02em;
     margin-bottom: 2px;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    display: block;
 }
 
 .pl-logo .flow { color: var(--sapphire-300); }
@@ -611,6 +623,8 @@ input[type="submit"].btn {
     font-weight: 800;
     letter-spacing: -0.02em;
     color: var(--text-1);
+    text-decoration: none;
+    display: block;
 }
 
 .mobile-logo .logo-text .flow { color: var(--sapphire-500); }
