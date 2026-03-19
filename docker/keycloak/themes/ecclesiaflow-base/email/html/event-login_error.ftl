@@ -7,7 +7,7 @@
         <!-- Icon -->
         <table cellpadding="0" cellspacing="0" border="0"><tr>
             <td style="width: 56px; height: 56px; background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.06)); border: 1px solid rgba(239,68,68,0.15); border-radius: 16px; text-align: center; vertical-align: middle;">
-                <span style="font-size: 24px;">&#9888;&#65039;</span>
+                <span style="font-size: 20px; font-weight: 700; color: #dc2626;">!</span>
             </td>
         </tr></table>
 
@@ -17,15 +17,11 @@
         <!-- Event details box -->
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 16px 0 24px;">
             <tr>
-                <td style="padding: 18px 20px; background: linear-gradient(135deg, #fef2f2, #fff5f5); border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 12px;">
+                <td style="padding: 18px 20px; background: #ffffff; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 12px;">
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                         <tr>
-                            <td style="font-size: 14px; color: #64748b; padding: 4px 0;">${msg("eventDate","Date")}</td>
+                            <td style="font-size: 14px; color: #475569; padding: 4px 0;">${msg("eventDate","Date")}</td>
                             <td align="right" style="font-size: 14px; color: #0f172a; font-weight: 600; padding: 4px 0;">${event.date?datetime?string("dd/MM/yyyy HH:mm")}</td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; color: #64748b; padding: 4px 0;">${msg("eventIpAddress","IP Address")}</td>
-                            <td align="right" style="font-size: 14px; color: #0f172a; font-weight: 600; padding: 4px 0;">${event.ipAddress}</td>
                         </tr>
                     </table>
                 </td>

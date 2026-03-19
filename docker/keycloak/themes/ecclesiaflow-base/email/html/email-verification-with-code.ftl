@@ -7,7 +7,7 @@
         <!-- Icon -->
         <table cellpadding="0" cellspacing="0" border="0"><tr>
             <td style="width: 56px; height: 56px; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(99,102,241,0.06)); border: 1px solid rgba(99,102,241,0.15); border-radius: 16px; text-align: center; vertical-align: middle;">
-                <span style="font-size: 24px;">&#128274;</span>
+                <span style="font-size: 20px; font-weight: 700; color: #6366F1;">#</span>
             </td>
         </tr></table>
 

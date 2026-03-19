@@ -51,11 +51,11 @@
                             <table width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
                                     <td align="center" style="padding: 20px 24px 8px;">
-                                        <a href="#" style="font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; color: #94A3B8; text-decoration: none; font-weight: 500;">Centre d'aide</a>
+                                        <a href="#" style="font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; color: #94A3B8; text-decoration: none; font-weight: 500;">${msg("footerHelp","Help Center")}</a>
                                         <span style="color: #E2E8F0; margin: 0 8px;">&#183;</span>
-                                        <a href="#" style="font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; color: #94A3B8; text-decoration: none; font-weight: 500;">Confidentialit&eacute;</a>
+                                        <a href="#" style="font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; color: #94A3B8; text-decoration: none; font-weight: 500;">${msg("footerPrivacy","Privacy")}</a>
                                         <span style="color: #E2E8F0; margin: 0 8px;">&#183;</span>
-                                        <a href="#" style="font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; color: #94A3B8; text-decoration: none; font-weight: 500;">Conditions</a>
+                                        <a href="#" style="font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; color: #94A3B8; text-decoration: none; font-weight: 500;">${msg("footerTerms","Terms")}</a>
                                     </td>
                                 </tr>
                                 <tr>
