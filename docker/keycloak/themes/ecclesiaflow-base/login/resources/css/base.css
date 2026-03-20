@@ -207,7 +207,7 @@ a:hover { color: var(--sapphire-400); }
     border-radius: var(--radius-md);
     background: var(--bg-input);
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     color: var(--text-1);
     outline: none;
     transition: all 0.15s;
@@ -263,7 +263,7 @@ input.kc-input,
     border-radius: var(--radius-md);
     background: var(--bg-input);
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     color: var(--text-1);
     outline: none;
     transition: all 0.15s;
@@ -461,7 +461,7 @@ input[type="submit"].btn {
     .btn { padding: 10px; font-size: 13px; }
     .field input[type="text"],
     .field input[type="password"],
-    .field input[type="email"] { padding: 9px 12px; font-size: 13px; }
+    .field input[type="email"] { padding: 9px 12px; font-size: 16px; }
     .field label { font-size: 12px; }
 }
 
