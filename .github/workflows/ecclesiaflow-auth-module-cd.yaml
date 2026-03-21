@@ -21,6 +21,10 @@ on:
 env:
   REGISTRY_IMAGE: ghcr.io/${{ github.repository_owner }}/ecclesiaflow-auth-module
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   deploy:
     name: Deploy to VPS
