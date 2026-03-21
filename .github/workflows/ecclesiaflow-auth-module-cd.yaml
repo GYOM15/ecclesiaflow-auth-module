@@ -18,6 +18,9 @@ on:
         options:
           - production
 
+env:
+  REGISTRY_IMAGE: ghcr.io/${{ github.repository_owner }}/ecclesiaflow-auth-module
+
 jobs:
   deploy:
     name: Deploy to VPS
@@ -27,6 +30,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set lowercase image name
+        run: echo "IMAGE=${REGISTRY_IMAGE,,}" >> $GITHUB_ENV
 
       - name: Setup JDK 21
         uses: actions/setup-java@v4
@@ -54,8 +60,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/ecclesiaflow-auth-module:latest
-            ghcr.io/${{ github.repository_owner }}/ecclesiaflow-auth-module:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -68,20 +74,12 @@ jobs:
           port: ${{ secrets.VPS_SSH_PORT != '' && secrets.VPS_SSH_PORT || '22' }}
           script: |
             set -e
-
             cd /opt/ecclesiaflow/ecclesiaflow-deploy
 
-            # Pull latest image
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker pull ghcr.io/${{ github.repository_owner }}/ecclesiaflow-auth-module:latest
-
-            # Tag for local compose
-            docker tag ghcr.io/${{ github.repository_owner }}/ecclesiaflow-auth-module:latest ecclesiaflow/auth-module:latest
-
-            # Restart only auth service
+            docker pull ${{ env.IMAGE }}:latest
+            docker tag ${{ env.IMAGE }}:latest ecclesiaflow/auth-module:latest
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps --no-build auth-module
-
-            # Cleanup old images
             docker image prune -f
 
       - name: Verify deployment
