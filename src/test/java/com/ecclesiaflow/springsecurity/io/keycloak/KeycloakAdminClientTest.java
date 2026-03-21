@@ -502,6 +502,117 @@ class KeycloakAdminClientTest {
         }
     }
 
+    @Nested
+    @DisplayName("disableUser")
+    class DisableUserTests {
+
+        @Test
+        @DisplayName("Should disable user successfully")
+        void shouldDisableUserSuccessfully() {
+            mockTokenAcquisition();
+
+            keycloakAdminClient.disableUser(KEYCLOAK_USER_ID);
+
+            verify(adminClient).updateUser(
+                    eq("Bearer " + ACCESS_TOKEN),
+                    eq(REALM),
+                    eq(KEYCLOAK_USER_ID),
+                    eq(Map.of("enabled", false))
+            );
+        }
+    }
+
+    @Nested
+    @DisplayName("updateUserEmail")
+    class UpdateUserEmailTests {
+
+        @Test
+        @DisplayName("Should update user email and username")
+        void shouldUpdateUserEmailAndUsername() {
+            mockTokenAcquisition();
+            String newEmail = "newemail@test.com";
+
+            keycloakAdminClient.updateUserEmail(KEYCLOAK_USER_ID, newEmail);
+
+            verify(adminClient).updateUser(
+                    eq("Bearer " + ACCESS_TOKEN),
+                    eq(REALM),
+                    eq(KEYCLOAK_USER_ID),
+                    eq(Map.of("email", newEmail, "username", newEmail))
+            );
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteUser")
+    class DeleteUserTests {
+
+        @Test
+        @DisplayName("Should delete user successfully")
+        void shouldDeleteUserSuccessfully() {
+            mockTokenAcquisition();
+
+            keycloakAdminClient.deleteUser(KEYCLOAK_USER_ID);
+
+            verify(adminClient).deleteUser(
+                    eq("Bearer " + ACCESS_TOKEN),
+                    eq(REALM),
+                    eq(KEYCLOAK_USER_ID)
+            );
+        }
+    }
+
+    @Nested
+    @DisplayName("authenticateUser")
+    class AuthenticateUserTests {
+
+        @Test
+        @DisplayName("Should authenticate user via Direct Grant")
+        void shouldAuthenticateUserSuccessfully() {
+            KeycloakTokenResponse tokenResponse = new KeycloakTokenResponse(
+                    "user-access-token", "user-refresh-token", 300, 1800, "Bearer", "openid");
+            when(tokenClient.getToken(eq(REALM), any(MultiValueMap.class)))
+                    .thenReturn(tokenResponse);
+
+            KeycloakTokenResponse result = keycloakAdminClient.authenticateUser(EMAIL, PASSWORD);
+
+            assertThat(result.accessToken()).isEqualTo("user-access-token");
+            assertThat(result.refreshToken()).isEqualTo("user-refresh-token");
+
+            verify(tokenClient).getToken(eq(REALM), argThat(form ->
+                    "password".equals(form.getFirst("grant_type")) &&
+                    DIRECT_GRANT_CLIENT_ID.equals(form.getFirst("client_id")) &&
+                    DIRECT_GRANT_CLIENT_SECRET.equals(form.getFirst("client_secret")) &&
+                    EMAIL.equals(form.getFirst("username")) &&
+                    PASSWORD.equals(form.getFirst("password"))
+            ));
+        }
+
+        @Test
+        @DisplayName("Should throw when response is null")
+        void shouldThrowWhenResponseIsNull() {
+            when(tokenClient.getToken(eq(REALM), any(MultiValueMap.class)))
+                    .thenReturn(null);
+
+            assertThatThrownBy(() -> keycloakAdminClient.authenticateUser(EMAIL, PASSWORD))
+                    .isInstanceOf(KeycloakAdminClient.KeycloakException.class)
+                    .hasMessageContaining("Failed to authenticate user via Direct Grant");
+        }
+
+        @Test
+        @DisplayName("Should throw when access token is null in response")
+        void shouldThrowWhenAccessTokenIsNull() {
+            KeycloakTokenResponse tokenResponse = new KeycloakTokenResponse(
+                    null, null, 300, 0, "Bearer", null);
+            when(tokenClient.getToken(eq(REALM), any(MultiValueMap.class)))
+                    .thenReturn(tokenResponse);
+
+            assertThatThrownBy(() -> keycloakAdminClient.authenticateUser(EMAIL, PASSWORD))
+                    .isInstanceOf(KeycloakAdminClient.KeycloakException.class)
+                    .hasMessageContaining("Failed to authenticate user via Direct Grant");
+        }
+    }
+
     private void mockTokenAcquisition() {
         KeycloakTokenResponse tokenResponse = new KeycloakTokenResponse(
                 ACCESS_TOKEN, null, 3600, 0, "Bearer", null);

@@ -341,4 +341,192 @@ class AuthGrpcServiceImplTest {
                     .isEqualTo(Status.Code.INTERNAL);
         }
     }
+
+    @Nested
+    @DisplayName("disableKeycloakUser")
+    class DisableKeycloakUserTests {
+
+        private static final String TEST_KEYCLOAK_USER_ID = "kc-user-456";
+
+        @Mock
+        private StreamObserver<DisableKeycloakUserResponse> disableResponseObserver;
+
+        @Test
+        @DisplayName("Should disable Keycloak user successfully")
+        void shouldDisableKeycloakUserSuccessfully() {
+            DisableKeycloakUserRequest request = DisableKeycloakUserRequest.newBuilder()
+                    .setKeycloakUserId(TEST_KEYCLOAK_USER_ID)
+                    .build();
+
+            authGrpcService.disableKeycloakUser(request, disableResponseObserver);
+
+            verify(keycloakAdminClient).disableUser(TEST_KEYCLOAK_USER_ID);
+
+            ArgumentCaptor<DisableKeycloakUserResponse> captor =
+                    ArgumentCaptor.forClass(DisableKeycloakUserResponse.class);
+            verify(disableResponseObserver).onNext(captor.capture());
+            verify(disableResponseObserver).onCompleted();
+            verify(disableResponseObserver, never()).onError(any());
+
+            assertThat(captor.getValue().getSuccess()).isTrue();
+            assertThat(captor.getValue().getMessage()).isEqualTo("Keycloak user disabled");
+        }
+
+        @Test
+        @DisplayName("Should reject empty keycloak_user_id")
+        void shouldRejectEmptyKeycloakUserId() {
+            DisableKeycloakUserRequest request = DisableKeycloakUserRequest.newBuilder()
+                    .setKeycloakUserId("")
+                    .build();
+
+            authGrpcService.disableKeycloakUser(request, disableResponseObserver);
+
+            ArgumentCaptor<StatusRuntimeException> errorCaptor =
+                    ArgumentCaptor.forClass(StatusRuntimeException.class);
+            verify(disableResponseObserver).onError(errorCaptor.capture());
+            verify(disableResponseObserver, never()).onNext(any());
+            verify(keycloakAdminClient, never()).disableUser(any());
+
+            assertThat(errorCaptor.getValue().getStatus().getCode())
+                    .isEqualTo(Status.Code.INVALID_ARGUMENT);
+            assertThat(errorCaptor.getValue().getStatus().getDescription())
+                    .contains("keycloak_user_id cannot be empty");
+        }
+
+        @Test
+        @DisplayName("Should return INTERNAL when Keycloak call fails")
+        void shouldReturnInternalWhenKeycloakFails() {
+            DisableKeycloakUserRequest request = DisableKeycloakUserRequest.newBuilder()
+                    .setKeycloakUserId(TEST_KEYCLOAK_USER_ID)
+                    .build();
+
+            doThrow(new RuntimeException("Keycloak error"))
+                    .when(keycloakAdminClient).disableUser(TEST_KEYCLOAK_USER_ID);
+
+            authGrpcService.disableKeycloakUser(request, disableResponseObserver);
+
+            ArgumentCaptor<StatusRuntimeException> errorCaptor =
+                    ArgumentCaptor.forClass(StatusRuntimeException.class);
+            verify(disableResponseObserver).onError(errorCaptor.capture());
+
+            assertThat(errorCaptor.getValue().getStatus().getCode())
+                    .isEqualTo(Status.Code.INTERNAL);
+            assertThat(errorCaptor.getValue().getStatus().getDescription())
+                    .contains("Failed to disable Keycloak user");
+        }
+    }
+
+    @Nested
+    @DisplayName("updateKeycloakUserEmail")
+    class UpdateKeycloakUserEmailTests {
+
+        private static final String TEST_KEYCLOAK_USER_ID = "kc-user-789";
+        private static final String NEW_EMAIL = "new@example.com";
+
+        @Mock
+        private StreamObserver<UpdateKeycloakUserEmailResponse> updateEmailResponseObserver;
+
+        @Test
+        @DisplayName("Should update email successfully")
+        void shouldUpdateEmailSuccessfully() {
+            UpdateKeycloakUserEmailRequest request = UpdateKeycloakUserEmailRequest.newBuilder()
+                    .setKeycloakUserId(TEST_KEYCLOAK_USER_ID)
+                    .setNewEmail(NEW_EMAIL)
+                    .build();
+
+            authGrpcService.updateKeycloakUserEmail(request, updateEmailResponseObserver);
+
+            verify(keycloakAdminClient).updateUserEmail(TEST_KEYCLOAK_USER_ID, NEW_EMAIL);
+
+            ArgumentCaptor<UpdateKeycloakUserEmailResponse> captor =
+                    ArgumentCaptor.forClass(UpdateKeycloakUserEmailResponse.class);
+            verify(updateEmailResponseObserver).onNext(captor.capture());
+            verify(updateEmailResponseObserver).onCompleted();
+            verify(updateEmailResponseObserver, never()).onError(any());
+
+            assertThat(captor.getValue().getSuccess()).isTrue();
+            assertThat(captor.getValue().getMessage()).isEqualTo("Keycloak user email updated");
+        }
+
+        @Test
+        @DisplayName("Should reject empty keycloak_user_id")
+        void shouldRejectEmptyKeycloakUserId() {
+            UpdateKeycloakUserEmailRequest request = UpdateKeycloakUserEmailRequest.newBuilder()
+                    .setKeycloakUserId("")
+                    .setNewEmail(NEW_EMAIL)
+                    .build();
+
+            authGrpcService.updateKeycloakUserEmail(request, updateEmailResponseObserver);
+
+            ArgumentCaptor<StatusRuntimeException> errorCaptor =
+                    ArgumentCaptor.forClass(StatusRuntimeException.class);
+            verify(updateEmailResponseObserver).onError(errorCaptor.capture());
+            verify(keycloakAdminClient, never()).updateUserEmail(any(), any());
+
+            assertThat(errorCaptor.getValue().getStatus().getCode())
+                    .isEqualTo(Status.Code.INVALID_ARGUMENT);
+        }
+
+        @Test
+        @DisplayName("Should reject invalid email format")
+        void shouldRejectInvalidEmailFormat() {
+            UpdateKeycloakUserEmailRequest request = UpdateKeycloakUserEmailRequest.newBuilder()
+                    .setKeycloakUserId(TEST_KEYCLOAK_USER_ID)
+                    .setNewEmail("not-an-email")
+                    .build();
+
+            authGrpcService.updateKeycloakUserEmail(request, updateEmailResponseObserver);
+
+            ArgumentCaptor<StatusRuntimeException> errorCaptor =
+                    ArgumentCaptor.forClass(StatusRuntimeException.class);
+            verify(updateEmailResponseObserver).onError(errorCaptor.capture());
+            verify(keycloakAdminClient, never()).updateUserEmail(any(), any());
+
+            assertThat(errorCaptor.getValue().getStatus().getCode())
+                    .isEqualTo(Status.Code.INVALID_ARGUMENT);
+            assertThat(errorCaptor.getValue().getStatus().getDescription())
+                    .contains("Invalid email format");
+        }
+
+        @Test
+        @DisplayName("Should reject empty email")
+        void shouldRejectEmptyEmail() {
+            UpdateKeycloakUserEmailRequest request = UpdateKeycloakUserEmailRequest.newBuilder()
+                    .setKeycloakUserId(TEST_KEYCLOAK_USER_ID)
+                    .setNewEmail("")
+                    .build();
+
+            authGrpcService.updateKeycloakUserEmail(request, updateEmailResponseObserver);
+
+            ArgumentCaptor<StatusRuntimeException> errorCaptor =
+                    ArgumentCaptor.forClass(StatusRuntimeException.class);
+            verify(updateEmailResponseObserver).onError(errorCaptor.capture());
+
+            assertThat(errorCaptor.getValue().getStatus().getCode())
+                    .isEqualTo(Status.Code.INVALID_ARGUMENT);
+        }
+
+        @Test
+        @DisplayName("Should return INTERNAL when Keycloak call fails")
+        void shouldReturnInternalWhenKeycloakFails() {
+            UpdateKeycloakUserEmailRequest request = UpdateKeycloakUserEmailRequest.newBuilder()
+                    .setKeycloakUserId(TEST_KEYCLOAK_USER_ID)
+                    .setNewEmail(NEW_EMAIL)
+                    .build();
+
+            doThrow(new RuntimeException("Keycloak error"))
+                    .when(keycloakAdminClient).updateUserEmail(TEST_KEYCLOAK_USER_ID, NEW_EMAIL);
+
+            authGrpcService.updateKeycloakUserEmail(request, updateEmailResponseObserver);
+
+            ArgumentCaptor<StatusRuntimeException> errorCaptor =
+                    ArgumentCaptor.forClass(StatusRuntimeException.class);
+            verify(updateEmailResponseObserver).onError(errorCaptor.capture());
+
+            assertThat(errorCaptor.getValue().getStatus().getCode())
+                    .isEqualTo(Status.Code.INTERNAL);
+            assertThat(errorCaptor.getValue().getStatus().getDescription())
+                    .contains("Failed to update Keycloak user email");
+        }
+    }
 }
