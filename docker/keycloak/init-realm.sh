@@ -135,7 +135,7 @@ if [ "$IS_DEV" = "true" ]; then
   #     ├── idp-create-user-if-unique  (ALTERNATIVE) — new user → silent create
   #     └── social-auto-link           (ALTERNATIVE) — existing user → sub-flow
   #           ├── idp-detect-existing-broker-user (REQUIRED)
-  #           └── idp-auto-link                   (REQUIRED)
+  #           └── idp-confirm-link                (REQUIRED) — asks user to confirm
   # -----------------------------------------------------------------------
 
   KCADM="/opt/keycloak/bin/kcadm.sh"
@@ -197,7 +197,7 @@ if [ "$IS_DEV" = "true" ]; then
 
   $KCADM create authentication/flows/social-auto-link/executions/execution \
     -r "$REALM" \
-    -s provider=idp-auto-link 2>&1
+    -s provider=idp-confirm-link 2>&1
 
   # 6. Set sub-flow executions to REQUIRED
   SUB_EXECS=$($KCADM get authentication/flows/social-auto-link/executions -r "$REALM" 2>/dev/null)
@@ -206,9 +206,9 @@ if [ "$IS_DEV" = "true" ]; then
   [ -n "$EID" ] && set_req "social-auto-link" "$EID" "REQUIRED" \
     && echo "[init-realm]   idp-detect-existing-broker-user → REQUIRED"
 
-  EID=$(get_exec_id "$SUB_EXECS" "Automatically set existing user")
+  EID=$(get_exec_id "$SUB_EXECS" "Confirm link existing account")
   [ -n "$EID" ] && set_req "social-auto-link" "$EID" "REQUIRED" \
-    && echo "[init-realm]   idp-auto-link → REQUIRED"
+    && echo "[init-realm]   idp-confirm-link → REQUIRED"
 
   # 7. Point identity providers to the new flow
   echo "[init-realm] Updating identity providers to use social-auto-provision..."
@@ -446,12 +446,12 @@ else
     $KCADM create authentication/flows/social-auto-link/executions/execution \
       -r "$REALM" -s provider=idp-detect-existing-broker-user 2>&1
     $KCADM create authentication/flows/social-auto-link/executions/execution \
-      -r "$REALM" -s provider=idp-auto-link 2>&1
+      -r "$REALM" -s provider=idp-confirm-link 2>&1
 
     SUB_EXECS=$($KCADM get authentication/flows/social-auto-link/executions -r "$REALM" 2>/dev/null)
     EID=$(get_exec_id "$SUB_EXECS" "Detect existing broker user")
     [ -n "$EID" ] && set_req "social-auto-link" "$EID" "REQUIRED"
-    EID=$(get_exec_id "$SUB_EXECS" "Automatically set existing user")
+    EID=$(get_exec_id "$SUB_EXECS" "Confirm link existing account")
     [ -n "$EID" ] && set_req "social-auto-link" "$EID" "REQUIRED"
 
     echo "[init-realm]   social-auto-provision flow created"
