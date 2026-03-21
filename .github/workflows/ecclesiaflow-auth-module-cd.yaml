@@ -69,7 +69,7 @@ jobs:
           script: |
             set -e
 
-            cd /opt/ecclesiaflow
+            cd /opt/ecclesiaflow/ecclesiaflow-deploy
 
             # Pull latest image
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -78,9 +78,8 @@ jobs:
             # Tag for local compose
             docker tag ghcr.io/${{ github.repository_owner }}/ecclesiaflow-auth-module:latest ecclesiaflow/auth-module:latest
 
-            # Deploy with zero-downtime
-            docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d --no-build
-            docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.prod exec -T auth-module wget -qO- http://localhost:8081/actuator/health/readiness || true
+            # Restart only auth service
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps --no-build auth-module
 
             # Cleanup old images
             docker image prune -f
@@ -95,7 +94,7 @@ jobs:
           script: |
             echo "Waiting for service to be ready..."
             for i in $(seq 1 30); do
-              if docker compose -f /opt/ecclesiaflow/docker/docker-compose.prod.yml ps auth-module | grep -q "healthy"; then
+              if docker compose -f /opt/ecclesiaflow/ecclesiaflow-deploy/docker-compose.prod.yml --env-file /opt/ecclesiaflow/ecclesiaflow-deploy/.env.prod ps auth-module | grep -q "healthy"; then
                 echo "Auth module is healthy!"
                 exit 0
               fi
@@ -103,5 +102,5 @@ jobs:
               sleep 10
             done
             echo "ERROR: Auth module did not become healthy within 5 minutes"
-            docker compose -f /opt/ecclesiaflow/docker/docker-compose.prod.yml logs --tail=50 auth-module
+            docker compose -f /opt/ecclesiaflow/ecclesiaflow-deploy/docker-compose.prod.yml --env-file /opt/ecclesiaflow/ecclesiaflow-deploy/.env.prod logs --tail=50 auth-module
             exit 1
