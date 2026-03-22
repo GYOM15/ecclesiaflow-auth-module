@@ -447,12 +447,20 @@ else
       -r "$REALM" -s provider=idp-detect-existing-broker-user 2>&1
     $KCADM create authentication/flows/social-auto-link/executions/execution \
       -r "$REALM" -s provider=idp-confirm-link 2>&1
+    $KCADM create authentication/flows/social-auto-link/executions/execution \
+      -r "$REALM" -s provider=idp-email-verification 2>&1
+    $KCADM create authentication/flows/social-auto-link/executions/execution \
+      -r "$REALM" -s provider=auth-username-password-form 2>&1
 
     SUB_EXECS=$($KCADM get authentication/flows/social-auto-link/executions -r "$REALM" 2>/dev/null)
     EID=$(get_exec_id "$SUB_EXECS" "Detect existing broker user")
     [ -n "$EID" ] && set_req "social-auto-link" "$EID" "REQUIRED"
     EID=$(get_exec_id "$SUB_EXECS" "Confirm link existing account")
     [ -n "$EID" ] && set_req "social-auto-link" "$EID" "REQUIRED"
+    EID=$(get_exec_id "$SUB_EXECS" "Verify existing account by Email")
+    [ -n "$EID" ] && set_req "social-auto-link" "$EID" "ALTERNATIVE"
+    EID=$(get_exec_id "$SUB_EXECS" "Username Password Form for identity provider reauthentication")
+    [ -n "$EID" ] && set_req "social-auto-link" "$EID" "ALTERNATIVE"
 
     echo "[init-realm]   social-auto-provision flow created"
   else
