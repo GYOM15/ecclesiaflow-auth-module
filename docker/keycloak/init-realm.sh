@@ -395,7 +395,9 @@ else
   $KCADM update "realms/$REALM" \
     -s loginTheme=ecclesiaflow-user \
     -s emailTheme=ecclesiaflow-base \
-    -s resetPasswordAllowed=true 2>&1 \
+    -s resetPasswordAllowed=true \
+    -s editUsernameAllowed=true \
+    -s registrationEmailAsUsername=true 2>&1 \
     && echo "[init-realm]   Realm themes assigned" \
     || echo "[init-realm]   WARNING: Theme assignment failed" >&2
 
