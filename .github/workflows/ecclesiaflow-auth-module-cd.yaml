@@ -20,6 +20,7 @@ on:
 
 env:
   REGISTRY_IMAGE: ghcr.io/${{ github.repository_owner }}/ecclesiaflow-auth-module
+  KEYCLOAK_IMAGE: ghcr.io/${{ github.repository_owner }}/ecclesiaflow-keycloak
 
 permissions:
   contents: read
@@ -35,8 +36,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set lowercase image name
-        run: echo "IMAGE=${REGISTRY_IMAGE,,}" >> $GITHUB_ENV
+      - name: Set lowercase image names
+        run: |
+          echo "IMAGE=${REGISTRY_IMAGE,,}" >> $GITHUB_ENV
+          echo "KC_IMAGE=${KEYCLOAK_IMAGE,,}" >> $GITHUB_ENV
 
       - name: Setup JDK 21
         uses: actions/setup-java@v4
@@ -58,7 +61,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push Auth Module image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -66,8 +69,19 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=auth
+          cache-to: type=gha,mode=max,scope=auth
+
+      - name: Build and push Keycloak image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker/keycloak
+          push: true
+          tags: |
+            ${{ env.KC_IMAGE }}:latest
+            ${{ env.KC_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=keycloak
+          cache-to: type=gha,mode=max,scope=keycloak
 
       - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1
@@ -83,9 +97,15 @@ jobs:
             cd /opt/ecclesiaflow/ecclesiaflow-deploy && git pull origin main
 
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
             docker pull ${{ env.IMAGE }}:latest
             docker tag ${{ env.IMAGE }}:latest ecclesiaflow/auth-module:latest
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps --no-build auth-module
+
+            docker pull ${{ env.KC_IMAGE }}:latest
+            docker tag ${{ env.KC_IMAGE }}:latest ecclesiaflow/keycloak:latest
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps --no-build keycloak
+
             docker image prune -f
 
       - name: Verify deployment
