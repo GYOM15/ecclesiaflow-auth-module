@@ -18,7 +18,7 @@
                         <#elseif p.alias == "facebook">
                             <svg viewBox="0 0 18 18" fill="#1877F2"><path d="M18 9a9 9 0 10-10.406 8.89v-6.29H5.309V9h2.285V7.017c0-2.255 1.343-3.501 3.4-3.501.984 0 2.014.176 2.014.176v2.215h-1.135c-1.118 0-1.467.694-1.467 1.406V9h2.496l-.399 2.6h-2.097v6.29A9.003 9.003 0 0018 9z"/></svg>
                         <#else>
-                            <span class="social-icon">${p.displayName[0]}</span>
+                            <span class="social-icon"><#if p.displayName?? && p.displayName?length gt 0>${p.displayName[0]}<#else>?</#if></span>
                         </#if>
                         ${p.displayName}
                     </a>
@@ -61,7 +61,7 @@
             <button class="btn btn-primary" type="submit">${msg("doRegister")}</button>
         </form>
         <div class="fcard-footer">
-            ${msg("hasAccount")} <a href="${url.loginUrl}">${msg("signIn")}</a>
+            ${msg("hasAccount")} <a href="${url.loginUrl}<#if locale??>&kc_locale=${locale.currentLanguageTag}</#if>">${msg("signIn")}</a>
         </div>
     </#if>
 

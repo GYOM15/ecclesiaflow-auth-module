@@ -14,7 +14,7 @@
   "emailTheme": "ecclesiaflow-base",
   "bruteForceProtected": true,
   "permanentLockout": false,
-  "maxFailureWaitSeconds": 900,
+  "maxFailureWaitSeconds": 300,
   "minimumQuickLoginWaitSeconds": 60,
   "waitIncrementSeconds": 60,
   "quickLoginCheckMilliSeconds": 1000,

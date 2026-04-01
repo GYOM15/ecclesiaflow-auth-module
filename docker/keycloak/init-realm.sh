@@ -58,7 +58,7 @@ sed \
   -e "s|__FACEBOOK_CLIENT_ID__|${FACEBOOK_CLIENT_ID:-DISABLED}|g" \
   -e "s|__FACEBOOK_CLIENT_SECRET__|${FACEBOOK_CLIENT_SECRET:-DISABLED}|g" \
   -e "s|__FRONTEND_POST_LOGOUT_REDIRECT_URI__|${FRONTEND_POST_LOGOUT_REDIRECT_URI:-http://localhost:3000}|g" \
-  -e "s|__SSL_REQUIRED__|${SSL_REQUIRED:-none}|g" \
+  -e "s|__SSL_REQUIRED__|${SSL_REQUIRED:-external}|g" \
   "$TEMPLATE" > "$OUTPUT"
 
 # Verify no unresolved placeholders remain
